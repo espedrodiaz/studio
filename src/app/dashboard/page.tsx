@@ -63,87 +63,81 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="shadow-md">
-          <CardHeader>
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Costo del Inventario</CardTitle>
-            <CreditCard className="h-4 w-4 text-green-500" />
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${formatUsd(totalInventoryCost)}</div>
-            <p className="text-xs text-green-600 font-medium">
+            <div className="text-2xl font-bold text-green-600">${formatUsd(totalInventoryCost)}</div>
+            <p className="text-xs text-muted-foreground">
               Bs {formatBs(totalInventoryCost)}
             </p>
           </CardContent>
         </Card>
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle>
-              Valor del Inventario
-            </CardTitle>
-            <Package className="h-4 w-4 text-sky-500" />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle>Valor del Inventario</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${formatUsd(totalInventoryValue)}</div>
-            <p className="text-xs text-green-600 font-medium">
-              Bs {formatBs(totalInventoryValue)}
+            <div className="text-2xl font-bold text-sky-600">${formatUsd(totalInventoryValue)}</div>
+            <p className="text-xs text-muted-foreground">
+               Bs {formatBs(totalInventoryValue)}
             </p>
           </CardContent>
         </Card>
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle>
-              Ganancia Estimada
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-green-700" />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle>Ganancia Estimada</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${formatUsd(estimatedProfit)}</div>
-            <p className="text-xs text-green-600 font-medium">
+            <div className="text-2xl font-bold text-green-700">${formatUsd(estimatedProfit)}</div>
+            <p className="text-xs text-muted-foreground">
               Bs {formatBs(estimatedProfit)}
             </p>
           </CardContent>
         </Card>
-        <Card className="shadow-md">
-          <CardHeader>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Cuentas por Cobrar</CardTitle>
-            <Users className="h-4 w-4 text-orange-500" />
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${formatUsd(totalReceivable)}</div>
-             <p className="text-xs text-green-600 font-medium">
+            <div className="text-2xl font-bold text-orange-600">${formatUsd(totalReceivable)}</div>
+            <p className="text-xs text-muted-foreground">
                Bs {formatBs(totalReceivable)}
             </p>
           </CardContent>
         </Card>
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Cuentas por Pagar
-            </CardTitle>
-            <LineChart className="h-4 w-4 text-red-500" />
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle>Cuentas por Pagar</CardTitle>
+            <LineChart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${formatUsd(totalPayable)}</div>
-            <p className="text-xs text-green-600 font-medium">
-              Bs {formatBs(totalPayable)}
+            <div className="text-2xl font-bold text-red-600">${formatUsd(totalPayable)}</div>
+            <p className="text-xs text-muted-foreground">
+               Bs {formatBs(totalPayable)}
             </p>
           </CardContent>
         </Card>
-         <Card className={`shadow-md ${isCritical ? 'bg-yellow-50 border-yellow-300' : 'bg-green-50 border-green-300'}`}>
-          <CardHeader>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Salud Financiera</CardTitle>
-            {isCritical ? (
+             {isCritical ? (
                 <AlertTriangle className="h-4 w-4 text-yellow-500" />
             ) : (
                 <ThumbsUp className="h-4 w-4 text-green-500" />
             )}
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${isCritical ? 'text-yellow-600' : 'text-green-600'}`}>
+             <div className={`text-xl font-bold ${isCritical ? 'text-yellow-600' : 'text-green-600'}`}>
                 {isCritical ? 'Crítico' : 'Saludable'}
             </div>
-            <p className={`text-xs ${isCritical ? 'text-yellow-500' : 'text-green-500'} font-medium`}>
+            <p className={`text-xs ${isCritical ? 'text-yellow-500' : 'text-green-500'}`}>
               {isCritical ? 'Las deudas superan los activos' : 'Operaciones estables'}
             </p>
           </CardContent>
@@ -153,7 +147,7 @@ export default async function DashboardPage() {
         <Card className="xl:col-span-2">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
-              <CardTitle>Últimas Ventas</CardTitle>
+              <CardTitle className="text-lg">Últimas Ventas</CardTitle>
               <CardDescription>
                 Resumen de las ventas más recientes.
               </CardDescription>
@@ -196,7 +190,7 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle>Inventario Reciente</CardTitle>
+            <CardTitle className="text-lg">Inventario Reciente</CardTitle>
             <CardDescription>
               Productos añadidos o actualizados recientemente.
             </CardDescription>
