@@ -260,7 +260,7 @@ export default function ExchangeRatesPage() {
                                 <DialogTitle className="text-indigo-600">Tasas de Proveedores</DialogTitle>
                                 <DialogDescription>Añada, edite o elimine las tasas de cambio de sus proveedores.</DialogDescription>
                             </DialogHeader>
-                             <div className="grid grid-cols-[2fr_1fr_auto] items-end gap-2 py-4 border-b">
+                             <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] items-end gap-2 py-4 border-b">
                                 <div className="space-y-2"><Label htmlFor="supplier-name">Nombre del Proveedor</Label><Input id="supplier-name" value={supplierRateName} onChange={(e) => setSupplierRateName(e.target.value)} placeholder="Ej: Proveedor XYZ"/></div>
                                 <div className="space-y-2"><Label htmlFor="supplier-rate">Tasa (Bs/$)</Label><Input id="supplier-rate" type="number" value={supplierRateAmount} onChange={(e) => setSupplierRateAmount(parseFloat(e.target.value) || "")} placeholder="Ej: 41.20"/></div>
                                 <div className="flex items-end gap-2">
@@ -337,34 +337,37 @@ export default function ExchangeRatesPage() {
                           </CardContent>
                       </Card>
                     )}
-                    <div className="max-h-[60vh] overflow-y-auto">
-                        <Table>
-                            <TableHeader><TableRow><TableHead>Fecha y Hora</TableHead><TableHead className="text-center">Tasa (Bs/$)</TableHead><TableHead className="text-center">Cambio</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {filteredBcvRates.map((rate, index) => {
-                                    const change = getBcvRateChange(index);
-                                    return (
-                                    <TableRow key={rate.id}>
-                                        <TableCell className="text-xs">{formatVenezuelanDateTime(rate.date)}</TableCell>
-                                        <TableCell className="font-medium text-center">{rate.rate.toFixed(2)}</TableCell>
-                                        <TableCell className={cn("text-xs text-center", change?.trend === 'up' ? 'text-green-600' : change?.trend === 'down' ? 'text-red-500' : '')}>
+                     <div className="max-h-[60vh] overflow-y-auto space-y-4 pr-2">
+                        {filteredBcvRates.map((rate, index) => {
+                            const change = getBcvRateChange(index);
+                            return (
+                                <Card key={rate.id} className="p-4">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="text-2xl font-bold tracking-tight text-primary">{formatBs(rate.rate)}</p>
+                                        </div>
                                         {change && (
-                                            <div className="flex items-center justify-center gap-1">
-                                            {change.trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                                            <span>{change.difference > 0 ? '+' : ''}{formatBs(change.difference)} ({change.percentage.toFixed(2)}%)</span>
-                                            </div>
+                                            <Badge className={cn("text-xs font-bold", change.trend === 'up' ? 'text-green-600 bg-green-100/60' : 'text-red-500 bg-red-100/60')} variant="secondary">
+                                                {change.trend === 'up' ? <ArrowUp className="inline h-3 w-3 mr-1"/> : <ArrowDown className="inline h-3 w-3 mr-1"/>}
+                                                {formatBs(change.difference)} ({change.percentage.toFixed(2)}%)
+                                            </Badge>
                                         )}
-                                        </TableCell>
-                                        <TableCell>
-                                        <DropdownMenu><DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end"><DropdownMenuItem onClick={() => handleDeleteBcvRate(rate.id)} className="text-destructive gap-2"><Trash2 className="h-4 w-4" /> Eliminar</DropdownMenuItem></DropdownMenuContent>
-                                        </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
+                                    </div>
+                                    <div className="flex justify-between items-center mt-3 text-muted-foreground">
+                                        <div className="flex items-center gap-2 text-xs">
+                                            <CalendarDays className="h-3 w-3" />
+                                            <span>{formatVenezuelanDateTime(rate.date)}</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <Button aria-haspopup="true" size="icon" variant="ghost" className="text-destructive hover:text-destructive h-8 w-8" onClick={() => handleDeleteBcvRate(rate.id)}>
+                                                <Trash2 className="h-4 w-4" />
+                                                <span className="sr-only">Eliminar</span>
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </Card>
+                            )
+                        })}
                     </div>
                 </CardContent>
             </Card>
