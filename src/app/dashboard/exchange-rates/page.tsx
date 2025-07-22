@@ -142,7 +142,7 @@ export default function ExchangeRatesPage() {
     }
     setNewBcvRate("");
     setIsBcvModalOpen(false);
-    toast({ title: "Tasa Agregada", description: `La nueva tasa BCV de ${newBcvRate} Bs/$ ha sido registrada.` });
+    toast({ title: "Tasa Agregada", description: `La nueva tasa BCV de ${formatBs(newBcvRate)} Bs ha sido registrada.` });
   };
 
   const handleDeleteBcvRate = (id: string) => {
@@ -215,11 +215,13 @@ export default function ExchangeRatesPage() {
   }
 
   const formatVenezuelanDateTime = (isoString: string) => new Date(isoString).toLocaleString('es-VE', { timeZone: 'America/Caracas', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
+  
   const formatBs = (amount: number) => {
     const fixedAmount = amount.toFixed(2);
     const [integer, decimal] = fixedAmount.split('.');
     return `${new Intl.NumberFormat('de-DE').format(Number(integer))},${decimal}`;
   }
+
 
   return (
     <div className="grid gap-6 md:grid-cols-3">
@@ -248,7 +250,7 @@ export default function ExchangeRatesPage() {
                         <DialogTrigger asChild><Button className="w-full gap-2"><PlusCircle className="h-4 w-4"/> Añadir Tasa BCV</Button></DialogTrigger>
                         <DialogContent>
                             <DialogHeader><DialogTitle>Registrar Nueva Tasa BCV</DialogTitle><DialogDescription>Ingrese el nuevo valor de la tasa en Bolívares por Dólar.</DialogDescription></DialogHeader>
-                            <div className="py-4"><div className="space-y-2"><Label htmlFor="rate">Nueva Tasa (Bs por 1$)</Label><Input id="rate" type="number" placeholder="Ej: 40.50" value={newBcvRate} onChange={(e) => setNewBcvRate(parseFloat(e.target.value) || "")}/></div></div>
+                            <div className="py-4"><div className="space-y-2"><Label htmlFor="rate">Nueva Tasa (Bs)</Label><Input id="rate" type="number" placeholder="Ej: 40,50" value={newBcvRate} onChange={(e) => setNewBcvRate(parseFloat(e.target.value) || "")}/></div></div>
                             <DialogFooter><Button variant="outline" onClick={() => setIsBcvModalOpen(false)}>Cancelar</Button><Button onClick={handleAddBcvRate} disabled={!newBcvRate || newBcvRate <= 0}>Registrar Tasa</Button></DialogFooter>
                         </DialogContent>
                     </Dialog>
@@ -262,7 +264,7 @@ export default function ExchangeRatesPage() {
                             </DialogHeader>
                              <div className="grid grid-cols-1 sm:grid-cols-[2fr_1fr_auto] items-end gap-2 py-4 border-b">
                                 <div className="space-y-2"><Label htmlFor="supplier-name">Nombre del Proveedor</Label><Input id="supplier-name" value={supplierRateName} onChange={(e) => setSupplierRateName(e.target.value)} placeholder="Ej: Proveedor XYZ"/></div>
-                                <div className="space-y-2"><Label htmlFor="supplier-rate">Tasa (Bs/$)</Label><Input id="supplier-rate" type="number" value={supplierRateAmount} onChange={(e) => setSupplierRateAmount(parseFloat(e.target.value) || "")} placeholder="Ej: 41.20"/></div>
+                                <div className="space-y-2"><Label htmlFor="supplier-rate">Tasa (Bs)</Label><Input id="supplier-rate" type="number" value={supplierRateAmount} onChange={(e) => setSupplierRateAmount(parseFloat(e.target.value) || "")} placeholder="Ej: 41,20"/></div>
                                 <div className="flex items-end gap-2">
                                   <Button onClick={handleSaveSupplierRate} size="icon" aria-label={editingSupplierRate ? "Guardar Cambios" : "Añadir Tasa"}>
                                     <Save className="h-4 w-4" />
@@ -283,7 +285,7 @@ export default function ExchangeRatesPage() {
                                             <div className="flex justify-between items-start">
                                                 <div>
                                                     <p className="font-semibold">{rate.name}</p>
-                                                    <p className="text-2xl font-bold tracking-tight text-indigo-600">{formatBs(rate.rate)} <span className="text-sm font-normal text-muted-foreground">Bs/$</span></p>
+                                                    <p className="text-2xl font-bold tracking-tight text-indigo-600">{formatBs(rate.rate)} <span className="text-sm font-normal text-muted-foreground">Bs</span></p>
                                                 </div>
                                                 <Badge className={cn("text-xs font-bold", diffColor)} variant="secondary">
                                                     {diff.difference >= 0 ? '+' : ''}{diff.percentage.toFixed(2)}%
