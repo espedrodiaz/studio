@@ -28,6 +28,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [bcvRate, setBcvRate] = useState(getCurrentBcvRate());
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
     const subscription = bcvRateSubject.subscribe(rate => {
@@ -36,6 +37,10 @@ export default function DashboardLayout({
     return () => subscription.unsubscribe();
   }, []);
 
+  const closeSheet = () => {
+    setIsSheetOpen(false);
+  }
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
@@ -43,7 +48,7 @@ export default function DashboardLayout({
       </div>
       <div className="flex flex-col">
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-          <Sheet>
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild>
               <Button
                 variant="outline"
@@ -56,7 +61,7 @@ export default function DashboardLayout({
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0">
                <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
-              <SidebarNav />
+              <SidebarNav onLinkClick={closeSheet} />
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
