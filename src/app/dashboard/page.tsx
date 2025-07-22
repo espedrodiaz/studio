@@ -8,6 +8,7 @@ import {
   Users,
   LineChart,
   AlertTriangle,
+  ThumbsUp,
 } from "lucide-react";
 import {
   Avatar,
@@ -52,7 +53,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Costo del Inventario</CardTitle>
@@ -109,7 +110,6 @@ export default function DashboardPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               Cuentas por Pagar
-              {isCritical && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
             </CardTitle>
             <LineChart className="h-4 w-4 text-red-500" />
           </CardHeader>
@@ -117,6 +117,24 @@ export default function DashboardPage() {
             <div className="text-2xl font-bold">${formatUsd(totalPayable)}</div>
             <p className="text-xs text-green-600 font-medium">
               Bs {formatBs(totalPayable)}
+            </p>
+          </CardContent>
+        </Card>
+         <Card className={`shadow-md ${isCritical ? 'bg-yellow-50 border-yellow-300' : 'bg-green-50 border-green-300'}`}>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Salud Financiera</CardTitle>
+            {isCritical ? (
+                <AlertTriangle className="h-4 w-4 text-yellow-500" />
+            ) : (
+                <ThumbsUp className="h-4 w-4 text-green-500" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${isCritical ? 'text-yellow-600' : 'text-green-600'}`}>
+                {isCritical ? 'Crítico' : 'Saludable'}
+            </div>
+            <p className={`text-xs ${isCritical ? 'text-yellow-500' : 'text-green-500'} font-medium`}>
+              {isCritical ? 'Las deudas superan los activos' : 'Operaciones estables'}
             </p>
           </CardContent>
         </Card>
