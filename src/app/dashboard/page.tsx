@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import {
   ArrowUpRight,
@@ -39,7 +40,7 @@ export default function DashboardPage() {
     const totalPayable = accountsPayable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     
     const formatBs = (amount: number) => {
-        return (amount * exchangeRates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return (amount * exchangeRates.bcv).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     const formatUsd = (amount: number) => {
@@ -49,67 +50,67 @@ export default function DashboardPage() {
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <Card>
+        <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Costo del Inventario</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <CreditCard className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${formatUsd(totalInventoryCost)}</div>
-            <p className="text-xs text-muted-foreground">
-              {formatBs(totalInventoryCost)} Bs
+            <p className="text-xs text-green-600 font-medium">
+              Bs {formatBs(totalInventoryCost)}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Valor del Inventario
             </CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <Package className="h-4 w-4 text-sky-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${formatUsd(totalInventoryValue)}</div>
-            <p className="text-xs text-muted-foreground">
-              {formatBs(totalInventoryValue)} Bs
+            <p className="text-xs text-green-600 font-medium">
+              Bs {formatBs(totalInventoryValue)}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Ganancia Estimada
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-green-700" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${formatUsd(estimatedProfit)}</div>
-            <p className="text-xs text-muted-foreground">
-              {formatBs(estimatedProfit)} Bs
+            <p className="text-xs text-green-600 font-medium">
+              Bs {formatBs(estimatedProfit)}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cuentas por Cobrar</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${formatUsd(totalReceivable)}</div>
-             <p className="text-xs text-muted-foreground">
-               {formatBs(totalReceivable)} Bs
+             <p className="text-xs text-green-600 font-medium">
+               Bs {formatBs(totalReceivable)}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Cuentas por Pagar</CardTitle>
-            <LineChart className="h-4 w-4 text-muted-foreground" />
+            <LineChart className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${formatUsd(totalPayable)}</div>
-            <p className="text-xs text-muted-foreground">
-              {formatBs(totalPayable)} Bs
+            <p className="text-xs text-green-600 font-medium">
+              Bs {formatBs(totalPayable)}
             </p>
           </CardContent>
         </Card>
