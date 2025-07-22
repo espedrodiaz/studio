@@ -346,7 +346,7 @@ export default function ExchangeRatesPage() {
                                 <Card key={rate.id} className="p-4">
                                     <div className="flex justify-between items-start">
                                         <div>
-                                            <p className="text-2xl font-bold tracking-tight text-primary">{formatBs(rate.rate)}</p>
+                                            <p className="text-2xl font-bold tracking-tight text-primary">{formatBs(rate.rate)} Bs</p>
                                         </div>
                                         {change && (
                                             <Badge className={cn("text-xs font-bold", change.trend === 'up' ? 'text-green-600 bg-green-100/60' : 'text-red-500 bg-red-100/60')} variant="secondary">
