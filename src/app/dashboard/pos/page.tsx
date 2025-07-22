@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { products, customers as initialCustomers, getPaymentMethods, getCurrentBcvRate, cashMovements as initialCashMovements, addCashMovement } from "@/lib/placeholder-data";
-import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp, ShoppingCart, Pencil, Car, Trash2, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp, ShoppingCart, Pencil, Car, Trash2, Plus, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
@@ -303,6 +303,7 @@ export default function PosPage() {
     const handleSelectCustomer = (customer: Customer) => {
         setSelectedCustomer(customer);
         setCustomerSearchTerm('');
+        goToStep(3);
     };
     
     const handleOmitCustomer = () => {
@@ -617,7 +618,7 @@ export default function PosPage() {
                       <div className="space-y-4">
                           {selectedCustomer && isCartExpanded && <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>}
                           {cart.map(item => (
-                              <Card key={item.id} className="p-4">
+                            <Card key={item.id} className="p-4">
                                 <p className="font-semibold text-sm mb-2">{item.name}</p>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
@@ -705,6 +706,71 @@ export default function PosPage() {
         </Collapsible>
       </Card>
     );
+
+    const Stepper = () => {
+        const steps = [
+            { id: 1, name: 'Carrito' },
+            { id: 2, name: 'Cliente' },
+            { id: 3, name: 'Pago' }
+        ];
+
+        return (
+            <nav aria-label="Progress">
+                <ol role="list" className="flex items-center">
+                    {steps.map((s, stepIdx) => (
+                        <li key={s.name} className={cn("relative", { 'flex-1': stepIdx !== steps.length -1 })}>
+                            {s.id < step ? (
+                                <>
+                                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                        <div className="h-0.5 w-full bg-primary" />
+                                    </div>
+                                    <button
+                                        onClick={() => goToStep(s.id)}
+                                        className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary hover:bg-primary/90"
+                                    >
+                                        <CheckCircle2 className="h-5 w-5 text-white" aria-hidden="true" />
+                                        <span className="sr-only">{s.name}</span>
+                                    </button>
+                                </>
+                            ) : s.id === step ? (
+                                <>
+                                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                        <div className="h-0.5 w-full bg-gray-200" />
+                                    </div>
+                                    <div
+                                        className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary bg-background"
+                                        aria-current="step"
+                                    >
+                                        <span className="h-2.5 w-2.5 rounded-full bg-primary" aria-hidden="true" />
+                                        <span className="sr-only">{s.name}</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                        <div className="h-0.5 w-full bg-gray-200" />
+                                    </div>
+                                    <div
+                                        className="group relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-background hover:border-gray-400"
+                                    >
+                                        <span className="h-2.5 w-2.5 rounded-full bg-transparent group-hover:bg-gray-300" aria-hidden="true" />
+                                        <span className="sr-only">{s.name}</span>
+                                    </div>
+                                </>
+                            )}
+                             <p className={cn("absolute -bottom-6 w-max text-xs", 
+                                s.id <= step ? 'font-semibold text-primary' : 'text-muted-foreground',
+                                { 'left-[-50%]': s.id > 1 && s.id < steps.length,
+                                'left-0' : s.id === 1,
+                                'right-0 text-right': s.id === steps.length
+                                }
+                            )}>{s.name}</p>
+                        </li>
+                    ))}
+                </ol>
+            </nav>
+        );
+    };
 
     return (
         <>
@@ -966,7 +1032,10 @@ export default function PosPage() {
                         </CardHeader>
                     </Card>
 
-                    <div className="space-y-4">
+                    <div className="space-y-8">
+                         <div className="px-4 pt-4 pb-8">
+                            <Stepper />
+                        </div>
                         {renderStep()}
                     </div>
                 </>
