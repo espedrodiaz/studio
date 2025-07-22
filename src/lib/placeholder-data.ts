@@ -22,11 +22,11 @@ export const suppliers = [
 ];
 
 export const sales = [
-  { id: 'SALE001', date: '2024-07-20', customer: 'Ana Pérez', total: 10.00, status: 'Pagada' },
-  { id: 'SALE002', date: '2024-07-20', customer: 'Carlos Gómez', total: 25.50, status: 'Pagada' },
-  { id: 'SALE003', date: '2024-07-21', customer: 'María Rodríguez', total: 5.40, status: 'Pendiente' },
-  { id: 'SALE004', date: '2024-07-22', customer: 'Cliente Ocasional', total: 12.80, status: 'Pagada' },
-  { id: 'SALE005', date: '2024-07-22', customer: 'Ana Pérez', total: 7.00, status: 'Pagada' },
+  { id: 'SALE001', date: '2024-07-20T10:00:00.000Z', customer: 'Ana Pérez', total: 10.00, status: 'Pagada' },
+  { id: 'SALE002', date: '2024-07-20T14:30:00.000Z', customer: 'Carlos Gómez', total: 25.50, status: 'Pagada' },
+  { id: 'SALE003', date: '2024-07-21T11:20:00.000Z', customer: 'María Rodríguez', total: 5.40, status: 'Pendiente' },
+  { id: 'SALE004', date: '2024-07-22T09:05:00.000Z', customer: 'Cliente Ocasional', total: 12.80, status: 'Pagada' },
+  { id: 'SALE005', date: '2024-07-22T16:45:00.000Z', customer: 'Ana Pérez', total: 7.00, status: 'Pagada' },
 ];
 
 export const accountsPayable = [
@@ -49,12 +49,12 @@ export const paymentMethods = [
 ];
 
 export const exchangeRates = [
-    { id: 'RATE003', date: '2024-07-25', rate: 100.00 },
-    { id: 'RATE002', date: '2024-07-24', rate: 98.50 },
-    { id: 'RATE001', date: '2024-07-23', rate: 99.20 },
+    { id: 'RATE003', date: '2024-07-25T09:00:00.000Z', rate: 100.00 },
+    { id: 'RATE002', date: '2024-07-24T09:05:00.000Z', rate: 98.50 },
+    { id: 'RATE001', date: '2024-07-23T08:55:00.000Z', rate: 99.20 },
 ];
 
 export const getCurrentBcvRate = () => {
-    // Assuming rates are sorted by date descending
-    return exchangeRates[0]?.rate || 0;
+    const sortedRates = [...exchangeRates].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return sortedRates[0]?.rate || 0;
 }

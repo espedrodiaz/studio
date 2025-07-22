@@ -31,6 +31,12 @@ export default function SalesPage() {
     return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
+  const formatVenezuelanDate = (isoString: string) => {
+    return new Date(isoString).toLocaleDateString('es-VE', {
+        timeZone: 'America/Caracas',
+    });
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -83,7 +89,7 @@ export default function SalesPage() {
             {sales.map((sale) => (
               <TableRow key={sale.id}>
                 <TableCell className="font-medium">{sale.customer}</TableCell>
-                <TableCell>{sale.date}</TableCell>
+                <TableCell>{formatVenezuelanDate(sale.date)}</TableCell>
                 <TableCell>
                   <Badge variant={sale.status === 'Pagada' ? 'default' : 'secondary'} className={sale.status === 'Pagada' ? 'bg-green-500/20 text-green-700 hover:bg-green-500/30' : ''}>
                     {sale.status}

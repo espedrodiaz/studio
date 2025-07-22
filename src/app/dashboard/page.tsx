@@ -52,6 +52,12 @@ export default function DashboardPage() {
         return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    const formatVenezuelanDate = (isoString: string) => {
+        return new Date(isoString).toLocaleDateString('es-VE', {
+            timeZone: 'America/Caracas',
+        });
+    }
+
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -173,7 +179,7 @@ export default function DashboardPage() {
                     <div className="font-medium">{sale.customer}</div>
                   </TableCell>
                   <TableCell className="text-right">${formatUsd(sale.total)}</TableCell>
-                  <TableCell className="hidden xl:table-column text-right">{sale.date}</TableCell>
+                  <TableCell className="hidden xl:table-column text-right">{formatVenezuelanDate(sale.date)}</TableCell>
                    <TableCell className="text-right">
                     <Badge variant={sale.status === 'Pagada' ? 'default' : 'secondary'} className={sale.status === 'Pagada' ? 'bg-green-500/20 text-green-700' : ''}>
                         {sale.status}

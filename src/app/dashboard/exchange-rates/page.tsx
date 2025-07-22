@@ -56,7 +56,7 @@ export default function ExchangeRatesPage() {
     }
     const newRateEntry: ExchangeRate = {
       id: `RATE${new Date().getTime()}`,
-      date: new Date().toISOString().split('T')[0],
+      date: new Date().toISOString(),
       rate: newRate,
     };
     const updatedRates = [newRateEntry, ...rates].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -87,6 +87,18 @@ export default function ExchangeRatesPage() {
       if(current > previous) return "up";
       if(current < previous) return "down";
       return null;
+  }
+  
+  const formatVenezuelanDateTime = (isoString: string) => {
+    return new Date(isoString).toLocaleString('es-VE', {
+        timeZone: 'America/Caracas',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true,
+    });
   }
 
   return (
@@ -138,7 +150,7 @@ export default function ExchangeRatesPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Fecha</TableHead>
+                                <TableHead>Fecha y Hora (VET)</TableHead>
                                 <TableHead className="text-right">Tasa (Bs/$)</TableHead>
                                 <TableHead className="text-center">Cambio</TableHead>
                                 <TableHead><span className="sr-only">Acciones</span></TableHead>
@@ -149,7 +161,7 @@ export default function ExchangeRatesPage() {
                                 const change = getRateChange(index);
                                 return (
                                 <TableRow key={rate.id}>
-                                    <TableCell>{new Date(rate.date).toLocaleDateString('es-VE')}</TableCell>
+                                    <TableCell>{formatVenezuelanDateTime(rate.date)}</TableCell>
                                     <TableCell className="font-medium text-right">{rate.rate.toFixed(2)}</TableCell>
                                     <TableCell className="text-center">
                                         {change === 'up' && <ArrowUp className="h-4 w-4 text-green-500 inline"/>}
