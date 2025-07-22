@@ -27,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { MoreHorizontal, PlusCircle, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { exchangeRates as initialRates, updateCurrentBcvRate, getCurrentBcvRate, bcvRateSubject } from "@/lib/placeholder-data";
 import { toast } from "@/hooks/use-toast";
@@ -47,6 +48,7 @@ export default function ExchangeRatesPage() {
   const [newRate, setNewRate] = useState<number | "">("");
   const [currentRate, setCurrentRate] = useState(getCurrentBcvRate());
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const subscription = bcvRateSubject.subscribe(rate => {
@@ -126,6 +128,7 @@ export default function ExchangeRatesPage() {
     }
     
     setNewRate("");
+    setIsModalOpen(false);
     toast({
       title: "Tasa Agregada",
       description: `La nueva tasa de ${newRate} Bs/$ ha sido registrada.`,
@@ -159,7 +162,7 @@ export default function ExchangeRatesPage() {
       const difference = current - previous;
       const percentage = (difference / previous) * 100;
 
-      let trend: 'up' | 'down' | null = null;
+      let trend: 'up' | 'down' | null = 'neutral';
       if (difference > 0) trend = 'up';
       if (difference < 0) trend = 'down';
 
@@ -191,64 +194,12 @@ export default function ExchangeRatesPage() {
 
 
   return (
-    <div className="grid gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Tasa de Cambio BCV</CardTitle>
-          <CardDescription>
-            Administra la tasa de cambio de Bolívares (VES) a Dólares (USD)
-            según el Banco Central de Venezuela.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-8 md:grid-cols-3">
-            <div className="flex flex-col gap-8">
-                <div className="flex flex-col items-center justify-center bg-muted/40 rounded-lg p-8">
-                    <p className="text-sm font-medium text-muted-foreground">
-                        Tasa Actual (VES / USD)
-                    </p>
-                    <p className="text-5xl font-bold tracking-tight text-green-600">
-                        {currentRate.toFixed(2)}
-                    </p>
-                </div>
-                 <div className="space-y-4">
-                  <p className="font-medium">Añadir Nueva Tasa</p>
-                  <div className="space-y-2">
-                    <Label htmlFor="rate">Nueva Tasa (Bs por 1$)</Label>
-                    <div className="flex gap-2">
-                    <Input
-                      id="rate"
-                      type="number"
-                      placeholder="Ej: 100.00"
-                      value={newRate}
-                      onChange={(e) => setNewRate(parseFloat(e.target.value) || "")}
-                    />
-                     <Button onClick={handleAddRate} disabled={!newRate || newRate <= 0} className="gap-2">
-                        <PlusCircle />
-                        Añadir
-                     </Button>
-                    </div>
-                  </div>
-                </div>
-            </div>
-            <div className="md:col-span-2">
-              <Card>
+    <div className="grid gap-6 md:grid-cols-3">
+        <div className="md:col-span-2">
+            <Card>
                 <CardHeader>
-                    <div className="flex justify-between items-center">
-                      <CardTitle>Historial de Tasas</CardTitle>
-                      <div className="w-48">
-                         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Filtrar por mes" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos los meses</SelectItem>
-                                {availableMonths.map(month => (
-                                    <SelectItem key={month} value={month}>{new Date(month).toLocaleString('es-VE', { month: 'long', year: 'numeric', timeZone: 'UTC' })}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                    <CardTitle>Historial de Tasas</CardTitle>
+                    <CardDescription>Seguimiento de las tasas de cambio publicadas.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     {monthSummary && (
@@ -282,55 +233,123 @@ export default function ExchangeRatesPage() {
                           </CardContent>
                       </Card>
                     )}
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Fecha y Hora</TableHead>
-                                <TableHead className="text-center">Tasa (Bs/$)</TableHead>
-                                <TableHead className="text-center">Cambio</TableHead>
-                                <TableHead><span className="sr-only">Acciones</span></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredRates.map((rate, index) => {
-                                const change = getRateChange(index);
-                                return (
-                                <TableRow key={rate.id}>
-                                    <TableCell className="text-xs">{formatVenezuelanDateTime(rate.date)}</TableCell>
-                                    <TableCell className="font-medium text-center">{rate.rate.toFixed(2)}</TableCell>
-                                    <TableCell className={cn("text-xs text-center", change?.trend === 'up' ? 'text-green-600' : 'text-red-500')}>
-                                      {change && change.trend && (
-                                        <div className="flex items-center justify-center gap-1">
-                                          {change.trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                                          <span>{formatBs(change.difference)} ({change.percentage.toFixed(2)}%)</span>
-                                        </div>
-                                      )}
-                                    </TableCell>
-                                    <TableCell>
-                                     <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                                            <MoreHorizontal className="h-4 w-4" />
-                                            <span className="sr-only">Toggle menu</span>
-                                        </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => handleDeleteRate(rate.id)} className="text-destructive gap-2">
-                                            <Trash2 /> Eliminar
-                                        </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                     </DropdownMenu>
-                                    </TableCell>
+                    <div className="max-h-[60vh] overflow-y-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Fecha y Hora</TableHead>
+                                    <TableHead className="text-center">Tasa (Bs/$)</TableHead>
+                                    <TableHead className="text-center">Cambio</TableHead>
+                                    <TableHead><span className="sr-only">Acciones</span></TableHead>
                                 </TableRow>
-                                )
-                            })}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredRates.map((rate, index) => {
+                                    const change = getRateChange(index);
+                                    return (
+                                    <TableRow key={rate.id}>
+                                        <TableCell className="text-xs">{formatVenezuelanDateTime(rate.date)}</TableCell>
+                                        <TableCell className="font-medium text-center">{rate.rate.toFixed(2)}</TableCell>
+                                        <TableCell className={cn("text-xs text-center", change?.trend === 'up' ? 'text-green-600' : change?.trend === 'down' ? 'text-red-500' : '')}>
+                                        {change && change.trend && (
+                                            <div className="flex items-center justify-center gap-1">
+                                            {change.trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                                            <span>{formatBs(change.difference)} ({change.percentage.toFixed(2)}%)</span>
+                                            </div>
+                                        )}
+                                        </TableCell>
+                                        <TableCell>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                            <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                                <span className="sr-only">Toggle menu</span>
+                                            </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleDeleteRate(rate.id)} className="text-destructive gap-2">
+                                                <Trash2 className="h-4 w-4" /> Eliminar
+                                            </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                    )
+                                })}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
-              </Card>
-            </div>
-        </CardContent>
-      </Card>
+            </Card>
+        </div>
+        <div className="flex flex-col gap-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Tasa Actual</CardTitle>
+                    <CardDescription>VES / USD</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-4xl font-bold tracking-tight text-green-600">
+                        {formatBs(currentRate)}
+                    </p>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Acciones</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                     <div>
+                         <Label>Filtrar por mes</Label>
+                         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Filtrar por mes" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos los meses</SelectItem>
+                                {availableMonths.map(month => (
+                                    <SelectItem key={month} value={month}>{new Date(month).toLocaleString('es-VE', { month: 'long', year: 'numeric', timeZone: 'UTC' })}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                      </div>
+
+                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                        <DialogTrigger asChild>
+                             <Button className="w-full gap-2">
+                                <PlusCircle className="h-4 w-4"/> Añadir Nueva Tasa
+                             </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Registrar Nueva Tasa de Cambio</DialogTitle>
+                                <DialogDescription>
+                                    Ingrese el nuevo valor de la tasa en Bolívares por Dólar.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4">
+                               <div className="space-y-2">
+                                    <Label htmlFor="rate">Nueva Tasa (Bs por 1$)</Label>
+                                    <Input
+                                    id="rate"
+                                    type="number"
+                                    placeholder="Ej: 40.50"
+                                    value={newRate}
+                                    onChange={(e) => setNewRate(parseFloat(e.target.value) || "")}
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                                <Button onClick={handleAddRate} disabled={!newRate || newRate <= 0}>
+                                    Registrar Tasa
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </CardContent>
+             </Card>
+        </div>
     </div>
   );
 }
