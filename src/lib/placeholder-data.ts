@@ -1,4 +1,6 @@
 
+import { Customer } from "./types";
+
 // A simple in-memory pub/sub system for real-time rate updates across components.
 // In a real app, this would be replaced by a state management library like Redux or Zustand.
 type Subscriber = (rate: number) => void;
@@ -32,11 +34,44 @@ export let products = [
   { id: 'PROD006', name: 'Azúcar Refinada 1kg', stock: 250, purchasePrice: 1.10, salePrice: 2.00 },
 ];
 
-export const customers = [
-  { id: 'CUST001', name: 'Ana Pérez', idNumber: 'V-12345678', email: 'ana.perez@email.com', phone: '0414-1234567' },
-  { id: 'CUST002', name: 'Carlos Gómez', idNumber: 'V-87654321', email: 'carlos.gomez@email.com', phone: '0412-8765432' },
-  { id: 'CUST003', name: 'María Rodríguez', idNumber: 'V-11223344', email: 'maria.r@email.com', phone: '0424-1122334' },
-  { id: 'CUST004', name: 'Luis Hernández', idNumber: 'E-55667788', email: 'luis.h@email.com', phone: '0416-5566778' },
+export const customers: Customer[] = [
+  { 
+    id: 'CUST001', 
+    name: 'Ana Pérez', 
+    idNumber: 'V-12345678', 
+    email: 'ana.perez@email.com', 
+    phone: '0414-1234567',
+    vehicles: [
+        { brand: 'Toyota', model: 'Corolla', engine: '1.8L', year: 2021 }
+    ]
+  },
+  { 
+    id: 'CUST002', 
+    name: 'Carlos Gómez', 
+    idNumber: 'V-87654321', 
+    email: 'carlos.gomez@email.com', 
+    phone: '0412-8765432',
+    vehicles: []
+  },
+  { 
+    id: 'CUST003', 
+    name: 'María Rodríguez', 
+    idNumber: 'V-11223344', 
+    email: 'maria.r@email.com', 
+    phone: '0424-1122334',
+    vehicles: [
+        { brand: 'Ford', model: 'Fiesta', engine: '1.6L', year: 2018 },
+        { brand: 'Chevrolet', model: 'Aveo', engine: '1.6L', year: 2015 }
+    ]
+  },
+  { 
+    id: 'CUST004', 
+    name: 'Luis Hernández', 
+    idNumber: 'E-55667788', 
+    email: 'luis.h@email.com', 
+    phone: '0416-5566778',
+    vehicles: []
+  },
 ];
 
 export const suppliers = [

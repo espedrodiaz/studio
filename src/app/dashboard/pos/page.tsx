@@ -7,8 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { products, customers, getPaymentMethods, getCurrentBcvRate, cashMovements as initialCashMovements, addCashMovement } from "@/lib/placeholder-data";
-import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp, ShoppingCart } from "lucide-react";
+import { products, customers as initialCustomers, getPaymentMethods, getCurrentBcvRate, cashMovements as initialCashMovements, addCashMovement } from "@/lib/placeholder-data";
+import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp, ShoppingCart, Pencil, Car, Trash2, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
@@ -16,10 +16,18 @@ import { toast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Customer } from '@/lib/types';
 
 
-type CartItem = typeof products[0] & { quantity: number };
+type CartItem = typeof products[0] & { quantity: number; salePrice: number };
 type CashMovement = typeof initialCashMovements[0];
+type Vehicle = {
+    brand: string;
+    model: string;
+    engine: string;
+    year: number | string;
+};
 
 export default function PosPage() {
     const [isCashDrawerOpen, setIsCashDrawerOpen] = useState(false);
@@ -34,8 +42,10 @@ export default function PosPage() {
 
     const [step, setStep] = useState(1);
     const [cart, setCart] = useState<CartItem[]>([]);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [selectedCustomer, setSelectedCustomer] = useState<typeof customers[0] | null>(null);
+    const [productSearchTerm, setProductSearchTerm] = useState('');
+    const [customerSearchTerm, setCustomerSearchTerm] = useState('');
+    const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
+    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [payments, setPayments] = useState<{methodId: string, amount: number}[]>([]);
     const [changePayments, setChangePayments] = useState<{methodId: string, amount: number}[]>([]);
     
@@ -43,6 +53,17 @@ export default function PosPage() {
     const bcvRate = getCurrentBcvRate();
 
     const [currentDate, setCurrentDate] = useState('');
+
+    // State for modals
+    const [isEditingPrice, setIsEditingPrice] = useState<CartItem | null>(null);
+    const [priceInUsd, setPriceInUsd] = useState<number | string>('');
+    const [priceInVes, setPriceInVes] = useState<number | string>('');
+
+    const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+    const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+    const [customerForm, setCustomerForm] = useState<Omit<Customer, 'id'>>({ name: '', idNumber: '', email: '', phone: '', vehicles: [] });
+    const [vehicleForm, setVehicleForm] = useState<Vehicle>({ brand: '', model: '', engine: '', year: '' });
+
 
     useEffect(() => {
         setPaymentMethodsList(getPaymentMethods());
@@ -63,12 +84,11 @@ export default function PosPage() {
         setIsCashDrawerOpen(true);
         toast({
             title: "Caja Abierta",
-            description: `Caja iniciada con $${formatUsd(initialBalances.usd)} y Bs ${formatBs(initialBalances.ves)}.`,
+            description: `Caja iniciada con $${formatUsd(initialBalances.usd)} y Bs ${formatBs(convertToBs(initialBalances.usd, 'Bs'))}.`,
         });
     }
 
     const handleCloseCashDrawer = (reportType: 'X' | 'Z') => {
-        // In a real app, this would generate and print the report.
         toast({
             title: `Reporte ${reportType} Generado`,
             description: "La funcionalidad de impresión y lógica de reportes se implementará en el futuro.",
@@ -76,13 +96,12 @@ export default function PosPage() {
 
         if (reportType === 'Z') {
             setIsCashDrawerOpen(false);
-            // Reset all states
             setStep(1);
             setCart([]);
             setSelectedCustomer(null);
             setPayments([]);
             setChangePayments([]);
-            setSearchTerm('');
+            setProductSearchTerm('');
             setInitialBalances({ usd: 0, ves: 0 });
             setCashMovements([]);
              toast({
@@ -125,9 +144,17 @@ export default function PosPage() {
 
 
     const filteredProducts = useMemo(() => {
-        if (!searchTerm) return [];
-        return products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [searchTerm]);
+        if (!productSearchTerm) return [];
+        return products.filter(p => p.name.toLowerCase().includes(productSearchTerm.toLowerCase()));
+    }, [productSearchTerm]);
+    
+    const filteredCustomers = useMemo(() => {
+        if (!customerSearchTerm) return [];
+        return customers.filter(c => 
+            c.name.toLowerCase().includes(customerSearchTerm.toLowerCase()) || 
+            c.idNumber.toLowerCase().includes(customerSearchTerm.toLowerCase())
+        );
+    }, [customerSearchTerm, customers]);
 
     const addToCart = (product: typeof products[0]) => {
         setCart(prevCart => {
@@ -137,7 +164,7 @@ export default function PosPage() {
             }
             return [...prevCart, { ...product, quantity: 1 }];
         });
-        setSearchTerm('');
+        setProductSearchTerm('');
     };
 
     const updateQuantity = (productId: string, newQuantity: number) => {
@@ -152,7 +179,112 @@ export default function PosPage() {
     const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const formatBs = (amount: number) => amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
-    const convertToBs = (amountUsd: number) => amountUsd * bcvRate;
+    const convertToBs = (amountUsd: number, targetCurrency: 'USD' | 'Bs') => {
+        if (targetCurrency === 'USD') {
+            return amountUsd / bcvRate;
+        }
+        return amountUsd * bcvRate;
+    }
+
+    const handlePriceEdit = (item: CartItem) => {
+        setIsEditingPrice(item);
+        setPriceInUsd(item.salePrice.toFixed(2));
+        setPriceInVes(convertToBs(item.salePrice, 'Bs').toFixed(2));
+    };
+
+    const handleUsdPriceChange = (value: string) => {
+        const newUsd = parseFloat(value) || 0;
+        setPriceInUsd(value);
+        setPriceInVes(convertToBs(newUsd, 'Bs').toFixed(2));
+    }
+    
+    const handleVesPriceChange = (value: string) => {
+        const newVes = parseFloat(value) || 0;
+        setPriceInVes(value);
+        setPriceInUsd(convertToBs(newVes, 'USD').toFixed(2));
+    }
+
+    const handleUpdatePrice = () => {
+        if (isEditingPrice) {
+            const newPriceUsd = parseFloat(priceInUsd as string);
+            setCart(cart.map(item => item.id === isEditingPrice.id ? { ...item, salePrice: newPriceUsd } : item));
+            toast({ title: "Precio Actualizado", description: `El precio de ${isEditingPrice.name} se ha actualizado.` });
+            setIsEditingPrice(null);
+            setPriceInUsd('');
+            setPriceInVes('');
+        }
+    }
+    
+    // Customer Management
+    const openCustomerModal = (customer: Customer | null) => {
+        if (customer) {
+            setEditingCustomer(customer);
+            setCustomerForm({ ...customer });
+        } else {
+            setEditingCustomer(null);
+            setCustomerForm({ name: '', idNumber: '', email: '', phone: '', vehicles: [] });
+        }
+        setIsCustomerModalOpen(true);
+    };
+
+    const handleCustomerFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setCustomerForm({ ...customerForm, [e.target.id]: e.target.value });
+    };
+
+    const handleVehicleFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setVehicleForm({ ...vehicleForm, [e.target.id]: e.target.value });
+    };
+
+    const addVehicle = () => {
+        if (vehicleForm.brand && vehicleForm.model && vehicleForm.year) {
+            setCustomerForm({ ...customerForm, vehicles: [...customerForm.vehicles, vehicleForm] });
+            setVehicleForm({ brand: '', model: '', engine: '', year: '' });
+        } else {
+            toast({ title: "Error", description: "Marca, Modelo y Año son obligatorios para el vehículo.", variant: "destructive" });
+        }
+    };
+    
+    const removeVehicle = (index: number) => {
+        setCustomerForm({ ...customerForm, vehicles: customerForm.vehicles.filter((_, i) => i !== index) });
+    };
+
+    const handleSaveCustomer = () => {
+        if (!customerForm.name || !customerForm.idNumber) {
+            toast({ title: "Error", description: "Nombre y Cédula/RIF son obligatorios.", variant: "destructive" });
+            return;
+        }
+
+        if (editingCustomer) { // Update
+            const updatedCustomer = { ...editingCustomer, ...customerForm };
+            setCustomers(customers.map(c => c.id === editingCustomer.id ? updatedCustomer : c));
+            setSelectedCustomer(updatedCustomer);
+            toast({ title: "Cliente Actualizado", description: `Los datos de ${updatedCustomer.name} han sido actualizados.` });
+        } else { // Create
+            const newCustomer = { id: `CUST${new Date().getTime()}`, ...customerForm };
+            setCustomers([...customers, newCustomer]);
+            setSelectedCustomer(newCustomer);
+            toast({ title: "Cliente Creado", description: `Se ha registrado a ${newCustomer.name}.` });
+        }
+        setIsCustomerModalOpen(false);
+    };
+
+    const handleSelectCustomer = (customer: Customer) => {
+        setSelectedCustomer(customer);
+        setCustomerSearchTerm('');
+    };
+    
+    const handleOmitCustomer = () => {
+        setSelectedCustomer({
+            id: 'CUST_OCCASIONAL',
+            name: 'Cliente Ocasional',
+            idNumber: 'V-00000000',
+            email: '',
+            phone: '',
+            vehicles: []
+        });
+        setStep(3);
+    };
+
 
     const subtotal = useMemo(() => cart.reduce((acc, item) => acc + item.salePrice * item.quantity, 0), [cart]);
     
@@ -160,7 +292,7 @@ export default function PosPage() {
         return payments.reduce((acc, p) => {
             const method = paymentMethodsList.find(m => m.id === p.methodId);
             if (method?.currency === 'Bs') {
-                return acc + (p.amount / bcvRate);
+                return acc + convertToBs(p.amount, 'USD');
             }
             return acc + p.amount;
         }, 0);
@@ -173,7 +305,7 @@ export default function PosPage() {
         return changePayments.reduce((acc, p) => {
              const method = paymentMethodsList.find(m => m.id === p.methodId);
             if (method?.currency === 'Bs') {
-                return acc + (p.amount / bcvRate);
+                return acc + convertToBs(p.amount, 'USD');
             }
             return acc + p.amount;
         }, 0)
@@ -219,15 +351,13 @@ export default function PosPage() {
     };
 
     const handleCompleteSale = () => {
-        // In a real app, this would save the sale, update stock, etc.
         toast({ title: "Venta Completada", description: "La venta ha sido registrada con éxito." });
-        // Reset state for next sale
         setStep(1);
         setCart([]);
         setSelectedCustomer(null);
         setPayments([]);
         setChangePayments([]);
-        setSearchTerm('');
+        setProductSearchTerm('');
     };
 
     const renderStep = () => {
@@ -245,17 +375,17 @@ export default function PosPage() {
                                 <Input 
                                     placeholder="Buscar productos por nombre..." 
                                     className="pl-8"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    value={productSearchTerm}
+                                    onChange={(e) => setProductSearchTerm(e.target.value)}
                                 />
-                                {searchTerm && (
+                                {productSearchTerm && (
                                 <div className="absolute top-full left-0 right-0 z-10 mt-2 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto">
                                     {filteredProducts.length > 0 ? (
                                     filteredProducts.map(product => (
                                         <div key={product.id} className="flex items-center justify-between p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => addToCart(product)}>
                                         <p className="font-semibold text-sm flex-1">{product.name}</p>
                                         <div className="text-right">
-                                            <p className="text-primary font-bold">{formatBs(convertToBs(product.salePrice))} Bs</p>
+                                            <p className="text-primary font-bold">{formatBs(convertToBs(product.salePrice, 'Bs'))} Bs</p>
                                             <p className="text-muted-foreground text-xs">(${formatUsd(product.salePrice)})</p>
                                         </div>
                                         </div>
@@ -280,51 +410,56 @@ export default function PosPage() {
                        </div>
                     </div>
                 );
-            case 2: // Customer Selection & Cart
+            case 2: // Customer Selection
                  return (
                      <div className="flex flex-col gap-8">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Seleccionar Cliente</CardTitle>
+                            </CardHeader>
+                            <CardContent>
                                 <div className="flex items-center gap-4 mt-2">
                                     <div className="relative flex-grow">
                                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input placeholder="Buscar por nombre o cédula..." className="pl-8" />
+                                        <Input 
+                                            placeholder="Buscar por nombre o cédula..." 
+                                            className="pl-8" 
+                                            value={customerSearchTerm}
+                                            onChange={e => setCustomerSearchTerm(e.target.value)}
+                                        />
                                     </div>
-                                    <Dialog>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline"><UserPlus className="mr-2 h-4 w-4"/> Nuevo Cliente</Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>Crear Nuevo Cliente</DialogTitle>
-                                            </DialogHeader>
-                                            {/* New Customer Form */}
-                                        </DialogContent>
-                                    </Dialog>
+                                    <Button variant="outline" onClick={() => openCustomerModal(null)}><UserPlus className="mr-2 h-4 w-4"/> Nuevo Cliente</Button>
                                 </div>
-                            </CardHeader>
-                            <CardContent className="max-h-[60vh] overflow-y-auto">
-                                {customers.map(customer => (
-                                    <div key={customer.id} onClick={() => setSelectedCustomer(customer)} className={`p-4 border rounded-lg cursor-pointer mb-2 ${selectedCustomer?.id === customer.id ? 'bg-primary/10 border-primary' : 'hover:bg-muted'}`}>
-                                        <p className="font-semibold">{customer.name}</p>
-                                        <p className="text-sm text-muted-foreground">{customer.idNumber}</p>
+
+                                {customerSearchTerm && (
+                                    <div className="max-h-[60vh] overflow-y-auto mt-4 border rounded-lg">
+                                        {filteredCustomers.length > 0 ? filteredCustomers.map(customer => (
+                                            <div key={customer.id} onClick={() => handleSelectCustomer(customer)} className={`p-4 border-b last:border-b-0 cursor-pointer hover:bg-muted`}>
+                                                <p className="font-semibold">{customer.name}</p>
+                                                <p className="text-sm text-muted-foreground">{customer.idNumber}</p>
+                                            </div>
+                                        )) : (
+                                            <p className="p-4 text-center text-muted-foreground">No se encontraron clientes.</p>
+                                        )}
                                     </div>
-                                ))}
+                                )}
                             </CardContent>
                         </Card>
                         {renderCart()}
                         <div className="flex justify-between mt-4">
-                            <Button variant="outline" onClick={() => setStep(1)}>
+                             <Button variant="outline" onClick={() => setStep(1)}>
                                 <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
                             </Button>
-                            <Button onClick={() => setStep(3)} disabled={!selectedCustomer}>
-                                Siguiente <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
+                            <div className="flex gap-4">
+                                <Button variant="secondary" onClick={handleOmitCustomer}>Omitir y Usar Cliente Ocasional</Button>
+                                <Button onClick={() => setStep(3)} disabled={!selectedCustomer}>
+                                    Siguiente <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 );
-            case 3: // Payment & Cart
+            case 3: // Payment
                 return (
                      <div className="flex flex-col gap-8">
                         <Card>
@@ -429,8 +564,11 @@ export default function PosPage() {
                                     <span>{item.quantity}</span>
                                     <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity + 1)}><PlusCircle className="h-4 w-4" /></Button>
                                 </div>
+                                 <Button size="icon" variant="ghost" onClick={() => handlePriceEdit(item)}>
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
                                 <div className="w-28 text-right">
-                                    <p className="font-semibold text-sm">{formatBs(convertToBs(item.salePrice * item.quantity))} Bs</p>
+                                    <p className="font-semibold text-sm">{formatBs(convertToBs(item.salePrice * item.quantity, 'Bs'))} Bs</p>
                                     <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
                                 </div>
                             </div>
@@ -444,7 +582,7 @@ export default function PosPage() {
                     <div className="flex justify-between font-semibold">
                         <span>Subtotal</span>
                         <span>
-                            {formatBs(convertToBs(subtotal))} Bs
+                            {formatBs(convertToBs(subtotal, 'Bs'))} Bs
                             <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(subtotal)})</span>
                         </span>
                     </div>
@@ -453,7 +591,7 @@ export default function PosPage() {
                         <div className="flex justify-between text-muted-foreground">
                             <span>Pagado</span>
                              <span>
-                                {formatBs(convertToBs(totalPaid))} Bs
+                                {formatBs(convertToBs(totalPaid, 'Bs'))} Bs
                                 <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(totalPaid)})</span>
                             </span>
                         </div>
@@ -462,8 +600,8 @@ export default function PosPage() {
                             <span>{balance > 0 ? 'Faltante' : 'Total'}</span>
                              <span>
                                 {balance > 0 
-                                    ? `${formatBs(convertToBs(balance))} Bs`
-                                    : `${formatBs(convertToBs(subtotal))} Bs`
+                                    ? `${formatBs(convertToBs(balance, 'Bs'))} Bs`
+                                    : `${formatBs(convertToBs(subtotal, 'Bs'))} Bs`
                                 }
                             </span>
                         </div>
@@ -471,7 +609,7 @@ export default function PosPage() {
                             <div className="flex justify-between font-bold text-lg text-green-600">
                                 <span>Vuelto</span>
                                 <span>
-                                    {formatBs(convertToBs(changeToGive))} Bs
+                                    {formatBs(convertToBs(changeToGive, 'Bs'))} Bs
                                     <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(changeToGive)})</span>
                                 </span>
                             </div>
@@ -591,6 +729,109 @@ export default function PosPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+            
+            <Dialog open={isEditingPrice !== null} onOpenChange={() => setIsEditingPrice(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Editar Precio</DialogTitle>
+                        <DialogDescription>{isEditingPrice?.name}</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="price-usd">Precio en USD</Label>
+                            <Input id="price-usd" type="number" value={priceInUsd} onChange={(e) => handleUsdPriceChange(e.target.value)} />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="price-ves">Precio en Bs</Label>
+                            <Input id="price-ves" type="number" value={priceInVes} onChange={(e) => handleVesPriceChange(e.target.value)} />
+                        </div>
+                    </div>
+                     <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsEditingPrice(null)}>Cancelar</Button>
+                        <Button onClick={handleUpdatePrice}>Actualizar Precio</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            
+            <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                         <DialogTitle>{editingCustomer ? 'Editar Cliente' : 'Crear Nuevo Cliente'}</DialogTitle>
+                    </DialogHeader>
+                    <Tabs defaultValue="personal">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="personal">Información Personal</TabsTrigger>
+                            <TabsTrigger value="vehicles">Vehículos</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="personal" className="py-4">
+                             <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="name">Nombre Completo</Label>
+                                    <Input id="name" value={customerForm.name} onChange={handleCustomerFormChange} placeholder="Nombre del Cliente" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="idNumber">Cédula / RIF</Label>
+                                    <Input id="idNumber" value={customerForm.idNumber} onChange={handleCustomerFormChange} placeholder="V-12345678" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Correo Electrónico</Label>
+                                    <Input id="email" type="email" value={customerForm.email} onChange={handleCustomerFormChange} placeholder="cliente@email.com" />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="phone">Teléfono / WhatsApp</Label>
+                                    <Input id="phone" value={customerForm.phone} onChange={handleCustomerFormChange} placeholder="0414-1234567" />
+                                </div>
+                            </div>
+                        </TabsContent>
+                        <TabsContent value="vehicles" className="py-4">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Añadir Vehículo</CardTitle>
+                                </CardHeader>
+                                <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                                    <div className="space-y-2 md:col-span-1">
+                                        <Label htmlFor="brand">Marca</Label>
+                                        <Input id="brand" value={vehicleForm.brand} onChange={handleVehicleFormChange} placeholder="Ej: Toyota" />
+                                    </div>
+                                    <div className="space-y-2 md:col-span-1">
+                                        <Label htmlFor="model">Modelo</Label>
+                                        <Input id="model" value={vehicleForm.model} onChange={handleVehicleFormChange} placeholder="Ej: Corolla" />
+                                    </div>
+                                    <div className="space-y-2 md:col-span-1">
+                                        <Label htmlFor="engine">Motor</Label>
+                                        <Input id="engine" value={vehicleForm.engine} onChange={handleVehicleFormChange} placeholder="Ej: 1.8L" />
+                                    </div>
+                                     <div className="space-y-2 md:col-span-1">
+                                        <Label htmlFor="year">Año</Label>
+                                        <Input id="year" type="number" value={vehicleForm.year} onChange={handleVehicleFormChange} placeholder="Ej: 2022" />
+                                    </div>
+                                    <Button onClick={addVehicle} size="icon"><Plus className="h-4 w-4" /></Button>
+                                </CardContent>
+                            </Card>
+                            <div className="mt-6 space-y-4">
+                                {customerForm.vehicles.map((vehicle, index) => (
+                                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                                        <div className="flex items-center gap-4">
+                                            <Car className="h-6 w-6 text-muted-foreground" />
+                                            <div>
+                                                <p className="font-semibold">{vehicle.brand} {vehicle.model} ({vehicle.year})</p>
+                                                <p className="text-sm text-muted-foreground">Motor: {vehicle.engine}</p>
+                                            </div>
+                                        </div>
+                                        <Button variant="ghost" size="icon" onClick={() => removeVehicle(index)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        </TabsContent>
+                    </Tabs>
+                     <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCustomerModalOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleSaveCustomer}>Guardar Cliente</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {isCashDrawerOpen && (
                 <>
@@ -605,7 +846,7 @@ export default function PosPage() {
                             <div className="flex items-center gap-4">
                                 <div className="text-right">
                                     <p className="text-sm font-medium">Caja Inicial</p>
-                                    <p className="text-xs text-muted-foreground">${formatUsd(initialBalances.usd)} / {formatBs(initialBalances.ves)} Bs</p>
+                                    <p className="text-xs text-muted-foreground">${formatUsd(initialBalances.usd)} / {formatBs(convertToBs(initialBalances.usd, 'Bs'))} Bs</p>
                                 </div>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
