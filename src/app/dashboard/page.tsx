@@ -7,6 +7,7 @@ import {
   CreditCard,
   Users,
   LineChart,
+  AlertTriangle,
 } from "lucide-react";
 import {
   Avatar,
@@ -39,6 +40,8 @@ export default function DashboardPage() {
     const totalReceivable = accountsReceivable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     const totalPayable = accountsPayable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     
+    const isCritical = totalPayable > (totalInventoryValue + totalReceivable);
+
     const formatBs = (amount: number) => {
         return (amount * exchangeRates.bcv).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
@@ -104,7 +107,10 @@ export default function DashboardPage() {
         </Card>
         <Card className="shadow-md">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cuentas por Pagar</CardTitle>
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              Cuentas por Pagar
+              {isCritical && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+            </CardTitle>
             <LineChart className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
