@@ -195,6 +195,74 @@ export default function ExchangeRatesPage() {
 
   return (
     <div className="grid gap-6 md:grid-cols-3">
+        <div className="flex flex-col gap-6 md:col-span-1">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Tasa Actual</CardTitle>
+                    <CardDescription>VES / USD</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-4xl font-bold tracking-tight text-green-600">
+                        {formatBs(currentRate)}
+                    </p>
+                </CardContent>
+            </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Acciones</CardTitle>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                     <div>
+                         <Label>Filtrar por mes</Label>
+                         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Filtrar por mes" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos los meses</SelectItem>
+                                {availableMonths.map(month => (
+                                    <SelectItem key={month} value={month}>{new Date(month).toLocaleString('es-VE', { month: 'long', year: 'numeric', timeZone: 'UTC' })}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                      </div>
+
+                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                        <DialogTrigger asChild>
+                             <Button className="w-full gap-2">
+                                <PlusCircle className="h-4 w-4"/> Añadir Nueva Tasa
+                             </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Registrar Nueva Tasa de Cambio</DialogTitle>
+                                <DialogDescription>
+                                    Ingrese el nuevo valor de la tasa en Bolívares por Dólar.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4">
+                               <div className="space-y-2">
+                                    <Label htmlFor="rate">Nueva Tasa (Bs por 1$)</Label>
+                                    <Input
+                                    id="rate"
+                                    type="number"
+                                    placeholder="Ej: 40.50"
+                                    value={newRate}
+                                    onChange={(e) => setNewRate(parseFloat(e.target.value) || "")}
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
+                                <Button onClick={handleAddRate} disabled={!newRate || newRate <= 0}>
+                                    Registrar Tasa
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </CardContent>
+             </Card>
+        </div>
         <div className="md:col-span-2">
             <Card>
                 <CardHeader>
@@ -281,74 +349,6 @@ export default function ExchangeRatesPage() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
-        <div className="flex flex-col gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Tasa Actual</CardTitle>
-                    <CardDescription>VES / USD</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold tracking-tight text-green-600">
-                        {formatBs(currentRate)}
-                    </p>
-                </CardContent>
-            </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Acciones</CardTitle>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                     <div>
-                         <Label>Filtrar por mes</Label>
-                         <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Filtrar por mes" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos los meses</SelectItem>
-                                {availableMonths.map(month => (
-                                    <SelectItem key={month} value={month}>{new Date(month).toLocaleString('es-VE', { month: 'long', year: 'numeric', timeZone: 'UTC' })}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                      </div>
-
-                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                        <DialogTrigger asChild>
-                             <Button className="w-full gap-2">
-                                <PlusCircle className="h-4 w-4"/> Añadir Nueva Tasa
-                             </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Registrar Nueva Tasa de Cambio</DialogTitle>
-                                <DialogDescription>
-                                    Ingrese el nuevo valor de la tasa en Bolívares por Dólar.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="py-4">
-                               <div className="space-y-2">
-                                    <Label htmlFor="rate">Nueva Tasa (Bs por 1$)</Label>
-                                    <Input
-                                    id="rate"
-                                    type="number"
-                                    placeholder="Ej: 40.50"
-                                    value={newRate}
-                                    onChange={(e) => setNewRate(parseFloat(e.target.value) || "")}
-                                    />
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                                <Button onClick={handleAddRate} disabled={!newRate || newRate <= 0}>
-                                    Registrar Tasa
-                                </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
-                </CardContent>
-             </Card>
         </div>
     </div>
   );
