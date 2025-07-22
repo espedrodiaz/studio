@@ -276,9 +276,9 @@ export default function ExchangeRatesPage() {
                                       <TableRow key={rate.id}>
                                           <TableCell>
                                             <div className="font-medium">{rate.name}</div>
-                                            <div className="text-sm text-muted-foreground">{formatBs(rate.rate)} Bs/$</div>
-                                            <div className="text-xs text-muted-foreground/80 mt-1">
-                                                Act: {formatVenezuelanDateTime(rate.lastUpdated)}
+                                            <div className="text-base font-semibold">{formatBs(rate.rate)} Bs/$</div>
+                                            <div className="text-xs text-muted-foreground">
+                                                Act. {formatVenezuelanDateTime(rate.lastUpdated)}
                                             </div>
                                           </TableCell>
                                           <TableCell className={cn("text-sm text-center align-top", diff.difference > 0 ? 'text-red-500' : 'text-green-600')}>
@@ -344,7 +344,7 @@ export default function ExchangeRatesPage() {
                                         {change && (
                                             <div className="flex items-center justify-center gap-1">
                                             {change.trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                                            <span>{formatBs(change.difference)} ({change.percentage.toFixed(2)}%)</span>
+                                            <span>{change.difference > 0 ? '+' : ''}{formatBs(change.difference)} ({change.percentage.toFixed(2)}%)</span>
                                             </div>
                                         )}
                                         </TableCell>
@@ -365,6 +365,3 @@ export default function ExchangeRatesPage() {
     </div>
   );
 }
-
-    
-    
