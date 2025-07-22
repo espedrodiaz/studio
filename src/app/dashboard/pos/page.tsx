@@ -71,6 +71,10 @@ export default function PosPage() {
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
     const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
 
+    const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
+    const [selectedChangeMethod, setSelectedChangeMethod] = useState<PaymentMethod | null>(null);
+    const [changeAmount, setChangeAmount] = useState<number | ''>('');
+
 
     useEffect(() => {
         const newInputs: Record<string, string> = {};
@@ -396,23 +400,32 @@ export default function PosPage() {
 
     const remainingChange = useMemo(() => changeToGive - totalChangeGiven, [changeToGive, totalChangeGiven]);
 
-     const addChangePayment = () => {
-        const changeGivingMethods = paymentMethodsList.filter(m => m.givesChange);
-        const firstChangeMethodId = changeGivingMethods[0]?.id;
-        if (firstChangeMethodId) {
-            setChangePayments([...changePayments, { methodId: firstChangeMethodId, amount: 0 }]);
-        }
+    const openChangeModal = (method: PaymentMethod) => {
+        const remainingChangeToGive = changeToGive - totalChangeGiven;
+        const suggestedAmount = method.currency === 'Bs'
+            ? parseFloat(convertToVes(remainingChangeToGive).toFixed(2))
+            : parseFloat(remainingChangeToGive.toFixed(2));
+        
+        setChangeAmount(suggestedAmount > 0 ? suggestedAmount : '');
+        setSelectedChangeMethod(method);
+        setIsChangeModalOpen(true);
     };
-    
-    const updateChangePayment = (index: number, newPayment: { methodId: string, amount: number }) => {
-        const newPayments = [...changePayments];
-        newPayments[index] = newPayment;
-        setChangePayments(newPayments);
+
+     const handleAddChange = () => {
+        if (selectedChangeMethod && typeof changeAmount === 'number' && changeAmount > 0) {
+            setChangePayments([...changePayments, { methodId: selectedChangeMethod.id, amount: changeAmount }]);
+            setChangeAmount('');
+            setSelectedChangeMethod(null);
+            setIsChangeModalOpen(false);
+        } else {
+             toast({ title: "Error", description: "Ingrese un monto de vuelto válido.", variant: "destructive" });
+        }
     };
 
     const removeChangePayment = (index: number) => {
         setChangePayments(changePayments.filter((_, i) => i !== index));
     };
+
 
     const handleCompleteSale = () => {
         toast({ title: "Venta Completada", description: "La venta ha sido registrada con éxito." });
@@ -529,9 +542,6 @@ export default function PosPage() {
                                     <Button variant="secondary" onClick={handleOmitCustomer}>Omitir</Button>
                                     <p className="text-xs text-muted-foreground mt-1">Usar Cliente Genérico</p>
                                 </div>
-                                <Button onClick={() => goToStep(3)} disabled={!selectedCustomer} className="self-end">
-                                    Siguiente <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
                             </div>
                         </div>
                     </div>
@@ -556,51 +566,74 @@ export default function PosPage() {
                                 </div>
 
                                  {payments.length > 0 && (
-                                    <div className="pt-4 mt-4 border-t">
-                                        <Label className="font-semibold">Pagos Recibidos</Label>
-                                        <div className="space-y-2 mt-2">
-                                            {payments.map((p, index) => {
-                                                const method = paymentMethodsList.find(m => m.id === p.methodId);
-                                                return (
-                                                    <div key={index} className="flex justify-between items-center p-2 border rounded-lg">
-                                                        <span>{method?.name}</span>
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-semibold">{method?.currency === 'Bs' ? formatBs(p.amount) : formatUsd(p.amount)} {method?.currency}</span>
-                                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removePayment(index)}><X className="h-4 w-4"/></Button>
+                                    <div className="pt-4 mt-4 border-t space-y-4">
+                                        <div>
+                                            <Label className="font-semibold">Pagos Recibidos</Label>
+                                            <div className="space-y-2 mt-2">
+                                                {payments.map((p, index) => {
+                                                    const method = paymentMethodsList.find(m => m.id === p.methodId);
+                                                    return (
+                                                        <div key={index} className="flex justify-between items-center p-2 border rounded-lg">
+                                                            <span>{method?.name}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-semibold">{method?.currency === 'Bs' ? formatBs(p.amount) : formatUsd(p.amount)} {method?.currency}</span>
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removePayment(index)}><X className="h-4 w-4"/></Button>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                )
-                                            })}
+                                                    )
+                                                })}
+                                            </div>
                                         </div>
+                                         <div className="space-y-1 rounded-lg border bg-background p-4">
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Total Pagado:</span>
+                                                    <span className="font-medium">Bs {formatBs(convertToVes(totalPaid))} (${formatUsd(totalPaid)})</span>
+                                                </div>
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-muted-foreground">Subtotal:</span>
+                                                    <span className="font-medium">Bs {formatBs(convertToVes(subtotal))} (${formatUsd(subtotal)})</span>
+                                                </div>
+                                                <Separator className="my-2" />
+                                                <div className="flex justify-between font-bold text-lg text-destructive">
+                                                    <span>Faltante:</span>
+                                                     <span>Bs {formatBs(convertToVes(balance > 0 ? balance : 0))} (${formatUsd(balance > 0 ? balance : 0)})</span>
+                                                </div>
+                                            </div>
                                     </div>
                                  )}
 
                                  {changeToGive > 0 && (
                                     <div className="pt-4 mt-4 border-t">
                                         <Label className="font-semibold">Entregar Vuelto</Label>
-                                        <p className="text-destructive text-sm font-semibold mb-2">Faltan ${formatUsd(remainingChange)} de vuelto por entregar.</p>
-                                        {changePayments.map((payment, index) => {
-                                             const method = paymentMethodsList.find(m => m.id === payment.methodId);
-                                             return (
-                                                <div key={index} className="flex gap-2 items-end p-4 border rounded-lg mt-2">
-                                                    <div className="flex-1">
-                                                        <Label>Método de Vuelto</Label>
-                                                        <Select value={payment.methodId} onValueChange={(value) => updateChangePayment(index, { ...payment, methodId: value, amount: 0 })}>
-                                                            <SelectTrigger><SelectValue /></SelectTrigger>
-                                                            <SelectContent>
-                                                                {paymentMethodsList.filter(m => m.givesChange).map(method => <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>)}
-                                                            </SelectContent>
-                                                        </Select>
-                                                    </div>
-                                                    <div className="flex-1">
-                                                        <Label>Monto ({method?.currency})</Label>
-                                                        <Input type="number" value={payment.amount} onChange={(e) => updateChangePayment(index, { ...payment, amount: parseFloat(e.target.value) || 0 })} />
-                                                    </div>
-                                                    <Button variant="ghost" size="icon" onClick={() => removeChangePayment(index)}><X className="h-4 w-4"/></Button>
-                                                </div>
-                                             )
-                                        })}
-                                         <Button variant="outline" className="mt-2" onClick={addChangePayment}>Añadir Vuelto</Button>
+                                        <p className="text-destructive text-sm font-semibold mb-2">Falta por entregar: Bs {formatBs(convertToVes(remainingChange))} (${formatUsd(remainingChange)})</p>
+                                        
+                                        <Label className="font-medium text-xs text-muted-foreground">Seleccione método de vuelto</Label>
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-2">
+                                            {paymentMethodsList.filter(m => m.givesChange).map(method => (
+                                                <Button key={method.id} variant="outline" className="h-16 flex-col gap-1" onClick={() => openChangeModal(method)}>
+                                                    <span className="font-semibold">{method.name}</span>
+                                                    <span className="text-xs text-muted-foreground">{method.currency}</span>
+                                                </Button>
+                                            ))}
+                                        </div>
+                                        
+                                        {changePayments.length > 0 && (
+                                            <div className="space-y-2 mt-4">
+                                                <Label className="font-medium text-xs text-muted-foreground">Vueltos entregados</Label>
+                                                {changePayments.map((p, index) => {
+                                                    const method = paymentMethodsList.find(m => m.id === p.methodId);
+                                                    return (
+                                                        <div key={index} className="flex justify-between items-center p-2 border rounded-lg">
+                                                            <span>{method?.name}</span>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-semibold">{method?.currency === 'Bs' ? formatBs(p.amount) : formatUsd(p.amount)} {method?.currency}</span>
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeChangePayment(index)}><X className="h-4 w-4"/></Button>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
                                     </div>
                                  )}
                             </CardContent>
@@ -1050,6 +1083,33 @@ export default function PosPage() {
                 </DialogContent>
              </Dialog>
 
+             <Dialog open={isChangeModalOpen} onOpenChange={setIsChangeModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Entregar Vuelto</DialogTitle>
+                        <DialogDescription>
+                            Ingrese el monto a entregar para <span className="font-semibold">{selectedChangeMethod?.name}</span>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                             <Label htmlFor="change-amount">Monto ({selectedChangeMethod?.currency})</Label>
+                             <Input 
+                                id="change-amount"
+                                type="number"
+                                value={changeAmount}
+                                onChange={(e) => setChangeAmount(parseFloat(e.target.value) || '')}
+                                placeholder="0.00"
+                             />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                         <Button variant="outline" onClick={() => setIsChangeModalOpen(false)}>Cancelar</Button>
+                         <Button onClick={handleAddChange}>Añadir Vuelto</Button>
+                    </DialogFooter>
+                </DialogContent>
+             </Dialog>
+
 
             {isCashDrawerOpen && (
                 <>
@@ -1110,3 +1170,5 @@ export default function PosPage() {
         </>
     );
 }
+
+    
