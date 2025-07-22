@@ -8,9 +8,9 @@ import { PosLogo } from '@/components/ui/pos-logo';
 const loadingPhrases = [
   "Cargando tu punto de venta...",
   "Simplificando tus finanzas.",
-  "Todo lo que necesitas para crecer.",
-  "El control de tu negocio en un solo lugar.",
-  "Tus ventas, más fáciles que nunca."
+  "Todo para tu negocio.",
+  "El control en un solo lugar.",
+  "Ventas más fáciles que nunca."
 ];
 
 export default function WelcomePage() {
@@ -18,10 +18,10 @@ export default function WelcomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Navigate to login after 6 seconds
+    // Navigate to login after 10 seconds
     const navigationTimer = setTimeout(() => {
       router.push('/login');
-    }, 6000);
+    }, 10000);
 
     // Change phrase every 2 seconds
     const phraseTimer = setInterval(() => {
