@@ -344,12 +344,33 @@ export default function PosPage() {
     const changeToGive = useMemo(() => balance < 0 ? Math.abs(balance) : 0, [balance]);
 
     const openPaymentModal = (method: PaymentMethod) => {
+        const remainingBalance = subtotal - totalPaid;
+        const suggestedAmount = method.currency === 'Bs'
+            ? parseFloat(convertToVes(remainingBalance).toFixed(2))
+            : parseFloat(remainingBalance.toFixed(2));
+        
+        setPaymentAmount(suggestedAmount > 0 ? suggestedAmount : '');
         setSelectedPaymentMethod(method);
         setIsPaymentModalOpen(true);
     };
 
     const handleAddPayment = () => {
         if (selectedPaymentMethod && typeof paymentAmount === 'number' && paymentAmount > 0) {
+            const remainingBalance = subtotal - totalPaid;
+            let paymentAmountInUsd = paymentAmount;
+            if (selectedPaymentMethod.currency === 'Bs') {
+                paymentAmountInUsd = convertToUsd(paymentAmount);
+            }
+
+            if (selectedPaymentMethod.type === 'Digital' && paymentAmountInUsd > remainingBalance + 0.001) {
+                toast({
+                    title: "Error de Monto",
+                    description: `El pago digital no puede exceder el monto restante de $${formatUsd(remainingBalance)}.`,
+                    variant: "destructive",
+                });
+                return;
+            }
+
             setPayments([...payments, { methodId: selectedPaymentMethod.id, amount: paymentAmount }]);
             setPaymentAmount('');
             setSelectedPaymentMethod(null);
