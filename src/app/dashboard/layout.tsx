@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { getCurrentBcvRate, bcvRateSubject } from "@/lib/placeholder-data";
 import { useState, useEffect } from "react";
@@ -55,6 +55,7 @@ export default function DashboardLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0">
+               <SheetTitle className="sr-only">Menú de Navegación</SheetTitle>
               <SidebarNav />
             </SheetContent>
           </Sheet>
