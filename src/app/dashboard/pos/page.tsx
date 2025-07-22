@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { products, customers as initialCustomers, getPaymentMethods, getCurrentBcvRate, cashMovements as initialCashMovements, addCashMovement } from "@/lib/placeholder-data";
-import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp, ShoppingCart, Pencil, Car, Trash2, Plus } from "lucide-react";
+import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp, ShoppingCart, Pencil, Car, Trash2, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
@@ -17,17 +17,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Customer } from '@/lib/types';
+import { Customer, Vehicle } from '@/lib/types';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 
 
 type CartItem = typeof products[0] & { quantity: number; salePrice: number };
 type CashMovement = typeof initialCashMovements[0];
-type Vehicle = {
-    brand: string;
-    model: string;
-    engine: string;
-    year: number | string;
-};
+
 
 export default function PosPage() {
     const [isCashDrawerOpen, setIsCashDrawerOpen] = useState(false);
@@ -53,6 +50,8 @@ export default function PosPage() {
     const bcvRate = getCurrentBcvRate();
 
     const [currentDate, setCurrentDate] = useState('');
+
+    const [isCartExpanded, setIsCartExpanded] = useState(true);
 
     // State for modals
     const [isEditingPrice, setIsEditingPrice] = useState<CartItem | null>(null);
@@ -84,7 +83,7 @@ export default function PosPage() {
         setIsCashDrawerOpen(true);
         toast({
             title: "Caja Abierta",
-            description: `Caja iniciada con $${formatUsd(initialBalances.usd)} y Bs ${formatBs(convertToBs(initialBalances.usd, 'Bs'))}.`,
+            description: `Caja iniciada con $${formatUsd(initialBalances.usd)} y Bs ${formatBs(convertToVes(initialBalances.usd))}.`,
         });
     }
 
@@ -179,29 +178,29 @@ export default function PosPage() {
     const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const formatBs = (amount: number) => amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
-    const convertToBs = (amountUsd: number, targetCurrency: 'USD' | 'Bs') => {
-        if (targetCurrency === 'USD') {
-            return amountUsd / bcvRate;
-        }
+    const convertToVes = (amountUsd: number) => {
         return amountUsd * bcvRate;
+    }
+    const convertToUsd = (amountVes: number) => {
+        return amountVes / bcvRate;
     }
 
     const handlePriceEdit = (item: CartItem) => {
         setIsEditingPrice(item);
         setPriceInUsd(item.salePrice.toFixed(2));
-        setPriceInVes(convertToBs(item.salePrice, 'Bs').toFixed(2));
+        setPriceInVes(convertToVes(item.salePrice).toFixed(2));
     };
 
     const handleUsdPriceChange = (value: string) => {
         const newUsd = parseFloat(value) || 0;
         setPriceInUsd(value);
-        setPriceInVes(convertToBs(newUsd, 'Bs').toFixed(2));
+        setPriceInVes(convertToVes(newUsd).toFixed(2));
     }
     
     const handleVesPriceChange = (value: string) => {
         const newVes = parseFloat(value) || 0;
         setPriceInVes(value);
-        setPriceInUsd(convertToBs(newVes, 'USD').toFixed(2));
+        setPriceInUsd(convertToUsd(newVes).toFixed(2));
     }
 
     const handleUpdatePrice = () => {
@@ -292,7 +291,7 @@ export default function PosPage() {
         return payments.reduce((acc, p) => {
             const method = paymentMethodsList.find(m => m.id === p.methodId);
             if (method?.currency === 'Bs') {
-                return acc + convertToBs(p.amount, 'USD');
+                return acc + convertToUsd(p.amount);
             }
             return acc + p.amount;
         }, 0);
@@ -305,7 +304,7 @@ export default function PosPage() {
         return changePayments.reduce((acc, p) => {
              const method = paymentMethodsList.find(m => m.id === p.methodId);
             if (method?.currency === 'Bs') {
-                return acc + convertToBs(p.amount, 'USD');
+                return acc + convertToUsd(p.amount);
             }
             return acc + p.amount;
         }, 0)
@@ -353,12 +352,22 @@ export default function PosPage() {
     const handleCompleteSale = () => {
         toast({ title: "Venta Completada", description: "La venta ha sido registrada con éxito." });
         setStep(1);
+        setIsCartExpanded(true);
         setCart([]);
         setSelectedCustomer(null);
         setPayments([]);
         setChangePayments([]);
         setProductSearchTerm('');
     };
+    
+    const goToStep = (targetStep: number) => {
+      setStep(targetStep);
+      if (targetStep > 1) {
+        setIsCartExpanded(false);
+      } else {
+        setIsCartExpanded(true);
+      }
+    }
 
     const renderStep = () => {
         switch (step) {
@@ -385,7 +394,7 @@ export default function PosPage() {
                                         <div key={product.id} className="flex items-center justify-between p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => addToCart(product)}>
                                         <p className="font-semibold text-sm flex-1">{product.name}</p>
                                         <div className="text-right">
-                                            <p className="text-primary font-bold">{formatBs(convertToBs(product.salePrice, 'Bs'))} Bs</p>
+                                            <p className="text-primary font-bold">{formatBs(convertToVes(product.salePrice))} Bs</p>
                                             <p className="text-muted-foreground text-xs">(${formatUsd(product.salePrice)})</p>
                                         </div>
                                         </div>
@@ -404,7 +413,7 @@ export default function PosPage() {
                        {renderCart()}
 
                        <div className="flex justify-end mt-4">
-                           <Button onClick={() => setStep(2)} disabled={cart.length === 0}>
+                           <Button onClick={() => goToStep(2)} disabled={cart.length === 0}>
                                 Siguiente <ArrowRight className="ml-2 h-4 w-4" />
                            </Button>
                        </div>
@@ -447,12 +456,12 @@ export default function PosPage() {
                         </Card>
                         {renderCart()}
                         <div className="flex justify-between mt-4">
-                             <Button variant="outline" onClick={() => setStep(1)}>
+                             <Button variant="outline" onClick={() => goToStep(1)}>
                                 <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
                             </Button>
                             <div className="flex gap-4">
                                 <Button variant="secondary" onClick={handleOmitCustomer}>Omitir y Usar Cliente Ocasional</Button>
-                                <Button onClick={() => setStep(3)} disabled={!selectedCustomer}>
+                                <Button onClick={() => goToStep(3)} disabled={!selectedCustomer}>
                                     Siguiente <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </div>
@@ -523,7 +532,7 @@ export default function PosPage() {
                         </Card>
                         {renderCart()}
                         <div className="flex justify-between mt-4">
-                            <Button variant="outline" onClick={() => setStep(2)}>
+                            <Button variant="outline" onClick={() => goToStep(2)}>
                                 <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
                             </Button>
                             <Button onClick={handleCompleteSale} disabled={balance > 0 || (changeToGive > 0 && remainingChange > 0.001)}>Completar Venta</Button>
@@ -536,89 +545,109 @@ export default function PosPage() {
     };
     
     const renderCart = () => (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                   <ShoppingCart className="h-6 w-6" />
-                   <span>Carrito ({cart.reduce((acc, item) => acc + item.quantity, 0)})</span>
-                </CardTitle>
-                {selectedCustomer && <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>}
-            </CardHeader>
-            <CardContent className="max-h-[50vh] overflow-y-auto">
-                {cart.length === 0 ? (
-                     <div className="py-12 flex flex-col items-center justify-center text-center text-muted-foreground">
-                        <ShoppingCart className="h-12 w-12 mb-4" />
-                        <p className="font-semibold">El carrito está vacío</p>
-                        <p className="text-sm">Busca un producto para empezar a vender.</p>
-                    </div>
-                ) : (
-                    <div className="space-y-4">
-                        {cart.map(item => (
-                            <div key={item.id} className="flex items-center gap-4">
-                                <div className="flex-grow">
-                                    <p className="font-semibold text-sm">{item.name}</p>
-                                    <p className="text-xs text-muted-foreground">${formatUsd(item.salePrice)}</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity - 1)}><MinusCircle className="h-4 w-4" /></Button>
-                                    <span>{item.quantity}</span>
-                                    <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity + 1)}><PlusCircle className="h-4 w-4" /></Button>
-                                </div>
-                                 <Button size="icon" variant="ghost" onClick={() => handlePriceEdit(item)}>
-                                    <Pencil className="h-4 w-4" />
-                                </Button>
-                                <div className="w-28 text-right">
-                                    <p className="font-semibold text-sm">{formatBs(convertToBs(item.salePrice * item.quantity, 'Bs'))} Bs</p>
-                                    <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </CardContent>
-            {cart.length > 0 && (
-                <CardFooter className="flex-col !items-stretch gap-2 pt-4">
-                    <Separator />
-                    <div className="flex justify-between font-semibold">
-                        <span>Subtotal</span>
-                        <span>
-                            {formatBs(convertToBs(subtotal, 'Bs'))} Bs
-                            <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(subtotal)})</span>
-                        </span>
-                    </div>
-                    {step === 3 && (
-                       <>
-                        <div className="flex justify-between text-muted-foreground">
-                            <span>Pagado</span>
-                             <span>
-                                {formatBs(convertToBs(totalPaid, 'Bs'))} Bs
-                                <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(totalPaid)})</span>
-                            </span>
-                        </div>
-                        <Separator />
-                        <div className={`flex justify-between font-bold text-lg ${balance > 0 ? 'text-destructive' : 'text-primary'}`}>
-                            <span>{balance > 0 ? 'Faltante' : 'Total'}</span>
-                             <span>
-                                {balance > 0 
-                                    ? `${formatBs(convertToBs(balance, 'Bs'))} Bs`
-                                    : `${formatBs(convertToBs(subtotal, 'Bs'))} Bs`
-                                }
-                            </span>
-                        </div>
-                        {changeToGive > 0 && (
-                            <div className="flex justify-between font-bold text-lg text-green-600">
-                                <span>Vuelto</span>
-                                <span>
-                                    {formatBs(convertToBs(changeToGive, 'Bs'))} Bs
-                                    <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(changeToGive)})</span>
-                                </span>
-                            </div>
-                        )}
-                        </>
-                    )}
-                </CardFooter>
-            )}
-        </Card>
+      <Card>
+        <Collapsible open={isCartExpanded} onOpenChange={setIsCartExpanded}>
+          <CollapsibleTrigger className="w-full">
+              <CardHeader className="flex flex-row items-center justify-between">
+                  <div className="flex items-center gap-2">
+                      <ShoppingCart className="h-6 w-6" />
+                      <CardTitle>
+                        <span>Carrito ({cart.reduce((acc, item) => acc + item.quantity, 0)})</span>
+                      </CardTitle>
+                      {isCartExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                  </div>
+                   {!isCartExpanded && (
+                      <div className="text-right">
+                          <p className="font-semibold text-lg">{formatBs(convertToVes(subtotal))} Bs</p>
+                          <p className="text-muted-foreground text-sm">(${formatUsd(subtotal)})</p>
+                      </div>
+                   )}
+              </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+              {selectedCustomer && !isCartExpanded && (
+                  <div className="px-6 pb-4">
+                      <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>
+                  </div>
+              )}
+              <CardContent className={cn("max-h-[50vh] overflow-y-auto", { 'pt-0': !isCartExpanded })}>
+                  {cart.length === 0 ? (
+                       <div className="py-12 flex flex-col items-center justify-center text-center text-muted-foreground">
+                          <ShoppingCart className="h-12 w-12 mb-4" />
+                          <p className="font-semibold">El carrito está vacío</p>
+                          <p className="text-sm">Busca un producto para empezar a vender.</p>
+                      </div>
+                  ) : (
+                      <div className="space-y-4">
+                          {selectedCustomer && isCartExpanded && <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>}
+                          {cart.map(item => (
+                              <div key={item.id} className="flex items-center gap-4">
+                                  <div className="flex-grow">
+                                      <p className="font-semibold text-sm">{item.name}</p>
+                                      <p className="text-xs text-muted-foreground">${formatUsd(item.salePrice)}</p>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                      <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity - 1)}><MinusCircle className="h-4 w-4" /></Button>
+                                      <span>{item.quantity}</span>
+                                      <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity + 1)}><PlusCircle className="h-4 w-4" /></Button>
+                                  </div>
+                                   <Button size="icon" variant="ghost" onClick={() => handlePriceEdit(item)}>
+                                      <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <div className="w-28 text-right">
+                                      <p className="font-semibold text-sm">{formatBs(convertToVes(item.salePrice * item.quantity))} Bs</p>
+                                      <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  )}
+              </CardContent>
+              {cart.length > 0 && (
+                  <CardFooter className="flex-col !items-stretch gap-2 pt-4">
+                      <Separator />
+                      <div className="flex justify-between font-semibold">
+                          <span>Subtotal</span>
+                          <span>
+                              {formatBs(convertToVes(subtotal))} Bs
+                              <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(subtotal)})</span>
+                          </span>
+                      </div>
+                      {step === 3 && (
+                         <>
+                          <div className="flex justify-between text-muted-foreground">
+                              <span>Pagado</span>
+                               <span>
+                                  {formatBs(convertToVes(totalPaid))} Bs
+                                  <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(totalPaid)})</span>
+                              </span>
+                          </div>
+                          <Separator />
+                          <div className={`flex justify-between font-bold text-lg ${balance > 0 ? 'text-destructive' : 'text-primary'}`}>
+                              <span>{balance > 0 ? 'Faltante' : 'Total'}</span>
+                               <span>
+                                  {balance > 0 
+                                      ? `${formatBs(convertToVes(balance))} Bs`
+                                      : `${formatBs(convertToVes(subtotal))} Bs`
+                                  }
+                              </span>
+                          </div>
+                          {changeToGive > 0 && (
+                              <div className="flex justify-between font-bold text-lg text-green-600">
+                                  <span>Vuelto</span>
+                                  <span>
+                                      {formatBs(convertToVes(changeToGive))} Bs
+                                      <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(changeToGive)})</span>
+                                  </span>
+                              </div>
+                          )}
+                          </>
+                      )}
+                  </CardFooter>
+              )}
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
     );
 
     return (
@@ -846,7 +875,7 @@ export default function PosPage() {
                             <div className="flex items-center gap-4">
                                 <div className="text-right">
                                     <p className="text-sm font-medium">Caja Inicial</p>
-                                    <p className="text-xs text-muted-foreground">${formatUsd(initialBalances.usd)} / {formatBs(convertToBs(initialBalances.usd, 'Bs'))} Bs</p>
+                                    <p className="text-xs text-muted-foreground">${formatUsd(initialBalances.usd)} / {formatBs(convertToVes(initialBalances.usd))} Bs</p>
                                 </div>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
