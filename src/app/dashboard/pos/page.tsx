@@ -63,6 +63,7 @@ export default function PosPage() {
             }
             return [...prevCart, { ...product, quantity: 1 }];
         });
+        setSearchTerm('');
     };
 
     const updateQuantity = (productId: string, newQuantity: number) => {
@@ -442,5 +443,3 @@ export default function PosPage() {
         </>
     );
 }
-
-    
