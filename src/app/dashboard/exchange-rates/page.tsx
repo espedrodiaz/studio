@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -256,10 +257,10 @@ export default function ExchangeRatesPage() {
                         <DialogTrigger asChild><Button variant="outline" className="w-full gap-2" onClick={() => setIsSupplierManagerOpen(true)}><PlusCircle className="h-4 w-4"/> Gestionar Tasas Proveedores</Button></DialogTrigger>
                         <DialogContent className="max-w-2xl">
                              <DialogHeader>
-                                <DialogTitle>Tasas de Proveedores</DialogTitle>
+                                <DialogTitle className="text-indigo-600">Tasas de Proveedores</DialogTitle>
                                 <DialogDescription>Añada, edite o elimine las tasas de cambio de sus proveedores.</DialogDescription>
                             </DialogHeader>
-                             <div className="grid grid-cols-[2fr_1fr_auto] md:grid-cols-[2fr_1fr_auto] items-end gap-2 py-4 border-b">
+                             <div className="grid grid-cols-[1fr_auto] md:grid-cols-[2fr_1fr_auto] items-end gap-2 py-4 border-b">
                                 <div className="space-y-2"><Label htmlFor="supplier-name">Nombre del Proveedor</Label><Input id="supplier-name" value={supplierRateName} onChange={(e) => setSupplierRateName(e.target.value)} placeholder="Ej: Proveedor XYZ"/></div>
                                 <div className="space-y-2"><Label htmlFor="supplier-rate">Tasa (Bs/$)</Label><Input id="supplier-rate" type="number" value={supplierRateAmount} onChange={(e) => setSupplierRateAmount(parseFloat(e.target.value) || "")} placeholder="Ej: 41.20"/></div>
                                 <div className="flex items-end gap-2">
@@ -282,7 +283,7 @@ export default function ExchangeRatesPage() {
                                             <div className="flex justify-between items-start">
                                                 <div>
                                                     <p className="font-semibold">{rate.name}</p>
-                                                    <p className="text-2xl font-bold tracking-tight">{formatBs(rate.rate)} <span className="text-sm font-normal text-muted-foreground">Bs/$</span></p>
+                                                    <p className="text-2xl font-bold tracking-tight text-indigo-600">{formatBs(rate.rate)} <span className="text-sm font-normal text-muted-foreground">Bs/$</span></p>
                                                 </div>
                                                 <Badge className={cn("text-xs font-bold", diffColor)} variant="secondary">
                                                     {diff.difference >= 0 ? '+' : ''}{diff.percentage.toFixed(2)}%
