@@ -51,7 +51,9 @@ export default async function DashboardPage() {
     const totalPayable = accountsPayable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     
     let financialStatus: 'grave' | 'critico' | 'saludable';
-    if (totalPayable > totalInventoryValue + totalReceivable) {
+    const totalAssets = totalInventoryValue + totalReceivable;
+
+    if (totalPayable > totalAssets) {
         financialStatus = 'grave';
     } else if (totalPayable > totalInventoryValue) {
         financialStatus = 'critico';
@@ -156,23 +158,17 @@ export default async function DashboardPage() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={cn("text-white", {
+              'bg-green-500': financialStatus === 'saludable',
+              'bg-yellow-500': financialStatus === 'critico',
+              'bg-red-600': financialStatus === 'grave',
+        })}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Salud Financiera</CardTitle>
-             {financialStatus === 'saludable' && <HeartPulse className="h-4 w-4 text-green-900" />}
-             {financialStatus === 'critico' && <AlertTriangle className="h-4 w-4 text-yellow-900" />}
-             {financialStatus === 'grave' && <Ban className="h-4 w-4 text-red-900" />}
+            <CardTitle className="text-sm font-medium text-white">Salud Financiera</CardTitle>
+             <HeartPulse className="h-4 w-4 text-white" />
           </CardHeader>
-          <CardContent className={cn("p-4 mt-2 rounded-md", {
-              'bg-green-400/80': financialStatus === 'saludable',
-              'bg-yellow-400/80': financialStatus === 'critico',
-              'bg-red-500/80': financialStatus === 'grave',
-          })}>
-             <div className={cn("text-center text-lg font-bold", {
-                'text-green-900': financialStatus === 'saludable',
-                'text-yellow-900': financialStatus === 'critico',
-                'text-red-900': financialStatus === 'grave',
-             })}>
+          <CardContent>
+             <div className="text-center text-2xl font-bold text-white pt-2">
                 {financialStatus === 'saludable' && 'Saludable'}
                 {financialStatus === 'critico' && 'Crítico'}
                 {financialStatus === 'grave' && 'Grave'}
