@@ -18,13 +18,11 @@ import { Gem } from "lucide-react";
 export function LoginForm() {
   const router = useRouter();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = () => {
     router.push("/dashboard");
   };
 
-  const handleGoogleLogin = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = () => {
     router.push("/dashboard");
   };
 
@@ -41,7 +39,7 @@ export function LoginForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="grid gap-4">
+          <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Correo electrónico</Label>
               <Input
@@ -63,13 +61,13 @@ export function LoginForm() {
               </div>
               <Input id="password" type="password" required />
             </div>
-            <Button type="submit" className="w-full">
+            <Button onClick={handleLogin} className="w-full">
               Iniciar sesión
             </Button>
             <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
               Iniciar sesión con Google
             </Button>
-          </form>
+          </div>
           <div className="mt-4 text-center text-sm">
             ¿No tienes una cuenta?{" "}
             <Link href="/signup" className="underline">

@@ -18,13 +18,11 @@ import { Gem } from "lucide-react";
 export function SignupForm() {
   const router = useRouter();
 
-  const handleSignup = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSignup = () => {
     router.push("/dashboard");
   };
 
-  const handleGoogleSignup = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleGoogleSignup = () => {
     router.push("/dashboard");
   };
 
@@ -39,7 +37,7 @@ export function SignupForm() {
           <CardDescription>Crea tu cuenta para empezar</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignup} className="grid gap-4">
+          <div className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="full-name">Nombre completo</Label>
               <Input id="full-name" placeholder="Tu Nombre" required />
@@ -57,13 +55,13 @@ export function SignupForm() {
               <Label htmlFor="password">Contraseña</Label>
               <Input id="password" type="password" required />
             </div>
-            <Button type="submit" className="w-full">
+            <Button onClick={handleSignup} className="w-full">
               Crear cuenta
             </Button>
             <Button variant="outline" className="w-full" onClick={handleGoogleSignup}>
               Registrarse con Google
             </Button>
-          </form>
+          </div>
           <div className="mt-4 text-center text-sm">
             ¿Ya tienes una cuenta?{" "}
             <Link href="/login" className="underline">
