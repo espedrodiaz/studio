@@ -268,19 +268,23 @@ export default function ExchangeRatesPage() {
                             </div>
                             <div className="max-h-[45vh] overflow-y-auto mt-4">
                               <Table>
-                                 <TableHeader><TableRow><TableHead>Proveedor</TableHead><TableHead className="text-center">Tasa (Bs/$)</TableHead><TableHead className="text-center">Dif. vs BCV</TableHead><TableHead>Últ. Actualización</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader>
+                                 <TableHeader><TableRow><TableHead className="w-[40%]">Proveedor / Tasa</TableHead><TableHead className="text-center">Dif. vs BCV</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader>
                                  <TableBody>
                                   {supplierRates.map(rate => {
                                       const diff = getSupplierRateDifference(rate.rate);
                                       return (
                                       <TableRow key={rate.id}>
-                                          <TableCell className="font-medium">{rate.name}</TableCell>
-                                          <TableCell className="font-medium text-center">{formatBs(rate.rate)}</TableCell>
-                                          <TableCell className={cn("text-xs text-center", diff.difference > 0 ? 'text-red-500' : 'text-green-600')}>
+                                          <TableCell>
+                                            <div className="font-medium">{rate.name}</div>
+                                            <div className="text-sm text-muted-foreground">{formatBs(rate.rate)} Bs/$</div>
+                                            <div className="text-xs text-muted-foreground/80 mt-1">
+                                                Act: {formatVenezuelanDateTime(rate.lastUpdated)}
+                                            </div>
+                                          </TableCell>
+                                          <TableCell className={cn("text-sm text-center align-top", diff.difference > 0 ? 'text-red-500' : 'text-green-600')}>
                                             {diff.difference >= 0 ? '+' : ''}{formatBs(diff.difference)} ({diff.percentage.toFixed(2)}%)
                                           </TableCell>
-                                          <TableCell className="text-xs">{formatVenezuelanDateTime(rate.lastUpdated)}</TableCell>
-                                          <TableCell>
+                                          <TableCell className="align-top">
                                             <DropdownMenu>
                                               <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
                                               <DropdownMenuContent align="end">
