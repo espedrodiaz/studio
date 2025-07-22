@@ -23,6 +23,11 @@ export function LoginForm() {
     router.push("/dashboard");
   };
 
+  const handleGoogleLogin = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push("/dashboard");
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">
       <Card className="mx-auto max-w-sm w-full">
@@ -61,7 +66,7 @@ export function LoginForm() {
             <Button type="submit" className="w-full">
               Iniciar sesión
             </Button>
-            <Button variant="outline" className="w-full">
+            <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
               Iniciar sesión con Google
             </Button>
           </form>
