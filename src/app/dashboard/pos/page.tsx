@@ -365,7 +365,7 @@ export default function PosPage() {
             if (selectedPaymentMethod.type === 'Digital' && paymentAmountInUsd > remainingBalance + 0.001) {
                 toast({
                     title: "Error de Monto",
-                    description: `El pago digital no puede exceder el monto restante de $${formatUsd(remainingBalance)}.`,
+                    description: `El pago digital no puede exceder el monto restante.`,
                     variant: "destructive",
                 });
                 return;
@@ -718,21 +718,23 @@ export default function PosPage() {
                           </div>
                           <Separator />
                           <div className={`flex justify-between font-bold text-lg ${balance > 0 ? 'text-destructive' : 'text-primary'}`}>
-                              <span>{balance > 0 ? 'Faltante' : 'Total'}</span>
-                               <span>
-                                  {balance > 0 
-                                      ? `${formatBs(convertToVes(balance))} Bs`
-                                      : `${formatBs(convertToVes(subtotal))} Bs`
-                                  }
-                              </span>
+                                <span>{balance > 0 ? 'Faltante' : 'Total'}</span>
+                                {balance > 0 ? (
+                                    <div className="text-right">
+                                        <span className="block">{formatBs(convertToVes(balance))} Bs</span>
+                                        <span className="block text-sm font-normal text-muted-foreground">(${formatUsd(balance)})</span>
+                                    </div>
+                                ) : (
+                                    <span className="block">{formatBs(convertToVes(subtotal))} Bs</span>
+                                )}
                           </div>
                           {changeToGive > 0 && (
                               <div className="flex justify-between font-bold text-lg text-green-600">
                                   <span>Vuelto</span>
-                                  <span>
-                                      {formatBs(convertToVes(changeToGive))} Bs
-                                      <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(changeToGive)})</span>
-                                  </span>
+                                   <div className="text-right">
+                                      <span className="block">{formatBs(convertToVes(changeToGive))} Bs</span>
+                                      <span className="block text-sm font-normal text-muted-foreground">(${formatUsd(changeToGive)})</span>
+                                  </div>
                               </div>
                           )}
                           </>
