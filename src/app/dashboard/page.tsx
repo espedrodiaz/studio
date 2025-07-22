@@ -9,6 +9,9 @@ import {
   LineChart,
   AlertTriangle,
   ThumbsUp,
+  BarChart,
+  CalendarDays,
+  Receipt,
 } from "lucide-react";
 import {
   Avatar,
@@ -33,6 +36,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { sales, products, accountsPayable, accountsReceivable, getCurrentBcvRate } from "@/lib/placeholder-data";
+import { cn } from "@/lib/utils";
 
 export default async function DashboardPage() {
     // Simulate a 3-second loading time to demonstrate the loading screen.
@@ -46,6 +50,24 @@ export default async function DashboardPage() {
     
     const isCritical = totalPayable > (totalInventoryCost + totalReceivable);
     const bcvRate = getCurrentBcvRate();
+
+    const today = new Date();
+    const todaySales = sales.filter(sale => {
+        const saleDate = new Date(sale.date);
+        return saleDate.getDate() === today.getDate() &&
+               saleDate.getMonth() === today.getMonth() &&
+               saleDate.getFullYear() === today.getFullYear();
+    });
+    const todayTotalSales = todaySales.reduce((sum, sale) => sum + sale.total, 0);
+    const todayTransactions = todaySales.length;
+
+    const monthSales = sales.filter(sale => {
+        const saleDate = new Date(sale.date);
+        return saleDate.getMonth() === today.getMonth() &&
+               saleDate.getFullYear() === today.getFullYear();
+    });
+    const monthTotalSales = monthSales.reduce((sum, sale) => sum + sale.total, 0);
+
 
     const formatBs = (amount: number) => {
         return (amount * bcvRate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -63,10 +85,10 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Costo del Inventario</CardTitle>
+            <CardTitle className="text-sm font-medium">Costo del Inventario</CardTitle>
             <CreditCard className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
@@ -78,7 +100,7 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Valor del Inventario</CardTitle>
+            <CardTitle className="text-sm font-medium">Valor del Inventario</CardTitle>
             <Package className="h-4 w-4 text-sky-600" />
           </CardHeader>
           <CardContent>
@@ -90,7 +112,7 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Ganancia Estimada</CardTitle>
+            <CardTitle className="text-sm font-medium">Ganancia Estimada</CardTitle>
             <DollarSign className="h-4 w-4 text-green-700" />
           </CardHeader>
           <CardContent>
@@ -102,7 +124,49 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Cuentas por Cobrar</CardTitle>
+            <CardTitle className="text-sm font-medium">Salud Financiera</CardTitle>
+             {isCritical ? (
+                <AlertTriangle className="h-4 w-4 text-yellow-900" />
+            ) : (
+                <ThumbsUp className="h-4 w-4 text-green-900" />
+            )}
+          </CardHeader>
+          <CardContent className={cn("p-4 mt-2 rounded-md", isCritical ? 'bg-yellow-400/80' : 'bg-green-400/80' )}>
+             <div className={cn("text-center text-lg font-bold", isCritical ? 'text-yellow-900' : 'text-green-900')}>
+                {isCritical ? 'Crítico' : 'Saludable'}
+            </div>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ventas del Día</CardTitle>
+            <BarChart className="h-4 w-4 text-indigo-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${formatUsd(todayTotalSales)}</div>
+            <p className="text-xs text-green-600">
+              Bs {formatBs(todayTotalSales)}
+            </p>
+            <p className="text-xs text-muted-foreground pt-1">
+              {todayTransactions} transacciones
+            </p>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ventas del Mes</CardTitle>
+            <CalendarDays className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${formatUsd(monthTotalSales)}</div>
+            <p className="text-xs text-green-600">
+              Bs {formatBs(monthTotalSales)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Cuentas por Cobrar</CardTitle>
             <Users className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
@@ -114,31 +178,13 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Cuentas por Pagar</CardTitle>
-            <LineChart className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-sm font-medium">Cuentas por Pagar</CardTitle>
+            <Receipt className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">${formatUsd(totalPayable)}</div>
             <p className="text-xs text-green-600">
                Bs {formatBs(totalPayable)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Salud Financiera</CardTitle>
-             {isCritical ? (
-                <AlertTriangle className="h-4 w-4 text-yellow-500" />
-            ) : (
-                <ThumbsUp className="h-4 w-4 text-green-500" />
-            )}
-          </CardHeader>
-          <CardContent>
-             <div className={`text-xl font-bold ${isCritical ? 'text-yellow-600' : 'text-green-600'}`}>
-                {isCritical ? 'Crítico' : 'Saludable'}
-            </div>
-            <p className={`text-xs ${isCritical ? 'text-yellow-500' : 'text-green-500'}`}>
-              {isCritical ? 'Las deudas superan los activos' : 'Operaciones estables'}
             </p>
           </CardContent>
         </Card>
