@@ -124,6 +124,30 @@ export default async function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Cuentas por Cobrar</CardTitle>
+            <Users className="h-4 w-4 text-orange-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${formatUsd(totalReceivable)}</div>
+            <p className="text-xs text-green-600">
+               Bs {formatBs(totalReceivable)}
+            </p>
+          </CardContent>
+        </Card>
+         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Cuentas por Pagar</CardTitle>
+            <Receipt className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${formatUsd(totalPayable)}</div>
+            <p className="text-xs text-green-600">
+               Bs {formatBs(totalPayable)}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Salud Financiera</CardTitle>
              {isCritical ? (
                 <AlertTriangle className="h-4 w-4 text-yellow-900" />
@@ -137,7 +161,7 @@ export default async function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-         <Card>
+        <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Ventas del Día</CardTitle>
             <BarChart className="h-4 w-4 text-indigo-600" />
@@ -161,30 +185,6 @@ export default async function DashboardPage() {
             <div className="text-2xl font-bold">${formatUsd(monthTotalSales)}</div>
             <p className="text-xs text-green-600">
               Bs {formatBs(monthTotalSales)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cuentas por Cobrar</CardTitle>
-            <Users className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${formatUsd(totalReceivable)}</div>
-            <p className="text-xs text-green-600">
-               Bs {formatBs(totalReceivable)}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cuentas por Pagar</CardTitle>
-            <Receipt className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${formatUsd(totalPayable)}</div>
-            <p className="text-xs text-green-600">
-               Bs {formatBs(totalPayable)}
             </p>
           </CardContent>
         </Card>
