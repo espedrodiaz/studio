@@ -80,13 +80,34 @@ export const suppliers = [
   { id: 'SUP003', name: 'Inversiones Primor', contact: 'Ricardo Solis', phone: '0241-8745011' },
 ];
 
-export const sales = [
-  { id: 'SALE001', date: '2024-07-20T10:00:00.000Z', customer: 'Ana Pérez', total: 10.00, status: 'Pagada' },
-  { id: 'SALE002', date: '2024-07-20T14:30:00.000Z', customer: 'Carlos Gómez', total: 25.50, status: 'Pagada' },
-  { id: 'SALE003', date: '2024-07-21T11:20:00.000Z', customer: 'María Rodríguez', total: 5.40, status: 'Pendiente' },
-  { id: 'SALE004', date: '2024-07-22T09:05:00.000Z', customer: 'Cliente Ocasional', total: 12.80, status: 'Pagada' },
-  { id: 'SALE005', date: '2024-07-22T16:45:00.000Z', customer: 'Ana Pérez', total: 7.00, status: 'Pagada' },
+export let sales: {
+    id: string;
+    date: string;
+    customer: string;
+    total: number;
+    status: 'Pagada' | 'Pendiente';
+    payments: { methodId: string, amount: number }[];
+    changeGiven: { methodId: string, amount: number }[];
+}[] = [
+  { id: 'SALE001', date: '2024-07-20T10:00:00.000Z', customer: 'Ana Pérez', total: 10.00, status: 'Pagada', payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [] },
+  { id: 'SALE002', date: '2024-07-20T14:30:00.000Z', customer: 'Carlos Gómez', total: 25.50, status: 'Pagada', payments: [{ methodId: 'pay-03', amount: 25.50}], changeGiven: [] },
+  { id: 'SALE003', date: '2024-07-21T11:20:00.000Z', customer: 'María Rodríguez', total: 5.40, status: 'Pendiente', payments: [], changeGiven: [] },
+  { id: 'SALE004', date: '2024-07-22T09:05:00.000Z', customer: 'Cliente Ocasional', total: 12.80, status: 'Pagada', payments: [{ methodId: 'pay-02', amount: 1280}], changeGiven: [] },
+  { id: 'SALE005', date: '2024-07-22T16:45:00.000Z', customer: 'Ana Pérez', total: 7.00, status: 'Pagada', payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [{ methodId: 'pay-01', amount: 3}] },
 ];
+
+type SaleInput = Omit<typeof sales[0], 'id' | 'date'>;
+
+export const addSale = (sale: SaleInput) => {
+    const newSale = {
+        ...sale,
+        id: `SALE${new Date().getTime()}`,
+        date: new Date().toISOString(),
+    };
+    sales.push(newSale);
+    return newSale;
+}
+
 
 export const accountsPayable = [
     { id: 'AP001', supplier: 'Distribuidora Alimentos Polar', amount: 1500.00, dueDate: '2024-08-15', status: 'Pendiente' },

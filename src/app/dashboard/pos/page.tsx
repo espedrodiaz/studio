@@ -8,8 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { products, customers as initialCustomers, getPaymentMethods, getCurrentBcvRate, cashMovements as initialCashMovements, addCashMovement } from "@/lib/placeholder-data";
-import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp, ShoppingCart, Pencil, Car, Trash2, Plus, ChevronDown, ChevronUp, CheckCircle2, Share2, Download, Send } from "lucide-react";
+import { products, customers as initialCustomers, getPaymentMethods, getCurrentBcvRate, cashMovements as initialCashMovements, addCashMovement, sales as initialSales, addSale } from "@/lib/placeholder-data";
+import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp, ShoppingCart, Pencil, Car, Trash2, Plus, ChevronDown, ChevronUp, CheckCircle2, Share2, Download, Send, Calculator } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
@@ -207,8 +207,16 @@ const DigitalTicket = ({ saleData, onClose }: { saleData: SaleData | null, onClo
 
 
 export default function PosPage() {
+    // Global State
+    const [paymentMethodsList, setPaymentMethodsList] = useState(getPaymentMethods());
+    const bcvRate = getCurrentBcvRate();
+    const [currentDate, setCurrentDate] = useState('');
+
+    // Cash Drawer State
     const [isCashDrawerOpen, setIsCashDrawerOpen] = useState(false);
-    const [initialBalances, setInitialBalances] = useState({ usd: 0, ves: 0 });
+    const [isCashDrawerModalOpen, setIsCashDrawerModalOpen] = useState(false);
+    const [initialBalances, setInitialBalances] = useState<{[key: string]: number}>({});
+    const [sales, setSales] = useState<typeof initialSales>([]);
     const [cashMovements, setCashMovements] = useState<CashMovement[]>(initialCashMovements);
 
     const [isCashMovementModalOpen, setIsCashMovementModalOpen] = useState(false);
@@ -217,6 +225,7 @@ export default function PosPage() {
     const [movementPaymentMethod, setMovementPaymentMethod] = useState('');
     const [movementConcept, setMovementConcept] = useState('');
 
+    // Sale Flow State
     const [step, setStep] = useState(1);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [productSearchTerm, setProductSearchTerm] = useState('');
@@ -226,14 +235,11 @@ export default function PosPage() {
     const [payments, setPayments] = useState<{methodId: string, amount: number}[]>([]);
     const [changePayments, setChangePayments] = useState<{methodId: string, amount: number}[]>([]);
     
-    const [paymentMethodsList, setPaymentMethodsList] = useState(getPaymentMethods());
-    const bcvRate = getCurrentBcvRate();
-
-    const [currentDate, setCurrentDate] = useState('');
-
+    // UI State
     const [isCartExpanded, setIsCartExpanded] = useState(true);
+    const [lastCompletedSale, setLastCompletedSale] = useState<SaleData | null>(null);
 
-    // State for modals
+    // Modal & Form States
     const [isEditingPrice, setIsEditingPrice] = useState<CartItem | null>(null);
     const [priceInUsd, setPriceInUsd] = useState<number | string>('');
     const [priceInVes, setPriceInVes] = useState<number | string>('');
@@ -243,7 +249,6 @@ export default function PosPage() {
     const [customerForm, setCustomerForm] = useState<Omit<Customer, 'id'>>({ name: '', idNumber: '', email: '', phone: '', vehicles: [] });
     const [vehicleForm, setVehicleForm] = useState<Vehicle>({ brand: '', model: '', engine: '', year: '' });
 
-    // Local state for quantity inputs
     const [quantityInputs, setQuantityInputs] = useState<Record<string, string>>({});
 
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -254,7 +259,47 @@ export default function PosPage() {
     const [selectedChangeMethod, setSelectedChangeMethod] = useState<PaymentMethod | null>(null);
     const [changeAmount, setChangeAmount] = useState<number | ''>('');
     
-    const [lastCompletedSale, setLastCompletedSale] = useState<SaleData | null>(null);
+    // Derived Calculations
+    const cashDrawerState = useMemo(() => {
+        const state: { [key: string]: { initial: number; sales: number; movementsIn: number; movementsOut: number; final: number } } = {};
+        
+        paymentMethodsList.forEach(pm => {
+            const initial = initialBalances[pm.id] || 0;
+            const salesTotal = sales.reduce((total, sale) => {
+                 const salePayment = sale.payments.find(p => p.methodId === pm.id);
+                 return total + (salePayment ? salePayment.amount : 0);
+            }, 0);
+             const changeGiven = sales.reduce((total, sale) => {
+                 const changePayment = sale.changeGiven.find(c => c.methodId === pm.id);
+                 return total + (changePayment ? changePayment.amount : 0);
+            }, 0);
+            const movementsIn = cashMovements.filter(m => m.paymentMethodId === pm.id && m.type === 'Entrada').reduce((sum, m) => sum + m.amount, 0);
+            const movementsOut = cashMovements.filter(m => m.paymentMethodId === pm.id && m.type === 'Salida').reduce((sum, m) => sum + m.amount, 0);
+
+            state[pm.id] = {
+                initial,
+                sales: salesTotal,
+                movementsIn,
+                movementsOut: movementsOut + changeGiven,
+                final: initial + salesTotal + movementsIn - movementsOut - changeGiven
+            };
+        });
+        
+        return state;
+    }, [initialBalances, sales, cashMovements, paymentMethodsList]);
+    
+    const totalCashDrawer = useMemo(() => {
+        const totals = { initial: 0, sales: 0, movementsOut: 0, final: 0 };
+        Object.values(cashDrawerState).forEach(state => {
+            const method = paymentMethodsList.find(pm => pm.id in cashDrawerState && cashDrawerState[pm.id] === state);
+            const rate = method?.currency === 'Bs' ? 1 / bcvRate : 1;
+            totals.initial += state.initial * rate;
+            totals.sales += (state.sales + state.movementsIn) * rate;
+            totals.movementsOut += state.movementsOut * rate;
+            totals.final += state.final * rate;
+        });
+        return totals;
+    }, [cashDrawerState, paymentMethodsList, bcvRate]);
 
 
     useEffect(() => {
@@ -274,7 +319,8 @@ export default function PosPage() {
     }, []);
 
     const handleOpenCashDrawer = () => {
-        if (initialBalances.usd < 0 || initialBalances.ves < 0) {
+         const hasNegative = Object.values(initialBalances).some(val => val < 0);
+        if (hasNegative) {
             toast({
                 title: "Error",
                 description: "Los saldos iniciales no pueden ser negativos.",
@@ -285,7 +331,7 @@ export default function PosPage() {
         setIsCashDrawerOpen(true);
         toast({
             title: "Caja Abierta",
-            description: `Caja iniciada con $${formatUsd(initialBalances.usd)} y Bs ${formatBs(convertToVes(initialBalances.usd))}.`,
+            description: `La sesión de caja ha comenzado.`,
         });
     }
 
@@ -303,8 +349,9 @@ export default function PosPage() {
             setPayments([]);
             setChangePayments([]);
             setProductSearchTerm('');
-            setInitialBalances({ usd: 0, ves: 0 });
+            setInitialBalances({});
             setCashMovements([]);
+            setSales([]);
              toast({
                 title: "Caja Cerrada",
                 description: "La sesión de caja ha finalizado. Puede iniciar una nueva.",
@@ -340,7 +387,6 @@ export default function PosPage() {
             description: `Se ha registrado una ${movementType.toLowerCase()} de caja.`,
         });
         resetMovementForm();
-        setIsCashMovementModalOpen(false);
     }
 
 
@@ -369,12 +415,11 @@ export default function PosPage() {
     };
 
     const updateQuantity = (productId: string, newQuantity: number) => {
-        setCart(prevCart => {
-            if (newQuantity <= 0) {
-                 return prevCart.filter(item => item.id !== productId);
-            }
-            return prevCart.map(item => item.id === productId ? { ...item, quantity: newQuantity } : item);
-        });
+        if (newQuantity <= 0) { // If user explicitly sets to 0 or less, remove item
+            setCart(prevCart => prevCart.filter(item => item.id !== productId));
+        } else {
+            setCart(prevCart => prevCart.map(item => item.id === productId ? { ...item, quantity: newQuantity } : item));
+        }
     };
     
     const handleQuantityInputChange = (productId: string, value: string) => {
@@ -384,14 +429,9 @@ export default function PosPage() {
     const handleQuantityInputBlur = (productId: string) => {
         const newQuantity = parseInt(quantityInputs[productId], 10);
         if (!isNaN(newQuantity)) {
-             if (newQuantity <= 0) {
-                // Restore previous value if input is invalid
-                const currentItem = cart.find(item => item.id === productId);
-                setQuantityInputs(prev => ({...prev, [productId]: String(currentItem?.quantity || 1)}));
-             } else {
-                updateQuantity(productId, newQuantity);
-             }
+             updateQuantity(productId, newQuantity);
         } else if (quantityInputs[productId] === '') {
+             // If input is cleared, restore previous valid quantity
              const currentItem = cart.find(item => item.id === productId);
              setQuantityInputs(prev => ({...prev, [productId]: String(currentItem?.quantity || 1)}));
         }
@@ -612,10 +652,28 @@ export default function PosPage() {
 
 
     const handleCompleteSale = () => {
-        // 1. Compile Sale Data
-         const sale: SaleData = {
-            id: `SALE-${Date.now()}`,
-            date: new Date().toISOString(),
+        const salePayments = payments.map(p => ({
+            methodId: p.methodId,
+            amount: p.amount,
+        }));
+         const saleChange = changePayments.map(p => ({
+            methodId: p.methodId,
+            amount: p.amount
+        }));
+
+        const newSale = addSale({
+            customer: selectedCustomer?.name || "Cliente Ocasional",
+            total: subtotal,
+            status: 'Pagada',
+            payments: salePayments,
+            changeGiven: saleChange
+        });
+
+        setSales(prev => [...prev, newSale]);
+
+         const saleForTicket: SaleData = {
+            id: newSale.id,
+            date: newSale.date,
             customer: selectedCustomer,
             items: cart,
             subtotal: subtotal,
@@ -630,7 +688,7 @@ export default function PosPage() {
             })),
             totalChange: totalChangeGiven
         };
-        setLastCompletedSale(sale);
+        setLastCompletedSale(saleForTicket);
 
         // 2. Reset State for next sale
         setStep(1);
@@ -895,21 +953,12 @@ export default function PosPage() {
                           {selectedCustomer && isCartExpanded && <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>}
                            {cart.map(item => (
                             <Card key={item.id} className="p-4">
-                                <p className="font-semibold mb-2">{item.name}</p>
-                                <div className="grid grid-cols-[1fr_auto] items-center gap-4">
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                       <Input
-                                            type="number"
-                                            value={quantityInputs[item.id] || ''}
-                                            onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
-                                            onBlur={() => handleQuantityInputBlur(item.id)}
-                                            onKeyDown={(e) => handleQuantityInputKeyDown(e, item.id)}
-                                            className="h-8 w-16 text-center"
-                                        />
-                                        <span>x ${formatUsd(item.salePrice)}</span>
+                                <div className="grid grid-cols-[1fr_auto] items-start gap-4">
+                                    <div>
+                                        <p className="font-semibold leading-tight">{item.name}</p>
                                     </div>
                                     <div className="flex items-center gap-1">
-                                        <div className="text-right">
+                                         <div className="text-right">
                                             <p className="font-semibold text-base">{formatBs(convertToVes(item.salePrice * item.quantity))}</p>
                                             <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
                                         </div>
@@ -929,6 +978,17 @@ export default function PosPage() {
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                                   <Input
+                                        type="number"
+                                        value={quantityInputs[item.id] || ''}
+                                        onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
+                                        onBlur={() => handleQuantityInputBlur(item.id)}
+                                        onKeyDown={(e) => handleQuantityInputKeyDown(e, item.id)}
+                                        className="h-8 w-16 text-center"
+                                    />
+                                    <span>x ${formatUsd(item.salePrice)}</span>
                                 </div>
                             </Card>
                           ))}
@@ -1052,40 +1112,29 @@ export default function PosPage() {
     return (
         <>
              <Dialog open={!isCashDrawerOpen} onOpenChange={() => {}}>
-                <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => e.preventDefault()}>
+                <DialogContent className="sm:max-w-lg" onInteractOutside={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle>Apertura de Caja</DialogTitle>
                         <DialogDescription>
-                            Ingrese los saldos iniciales en efectivo para comenzar a operar.
+                            Ingrese los saldos iniciales en efectivo para cada forma de pago para comenzar a operar.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="usd-balance" className="text-right">
-                                Efectivo (USD)
-                            </Label>
-                            <Input
-                                id="usd-balance"
-                                type="number"
-                                value={initialBalances.usd === 0 ? '' : initialBalances.usd}
-                                onChange={(e) => setInitialBalances(b => ({ ...b, usd: parseFloat(e.target.value) || 0 }))}
-                                className="col-span-3"
-                                placeholder="0.00"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="ves-balance" className="text-right">
-                                Efectivo (Bs)
-                            </Label>
-                            <Input
-                                id="ves-balance"
-                                type="number"
-                                 value={initialBalances.ves === 0 ? '' : initialBalances.ves}
-                                onChange={(e) => setInitialBalances(b => ({ ...b, ves: parseFloat(e.target.value) || 0 }))}
-                                className="col-span-3"
-                                placeholder="0.00"
-                            />
-                        </div>
+                    <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+                        {paymentMethodsList.filter(pm => pm.type === 'Efectivo').map(pm => (
+                            <div key={pm.id} className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor={`balance-${pm.id}`} className="text-right">
+                                    {pm.name}
+                                </Label>
+                                <Input
+                                    id={`balance-${pm.id}`}
+                                    type="number"
+                                    value={initialBalances[pm.id] || ''}
+                                    onChange={(e) => setInitialBalances(b => ({ ...b, [pm.id]: parseFloat(e.target.value) || 0 }))}
+                                    className="col-span-3"
+                                    placeholder="0.00"
+                                />
+                            </div>
+                        ))}
                     </div>
                     <DialogFooter>
                         <Button onClick={handleOpenCashDrawer} className="w-full">
@@ -1096,64 +1145,88 @@ export default function PosPage() {
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={isCashMovementModalOpen} onOpenChange={setIsCashMovementModalOpen}>
-                <DialogContent>
+             <Dialog open={isCashDrawerModalOpen} onOpenChange={setIsCashDrawerModalOpen}>
+                <DialogContent className="max-w-4xl">
                     <DialogHeader>
-                        <DialogTitle>Registrar Movimiento de Caja</DialogTitle>
-                        <DialogDescription>
-                            Añada una entrada o salida de dinero que no corresponda a una venta.
+                        <DialogTitle>Estado de Caja</DialogTitle>
+                         <DialogDescription>
+                           Resumen de los movimientos y saldos actuales de la caja.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                           <Label>Tipo de Movimiento</Label>
-                           <RadioGroup defaultValue="Salida" value={movementType} onValueChange={(v) => setMovementType(v as 'Entrada' | 'Salida')}>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="Salida" id="r-salida" />
-                                    <Label htmlFor="r-salida">Salida de Dinero</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="Entrada" id="r-entrada" />
-                                    <Label htmlFor="r-entrada">Entrada de Dinero</Label>
-                                </div>
-                           </RadioGroup>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                        {/* Left Side: Summary and Actions */}
+                        <div className="space-y-6">
+                             <Card>
+                                <CardHeader><CardTitle>Resumen General (USD)</CardTitle></CardHeader>
+                                <CardContent className="space-y-2 text-sm">
+                                    <div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">${formatUsd(totalCashDrawer.initial)}</span></div>
+                                    <div className="flex justify-between"><span>Ingresos (Ventas + Entradas):</span> <span className="font-medium text-green-600">+ ${formatUsd(totalCashDrawer.sales)}</span></div>
+                                    <div className="flex justify-between"><span>Salidas (Vueltos + Salidas):</span> <span className="font-medium text-red-600">- ${formatUsd(totalCashDrawer.movementsOut)}</span></div>
+                                    <Separator/>
+                                    <div className="flex justify-between font-bold text-base"><span>Saldo Actual en Caja:</span> <span>${formatUsd(totalCashDrawer.final)}</span></div>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader><CardTitle>Registrar Movimiento de Caja</CardTitle></CardHeader>
+                                <CardContent className="space-y-4">
+                                     <div className="space-y-2">
+                                        <Label>Tipo de Movimiento</Label>
+                                        <RadioGroup value={movementType} onValueChange={(v) => setMovementType(v as 'Entrada' | 'Salida')} className="flex gap-4">
+                                            <div className="flex items-center space-x-2"><RadioGroupItem value="Entrada" id="r-entrada" /><Label htmlFor="r-entrada">Entrada</Label></div>
+                                            <div className="flex items-center space-x-2"><RadioGroupItem value="Salida" id="r-salida" /><Label htmlFor="r-salida">Salida</Label></div>
+                                        </RadioGroup>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="movement-payment-method">Forma de Pago</Label>
+                                        <Select value={movementPaymentMethod} onValueChange={setMovementPaymentMethod}>
+                                            <SelectTrigger id="movement-payment-method"><SelectValue placeholder="Seleccione..." /></SelectTrigger>
+                                            <SelectContent>{paymentMethodsList.map(pm => (<SelectItem key={pm.id} value={pm.id}>{pm.name}</SelectItem>))}</SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="movement-amount">Monto</Label>
+                                        <Input id="movement-amount" type="number" value={movementAmount} onChange={(e) => setMovementAmount(parseFloat(e.target.value) || '')} placeholder="0.00"/>
+                                    </div>
+                                     <div className="space-y-2">
+                                        <Label htmlFor="movement-concept">Concepto</Label>
+                                        <Textarea id="movement-concept" value={movementConcept} onChange={(e) => setMovementConcept(e.target.value)} placeholder="Ej: Pago a proveedor, Compra de hielo..."/>
+                                    </div>
+                                    <Button onClick={handleAddCashMovement} className="w-full">Registrar Movimiento</Button>
+                                </CardContent>
+                            </Card>
                         </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="movement-payment-method">Forma de Pago</Label>
-                             <Select value={movementPaymentMethod} onValueChange={setMovementPaymentMethod}>
-                                <SelectTrigger id="movement-payment-method">
-                                    <SelectValue placeholder="Seleccione una caja" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {paymentMethodsList.map(pm => (
-                                        <SelectItem key={pm.id} value={pm.id}>{pm.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                             </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="movement-amount">Monto</Label>
-                            <Input
-                                id="movement-amount"
-                                type="number"
-                                value={movementAmount}
-                                onChange={(e) => setMovementAmount(parseFloat(e.target.value) || '')}
-                                placeholder="0.00"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="movement-concept">Concepto</Label>
-                            <Textarea
-                                id="movement-concept"
-                                value={movementConcept}
-                                onChange={(e) => setMovementConcept(e.target.value)}
-                                placeholder="Ej: Pago a proveedor, Compra de hielo..."
-                            />
+                        {/* Right Side: Detailed Breakdown */}
+                        <div className="space-y-4">
+                            <Label>Desglose por Forma de Pago</Label>
+                            <div className="max-h-[65vh] overflow-y-auto pr-2 space-y-3">
+                                {paymentMethodsList.map(pm => {
+                                    const state = cashDrawerState[pm.id];
+                                    if (!state) return null;
+                                    const format = pm.currency === '$' ? formatUsd : formatBs;
+                                    return (
+                                        <Card key={pm.id}>
+                                            <CardHeader className="pb-2">
+                                                <CardTitle className="text-base flex justify-between items-center">
+                                                    <span>{pm.name}</span>
+                                                    <Badge variant={pm.type === 'Efectivo' ? 'secondary' : 'outline'}>{pm.type}</Badge>
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-1 text-xs">
+                                                 <div className="flex justify-between"><span>Inicial:</span> <span>{format(state.initial)}</span></div>
+                                                 <div className="flex justify-between"><span>+ Ventas:</span> <span>{format(state.sales)}</span></div>
+                                                 <div className="flex justify-between"><span>+ Entradas:</span> <span>{format(state.movementsIn)}</span></div>
+                                                 <div className="flex justify-between"><span>- Salidas/Vueltos:</span> <span>{format(state.movementsOut)}</span></div>
+                                                 <Separator className="my-1"/>
+                                                 <div className="flex justify-between font-semibold"><span>Final:</span> <span>{format(state.final)}</span></div>
+                                            </CardContent>
+                                        </Card>
+                                    )
+                                })}
+                            </div>
                         </div>
                     </div>
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsCashMovementModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleAddCashMovement}>Registrar Movimiento</Button>
+                        <Button variant="outline" onClick={() => setIsCashDrawerModalOpen(false)}>Cerrar</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -1329,10 +1402,10 @@ export default function PosPage() {
                                 </CardDescription>
                             </div>
                             <div className="flex items-center gap-4">
-                                <div className="text-right">
-                                    <p className="text-sm font-medium">Caja Inicial</p>
-                                    <p className="text-xs text-muted-foreground">${formatUsd(initialBalances.usd)} / {formatBs(convertToVes(initialBalances.usd))} Bs</p>
-                                </div>
+                                <Button variant="outline" size="icon" onClick={() => setIsCashDrawerModalOpen(true)}>
+                                    <Calculator className="h-4 w-4" />
+                                    <span className="sr-only">Estado de Caja</span>
+                                </Button>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="outline" size="icon">
@@ -1341,16 +1414,6 @@ export default function PosPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Acciones de Caja</DropdownMenuLabel>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => {
-                                            resetMovementForm();
-                                            setIsCashMovementModalOpen(true);
-                                        }}>
-                                            <ArrowDownUp className="mr-2 h-4 w-4" />
-                                            <span>Entrada/Salida de Caja</span>
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
                                         <DropdownMenuLabel>Reportes y Cierre</DropdownMenuLabel>
                                          <DropdownMenuItem onClick={() => handleCloseCashDrawer('X')}>
                                             <FileText className="mr-2 h-4 w-4" />
@@ -1377,5 +1440,3 @@ export default function PosPage() {
         </>
     );
 }
-
-    
