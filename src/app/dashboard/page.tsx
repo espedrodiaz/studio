@@ -12,6 +12,8 @@ import {
   BarChart,
   CalendarDays,
   Receipt,
+  HeartPulse,
+  Ban,
 } from "lucide-react";
 import {
   Avatar,
@@ -48,7 +50,15 @@ export default async function DashboardPage() {
     const totalReceivable = accountsReceivable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     const totalPayable = accountsPayable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     
-    const isCritical = totalPayable > (totalInventoryCost + totalReceivable);
+    let financialStatus: 'grave' | 'critico' | 'saludable';
+    if (totalPayable > totalInventoryValue + totalReceivable) {
+        financialStatus = 'grave';
+    } else if (totalPayable > totalInventoryValue) {
+        financialStatus = 'critico';
+    } else {
+        financialStatus = 'saludable';
+    }
+
     const bcvRate = getCurrentBcvRate();
 
     const today = new Date();
@@ -149,15 +159,23 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Salud Financiera</CardTitle>
-             {isCritical ? (
-                <AlertTriangle className="h-4 w-4 text-yellow-900" />
-            ) : (
-                <ThumbsUp className="h-4 w-4 text-green-900" />
-            )}
+             {financialStatus === 'saludable' && <HeartPulse className="h-4 w-4 text-green-900" />}
+             {financialStatus === 'critico' && <AlertTriangle className="h-4 w-4 text-yellow-900" />}
+             {financialStatus === 'grave' && <Ban className="h-4 w-4 text-red-900" />}
           </CardHeader>
-          <CardContent className={cn("p-4 mt-2 rounded-md", isCritical ? 'bg-yellow-400/80' : 'bg-green-400/80' )}>
-             <div className={cn("text-center text-lg font-bold", isCritical ? 'text-yellow-900' : 'text-green-900')}>
-                {isCritical ? 'Crítico' : 'Saludable'}
+          <CardContent className={cn("p-4 mt-2 rounded-md", {
+              'bg-green-400/80': financialStatus === 'saludable',
+              'bg-yellow-400/80': financialStatus === 'critico',
+              'bg-red-500/80': financialStatus === 'grave',
+          })}>
+             <div className={cn("text-center text-lg font-bold", {
+                'text-green-900': financialStatus === 'saludable',
+                'text-yellow-900': financialStatus === 'critico',
+                'text-red-900': financialStatus === 'grave',
+             })}>
+                {financialStatus === 'saludable' && 'Saludable'}
+                {financialStatus === 'critico' && 'Crítico'}
+                {financialStatus === 'grave' && 'Grave'}
             </div>
           </CardContent>
         </Card>
