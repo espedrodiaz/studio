@@ -259,9 +259,9 @@ export default function ExchangeRatesPage() {
                                 <DialogTitle>Tasas de Proveedores</DialogTitle>
                                 <DialogDescription>Añada, edite o elimine las tasas de cambio de sus proveedores.</DialogDescription>
                             </DialogHeader>
-                             <div className="grid grid-cols-[1fr_auto] md:grid-cols-[1fr_1fr_auto] items-end gap-4 py-4 border-b">
+                             <div className="grid grid-cols-[2fr_1fr_auto] md:grid-cols-[2fr_1fr_auto] items-end gap-2 py-4 border-b">
                                 <div className="space-y-2"><Label htmlFor="supplier-name">Nombre del Proveedor</Label><Input id="supplier-name" value={supplierRateName} onChange={(e) => setSupplierRateName(e.target.value)} placeholder="Ej: Proveedor XYZ"/></div>
-                                <div className="space-y-2"><Label htmlFor="supplier-rate">Tasa (Bs por 1$)</Label><Input id="supplier-rate" type="number" value={supplierRateAmount} onChange={(e) => setSupplierRateAmount(parseFloat(e.target.value) || "")} placeholder="Ej: 41.20"/></div>
+                                <div className="space-y-2"><Label htmlFor="supplier-rate">Tasa (Bs/$)</Label><Input id="supplier-rate" type="number" value={supplierRateAmount} onChange={(e) => setSupplierRateAmount(parseFloat(e.target.value) || "")} placeholder="Ej: 41.20"/></div>
                                 <div className="flex items-end gap-2">
                                   <Button onClick={handleSaveSupplierRate} size="icon" aria-label={editingSupplierRate ? "Guardar Cambios" : "Añadir Tasa"}>
                                     <Save className="h-4 w-4" />
