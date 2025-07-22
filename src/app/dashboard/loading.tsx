@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -12,10 +13,14 @@ const loadingPhrases = [
 ];
 
 export default function Loading() {
-  const [phrase, setPhrase] = useState('');
+  const [phraseIndex, setPhraseIndex] = useState(0);
 
   useEffect(() => {
-    setPhrase(loadingPhrases[Math.floor(Math.random() * loadingPhrases.length)]);
+    const interval = setInterval(() => {
+      setPhraseIndex((prevIndex) => (prevIndex + 1) % loadingPhrases.length);
+    }, 2000); // Change phrase every 2 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -27,7 +32,11 @@ export default function Loading() {
         <div className="relative w-64 h-1 bg-muted rounded-full overflow-hidden mb-4">
             <div className="absolute inset-0 h-full bg-primary animate-pulse w-full"></div>
         </div>
-        <p className="text-muted-foreground italic mb-12">{phrase}</p>
+        <div className="h-6 mb-12">
+            <p key={phraseIndex} className="text-muted-foreground italic animate-fade-in">
+                {loadingPhrases[phraseIndex]}
+            </p>
+        </div>
         <p className="text-xs text-muted-foreground/50">Tecnología Impulsada por DiazSoft</p>
       </div>
     </div>
