@@ -586,10 +586,13 @@ export default function PosPage() {
                                       <p className="font-semibold text-sm">{item.name}</p>
                                       <p className="text-xs text-muted-foreground">${formatUsd(item.salePrice)}</p>
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                      <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity - 1)}><MinusCircle className="h-4 w-4" /></Button>
-                                      <span>{item.quantity}</span>
-                                      <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity + 1)}><PlusCircle className="h-4 w-4" /></Button>
+                                  <div className="w-16">
+                                      <Input
+                                          type="number"
+                                          value={item.quantity}
+                                          onChange={(e) => updateQuantity(item.id, parseInt(e.target.value, 10) || 0)}
+                                          className="h-8 text-center p-1"
+                                      />
                                   </div>
                                    <Button size="icon" variant="ghost" onClick={() => handlePriceEdit(item)}>
                                       <Pencil className="h-4 w-4" />
@@ -598,6 +601,9 @@ export default function PosPage() {
                                       <p className="font-semibold text-sm">{formatBs(convertToVes(item.salePrice * item.quantity))} Bs</p>
                                       <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
                                   </div>
+                                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => updateQuantity(item.id, 0)}>
+                                    <X className="h-4 w-4"/>
+                                  </Button>
                               </div>
                           ))}
                       </div>
