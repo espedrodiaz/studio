@@ -65,8 +65,8 @@ export default async function DashboardPage() {
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card className="shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Costo del Inventario</CardTitle>
+          <CardHeader>
+            <CardTitle>Costo del Inventario</CardTitle>
             <CreditCard className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -77,8 +77,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
         <Card className="shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+          <CardHeader>
+            <CardTitle>
               Valor del Inventario
             </CardTitle>
             <Package className="h-4 w-4 text-sky-500" />
@@ -91,8 +91,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
         <Card className="shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
+          <CardHeader>
+            <CardTitle>
               Ganancia Estimada
             </CardTitle>
             <DollarSign className="h-4 w-4 text-green-700" />
@@ -105,8 +105,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
         <Card className="shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Cuentas por Cobrar</CardTitle>
+          <CardHeader>
+            <CardTitle>Cuentas por Cobrar</CardTitle>
             <Users className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
@@ -117,8 +117,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
         <Card className="shadow-md">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
               Cuentas por Pagar
             </CardTitle>
             <LineChart className="h-4 w-4 text-red-500" />
@@ -131,8 +131,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
          <Card className={`shadow-md ${isCritical ? 'bg-yellow-50 border-yellow-300' : 'bg-green-50 border-green-300'}`}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Salud Financiera</CardTitle>
+          <CardHeader>
+            <CardTitle>Salud Financiera</CardTitle>
             {isCritical ? (
                 <AlertTriangle className="h-4 w-4 text-yellow-500" />
             ) : (
