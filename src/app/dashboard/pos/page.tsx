@@ -17,7 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Customer, Vehicle } from '@/lib/types';
+import { Customer, Vehicle } from "@/lib/types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
@@ -581,30 +581,30 @@ export default function PosPage() {
                       <div className="space-y-4">
                           {selectedCustomer && isCartExpanded && <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>}
                           {cart.map(item => (
-                              <div key={item.id} className="flex items-center gap-4">
-                                  <div className="flex-grow">
-                                      <p className="font-semibold text-sm">{item.name}</p>
-                                      <p className="text-xs text-muted-foreground">${formatUsd(item.salePrice)}</p>
-                                  </div>
-                                  <div className="w-16">
-                                      <Input
-                                          type="number"
-                                          value={item.quantity}
-                                          onChange={(e) => updateQuantity(item.id, parseInt(e.target.value, 10) || 0)}
-                                          className="h-8 text-center p-1"
-                                      />
-                                  </div>
-                                   <Button size="icon" variant="ghost" onClick={() => handlePriceEdit(item)}>
-                                      <Pencil className="h-4 w-4" />
-                                  </Button>
-                                  <div className="w-28 text-right">
-                                      <p className="font-semibold text-sm">{formatBs(convertToVes(item.salePrice * item.quantity))} Bs</p>
-                                      <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
-                                  </div>
-                                  <Button size="icon" variant="ghost" className="text-destructive" onClick={() => updateQuantity(item.id, 0)}>
-                                    <X className="h-4 w-4"/>
-                                  </Button>
-                              </div>
+                            <div key={item.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-2">
+                                <div className="flex-grow">
+                                    <p className="font-semibold text-sm">{item.name}</p>
+                                    <p className="text-xs text-muted-foreground">${formatUsd(item.salePrice)}</p>
+                                </div>
+                                <div className="w-16">
+                                    <Input
+                                        type="number"
+                                        value={item.quantity}
+                                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value, 10) || 0)}
+                                        className="h-8 text-center p-1"
+                                    />
+                                </div>
+                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handlePriceEdit(item)}>
+                                    <Pencil className="h-4 w-4" />
+                                </Button>
+                                <div className="w-24 text-right">
+                                    <p className="font-semibold text-sm">{formatBs(convertToVes(item.salePrice * item.quantity))}</p>
+                                    <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
+                                </div>
+                                <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => updateQuantity(item.id, 0)}>
+                                  <X className="h-4 w-4"/>
+                                </Button>
+                            </div>
                           ))}
                       </div>
                   )}
