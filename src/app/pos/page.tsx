@@ -45,6 +45,10 @@ export default function PosPage() {
         });
     };
 
+    const formatUsd = (amount: number) => {
+        return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
     const subtotal = useMemo(() => cart.reduce((acc, item) => acc + item.salePrice * item.quantity, 0), [cart]);
     const totalPaid = useMemo(() => payments.reduce((acc, p) => acc + p.amount, 0), [payments]);
     const balance = useMemo(() => subtotal - totalPaid, [subtotal, totalPaid]);
@@ -92,7 +96,7 @@ export default function PosPage() {
                                             <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                                                 <img src={`https://placehold.co/100x100.png`} alt={product.name} data-ai-hint="product" className="rounded-md mb-2"/>
                                                 <p className="font-semibold text-sm">{product.name}</p>
-                                                <p className="text-muted-foreground text-xs">${product.salePrice.toFixed(2)}</p>
+                                                <p className="text-muted-foreground text-xs">${formatUsd(product.salePrice)}</p>
                                             </CardContent>
                                         </Card>
                                     ))}
@@ -190,14 +194,14 @@ export default function PosPage() {
                                 <img src={`https://placehold.co/40x40.png`} data-ai-hint="product item" alt={item.name} className="w-10 h-10 rounded-md" />
                                 <div className="flex-grow">
                                     <p className="font-semibold text-sm">{item.name}</p>
-                                    <p className="text-xs text-muted-foreground">${item.salePrice.toFixed(2)}</p>
+                                    <p className="text-xs text-muted-foreground">${formatUsd(item.salePrice)}</p>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity - 1)}><MinusCircle className="h-4 w-4" /></Button>
                                     <span>{item.quantity}</span>
                                     <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity + 1)}><PlusCircle className="h-4 w-4" /></Button>
                                 </div>
-                                <p className="font-semibold w-16 text-right">${(item.salePrice * item.quantity).toFixed(2)}</p>
+                                <p className="font-semibold w-20 text-right">${formatUsd(item.salePrice * item.quantity)}</p>
                             </div>
                         ))}
                     </div>
@@ -208,23 +212,23 @@ export default function PosPage() {
                     <Separator />
                     <div className="flex justify-between font-semibold">
                         <span>Subtotal</span>
-                        <span>${subtotal.toFixed(2)}</span>
+                        <span>${formatUsd(subtotal)}</span>
                     </div>
                     {step === 3 && (
                        <>
                         <div className="flex justify-between text-muted-foreground">
                             <span>Pagado</span>
-                            <span>${totalPaid.toFixed(2)}</span>
+                            <span>${formatUsd(totalPaid)}</span>
                         </div>
                         <Separator />
                         <div className={`flex justify-between font-bold text-lg ${balance > 0 ? 'text-destructive' : 'text-primary'}`}>
                             <span>{balance > 0 ? 'Faltante' : 'Total'}</span>
-                            <span>${balance > 0 ? balance.toFixed(2) : subtotal.toFixed(2)}</span>
+                            <span>${balance > 0 ? formatUsd(balance) : formatUsd(subtotal)}</span>
                         </div>
                         {change > 0 && (
                             <div className="flex justify-between font-bold text-lg text-green-600">
                                 <span>Vuelto</span>
-                                <span>${change.toFixed(2)}</span>
+                                <span>${formatUsd(change)}</span>
                             </div>
                         )}
                         </>

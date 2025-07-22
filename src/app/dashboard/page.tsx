@@ -42,6 +42,10 @@ export default function DashboardPage() {
         return (amount * exchangeRates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
+    const formatUsd = (amount: number) => {
+        return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -51,7 +55,7 @@ export default function DashboardPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalInventoryCost.toFixed(2)}</div>
+            <div className="text-2xl font-bold">${formatUsd(totalInventoryCost)}</div>
             <p className="text-xs text-muted-foreground">
               {formatBs(totalInventoryCost)} Bs
             </p>
@@ -65,7 +69,7 @@ export default function DashboardPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalInventoryValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold">${formatUsd(totalInventoryValue)}</div>
             <p className="text-xs text-muted-foreground">
               {formatBs(totalInventoryValue)} Bs
             </p>
@@ -79,7 +83,7 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${estimatedProfit.toFixed(2)}</div>
+            <div className="text-2xl font-bold">${formatUsd(estimatedProfit)}</div>
             <p className="text-xs text-muted-foreground">
               {formatBs(estimatedProfit)} Bs
             </p>
@@ -91,7 +95,7 @@ export default function DashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalReceivable.toFixed(2)}</div>
+            <div className="text-2xl font-bold">${formatUsd(totalReceivable)}</div>
              <p className="text-xs text-muted-foreground">
                {formatBs(totalReceivable)} Bs
             </p>
@@ -103,7 +107,7 @@ export default function DashboardPage() {
             <LineChart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalPayable.toFixed(2)}</div>
+            <div className="text-2xl font-bold">${formatUsd(totalPayable)}</div>
             <p className="text-xs text-muted-foreground">
               {formatBs(totalPayable)} Bs
             </p>
@@ -142,7 +146,7 @@ export default function DashboardPage() {
                   <TableCell>
                     <div className="font-medium">{sale.customer}</div>
                   </TableCell>
-                  <TableCell className="text-right">${sale.total.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">${formatUsd(sale.total)}</TableCell>
                   <TableCell className="hidden xl:table-column text-right">{sale.date}</TableCell>
                    <TableCell className="text-right">
                     <Badge variant={sale.status === 'Pagada' ? 'default' : 'secondary'} className={sale.status === 'Pagada' ? 'bg-green-500/20 text-green-700' : ''}>

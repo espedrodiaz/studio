@@ -20,6 +20,10 @@ import { accountsPayable } from "@/lib/placeholder-data";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function AccountsPayablePage() {
+  const formatUsd = (amount: number) => {
+    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -57,7 +61,7 @@ export default function AccountsPayablePage() {
                     {account.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">${account.amount.toFixed(2)}</TableCell>
+                <TableCell className="text-right">${formatUsd(account.amount)}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

@@ -27,6 +27,10 @@ import { Badge } from "@/components/ui/badge";
 import { sales } from "@/lib/placeholder-data";
 
 export default function SalesPage() {
+  const formatUsd = (amount: number) => {
+    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -85,7 +89,7 @@ export default function SalesPage() {
                     {sale.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-right">${sale.total.toFixed(2)}</TableCell>
+                <TableCell className="text-right">${formatUsd(sale.total)}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>

@@ -26,6 +26,10 @@ import { Badge } from "@/components/ui/badge";
 import { products } from "@/lib/placeholder-data";
 
 export default function InventoryPage() {
+  const formatUsd = (amount: number) => {
+    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -63,10 +67,10 @@ export default function InventoryPage() {
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  ${product.purchasePrice.toFixed(2)}
+                  ${formatUsd(product.purchasePrice)}
                 </TableCell>
                 <TableCell className="text-right">
-                  ${product.salePrice.toFixed(2)}
+                  ${formatUsd(product.salePrice)}
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
