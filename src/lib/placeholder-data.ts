@@ -144,3 +144,20 @@ export const updateSupplierRate = (id: string, updates: {name: string, rate: num
 export const deleteSupplierRate = (id: string) => {
     supplierRates = supplierRates.filter(r => r.id !== id);
 }
+
+// Cash Drawer Movements
+export let cashMovements = [
+    { id: 'CM001', date: '2024-07-25T11:00:00.000Z', type: 'Salida', amount: 20, paymentMethodId: 'pay-01', concept: 'Pago a proveedor de limpieza' }
+];
+
+type CashMovement = Omit<typeof cashMovements[0], 'id' | 'date'>;
+
+export const addCashMovement = (movement: CashMovement) => {
+    const newMovement = { 
+        ...movement,
+        id: `CM${new Date().getTime()}`,
+        date: new Date().toISOString()
+    };
+    cashMovements.push(newMovement);
+    return newMovement;
+}

@@ -7,20 +7,30 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { products, customers, getPaymentMethods, getCurrentBcvRate } from "@/lib/placeholder-data";
-import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText } from "lucide-react";
+import { products, customers, getPaymentMethods, getCurrentBcvRate, cashMovements as initialCashMovements, addCashMovement } from "@/lib/placeholder-data";
+import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Textarea } from '@/components/ui/textarea';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
 type CartItem = typeof products[0] & { quantity: number };
+type CashMovement = typeof initialCashMovements[0];
 
 export default function PosPage() {
     const [isCashDrawerOpen, setIsCashDrawerOpen] = useState(false);
     const [initialBalances, setInitialBalances] = useState({ usd: 0, ves: 0 });
+    const [cashMovements, setCashMovements] = useState<CashMovement[]>(initialCashMovements);
+
+    const [isCashMovementModalOpen, setIsCashMovementModalOpen] = useState(false);
+    const [movementType, setMovementType] = useState<'Entrada' | 'Salida'>('Salida');
+    const [movementAmount, setMovementAmount] = useState<number | ''>('');
+    const [movementPaymentMethod, setMovementPaymentMethod] = useState('');
+    const [movementConcept, setMovementConcept] = useState('');
 
     const [step, setStep] = useState(1);
     const [cart, setCart] = useState<CartItem[]>([]);
@@ -61,7 +71,7 @@ export default function PosPage() {
         // In a real app, this would generate and print the report.
         toast({
             title: `Reporte ${reportType} Generado`,
-            description: "La funcionalidad de impresión se implementará en el futuro.",
+            description: "La funcionalidad de impresión y lógica de reportes se implementará en el futuro.",
         });
 
         if (reportType === 'Z') {
@@ -74,11 +84,43 @@ export default function PosPage() {
             setChangePayments([]);
             setSearchTerm('');
             setInitialBalances({ usd: 0, ves: 0 });
+            setCashMovements([]);
              toast({
                 title: "Caja Cerrada",
                 description: "La sesión de caja ha finalizado. Puede iniciar una nueva.",
             });
         }
+    }
+    
+    const resetMovementForm = () => {
+        setMovementType('Salida');
+        setMovementAmount('');
+        setMovementPaymentMethod('');
+        setMovementConcept('');
+    };
+
+    const handleAddCashMovement = () => {
+        if (!movementAmount || movementAmount <= 0 || !movementPaymentMethod || !movementConcept) {
+             toast({
+                title: "Error",
+                description: "Todos los campos son obligatorios para registrar el movimiento.",
+                variant: "destructive",
+            });
+            return;
+        }
+        const newMovement = addCashMovement({
+            type: movementType,
+            paymentMethodId: movementPaymentMethod,
+            amount: movementAmount,
+            concept: movementConcept
+        });
+        setCashMovements(prev => [...prev, newMovement]);
+         toast({
+            title: "Movimiento Registrado",
+            description: `Se ha registrado una ${movementType.toLowerCase()} de caja.`,
+        });
+        resetMovementForm();
+        setIsCashMovementModalOpen(false);
     }
 
 
@@ -455,6 +497,68 @@ export default function PosPage() {
                 </DialogContent>
             </Dialog>
 
+            <Dialog open={isCashMovementModalOpen} onOpenChange={setIsCashMovementModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Registrar Movimiento de Caja</DialogTitle>
+                        <DialogDescription>
+                            Añada una entrada o salida de dinero que no corresponda a una venta.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                           <Label>Tipo de Movimiento</Label>
+                           <RadioGroup defaultValue="Salida" value={movementType} onValueChange={(v) => setMovementType(v as 'Entrada' | 'Salida')}>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Salida" id="r-salida" />
+                                    <Label htmlFor="r-salida">Salida de Dinero</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="Entrada" id="r-entrada" />
+                                    <Label htmlFor="r-entrada">Entrada de Dinero</Label>
+                                </div>
+                           </RadioGroup>
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="movement-payment-method">Forma de Pago</Label>
+                             <Select value={movementPaymentMethod} onValueChange={setMovementPaymentMethod}>
+                                <SelectTrigger id="movement-payment-method">
+                                    <SelectValue placeholder="Seleccione una caja" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {paymentMethodsList.filter(pm => pm.type === "Efectivo").map(pm => (
+                                        <SelectItem key={pm.id} value={pm.id}>{pm.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                             </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="movement-amount">Monto</Label>
+                            <Input
+                                id="movement-amount"
+                                type="number"
+                                value={movementAmount}
+                                onChange={(e) => setMovementAmount(parseFloat(e.target.value) || '')}
+                                placeholder="0.00"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="movement-concept">Concepto</Label>
+                            <Textarea
+                                id="movement-concept"
+                                value={movementConcept}
+                                onChange={(e) => setMovementConcept(e.target.value)}
+                                placeholder="Ej: Pago a proveedor, Compra de hielo..."
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsCashMovementModalOpen(false)}>Cancelar</Button>
+                        <Button onClick={handleAddCashMovement}>Registrar Movimiento</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {isCashDrawerOpen && (
                 <>
                     <Card className="mb-6">
@@ -478,9 +582,18 @@ export default function PosPage() {
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Reportes y Cierre</DropdownMenuLabel>
+                                        <DropdownMenuLabel>Acciones de Caja</DropdownMenuLabel>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => handleCloseCashDrawer('X')}>
+                                        <DropdownMenuItem onClick={() => {
+                                            resetMovementForm();
+                                            setIsCashMovementModalOpen(true);
+                                        }}>
+                                            <ArrowDownUp className="mr-2 h-4 w-4" />
+                                            <span>Entrada/Salida de Caja</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuLabel>Reportes y Cierre</DropdownMenuLabel>
+                                         <DropdownMenuItem onClick={() => handleCloseCashDrawer('X')}>
                                             <FileText className="mr-2 h-4 w-4" />
                                             <span>Imprimir Cierre X</span>
                                         </DropdownMenuItem>
