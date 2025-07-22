@@ -1,26 +1,53 @@
+
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { products, customers, paymentMethods } from "@/lib/placeholder-data";
-import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight } from "lucide-react";
+import { products, customers, paymentMethods, getPaymentMethods } from "@/lib/placeholder-data";
+import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
+import { toast } from '@/hooks/use-toast';
 
 type CartItem = typeof products[0] & { quantity: number };
 
 export default function PosPage() {
+    const [isCashDrawerOpen, setIsCashDrawerOpen] = useState(false);
+    const [initialBalances, setInitialBalances] = useState({ usd: 0, ves: 0 });
+
     const [step, setStep] = useState(1);
     const [cart, setCart] = useState<CartItem[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState<typeof customers[0] | null>(null);
     const [payments, setPayments] = useState<{methodId: string, amount: number}[]>([]);
     
+    const [paymentMethodsList, setPaymentMethodsList] = useState(getPaymentMethods());
+
+    useEffect(() => {
+        setPaymentMethodsList(getPaymentMethods());
+    }, []);
+
+    const handleOpenCashDrawer = () => {
+        if (initialBalances.usd < 0 || initialBalances.ves < 0) {
+            toast({
+                title: "Error",
+                description: "Los saldos iniciales no pueden ser negativos.",
+                variant: "destructive",
+            });
+            return;
+        }
+        setIsCashDrawerOpen(true);
+        toast({
+            title: "Caja Abierta",
+            description: `Caja iniciada con $${formatUsd(initialBalances.usd)} y Bs ${formatUsd(initialBalances.ves)}.`,
+        });
+    }
+
     const filteredProducts = useMemo(() => {
         if (!searchTerm) return products;
         return products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -55,7 +82,7 @@ export default function PosPage() {
     const change = useMemo(() => balance < 0 ? Math.abs(balance) : 0, [balance]);
 
     const addPayment = () => {
-        const firstPaymentMethodId = paymentMethods[0]?.id;
+        const firstPaymentMethodId = paymentMethodsList[0]?.id;
         if (firstPaymentMethodId) {
             setPayments([...payments, { methodId: firstPaymentMethodId, amount: 0 }]);
         }
@@ -156,7 +183,7 @@ export default function PosPage() {
                                             <Select value={payment.methodId} onValueChange={(value) => updatePayment(index, { ...payment, methodId: value })}>
                                                 <SelectTrigger><SelectValue /></SelectTrigger>
                                                 <SelectContent>
-                                                    {paymentMethods.map(method => <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>)}
+                                                    {paymentMethodsList.map(method => <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>)}
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -240,19 +267,67 @@ export default function PosPage() {
 
     return (
         <div className="flex-1 space-y-4">
-            {renderStep()}
-             <div className="flex justify-between mt-8">
-                <Button variant="outline" onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
-                </Button>
-                {step < 3 ? (
-                    <Button onClick={() => setStep(s => Math.min(3, s + 1))} disabled={cart.length === 0 || (step === 2 && !selectedCustomer)}>
-                        Siguiente <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                ) : (
-                    <Button disabled={balance > 0}>Completar Venta</Button>
-                )}
-            </div>
+             <Dialog open={!isCashDrawerOpen} onOpenChange={() => {}}>
+                <DialogContent className="sm:max-w-[425px]" onInteractOutside={(e) => e.preventDefault()}>
+                    <DialogHeader>
+                        <DialogTitle>Apertura de Caja</DialogTitle>
+                        <DialogDescription>
+                            Ingrese los saldos iniciales en efectivo para comenzar a operar.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="usd-balance" className="text-right">
+                                Efectivo (USD)
+                            </Label>
+                            <Input
+                                id="usd-balance"
+                                type="number"
+                                value={initialBalances.usd}
+                                onChange={(e) => setInitialBalances(b => ({ ...b, usd: parseFloat(e.target.value) || 0 }))}
+                                className="col-span-3"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="ves-balance" className="text-right">
+                                Efectivo (Bs)
+                            </Label>
+                            <Input
+                                id="ves-balance"
+                                type="number"
+                                value={initialBalances.ves}
+                                onChange={(e) => setInitialBalances(b => ({ ...b, ves: parseFloat(e.target.value) || 0 }))}
+                                className="col-span-3"
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleOpenCashDrawer} className="w-full">
+                            <DollarSign className="mr-2 h-4 w-4" />
+                            Abrir Caja
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {isCashDrawerOpen && (
+                <>
+                    {renderStep()}
+                    <div className="flex justify-between mt-8">
+                        <Button variant="outline" onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}>
+                            <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
+                        </Button>
+                        {step < 3 ? (
+                            <Button onClick={() => setStep(s => Math.min(3, s + 1))} disabled={cart.length === 0 || (step === 2 && !selectedCustomer)}>
+                                Siguiente <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        ) : (
+                            <Button disabled={balance > 0}>Completar Venta</Button>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 }
+

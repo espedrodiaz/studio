@@ -25,6 +25,7 @@ import {
   PanelLeft,
   Store,
   Landmark,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -64,7 +65,8 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
         <NavLink href="/dashboard/customers" icon={Users} onClick={onLinkClick}>Clientes</NavLink>
         <NavLink href="/dashboard/suppliers" icon={Truck} onClick={onLinkClick}>Proveedores</NavLink>
         <NavLink href="/dashboard/exchange-rates" icon={Landmark} onClick={onLinkClick}>Tasas de Cambio</NavLink>
-        
+        <NavLink href="/dashboard/payment-methods" icon={Wallet} onClick={onLinkClick}>Formas de Pago</NavLink>
+
         <Accordion type="single" collapsible defaultValue={isAccountsActive ? "item-1" : ""}>
           <AccordionItem value="item-1" className="border-b-0">
             <AccordionTrigger className={cn(

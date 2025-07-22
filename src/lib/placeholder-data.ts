@@ -64,13 +64,34 @@ export const accountsReceivable = [
     { id: 'AR002', customer: 'Constructora XYZ', amount: 350.00, dueDate: '2024-08-20', status: 'Pendiente' },
 ];
 
-export const paymentMethods = [
+export let paymentMethods = [
     { id: 'pay-01', name: 'Efectivo USD', currency: '$', type: 'Efectivo', givesChange: true },
     { id: 'pay-02', name: 'Efectivo VES', currency: 'Bs', type: 'Efectivo', givesChange: true },
     { id: 'pay-03', name: 'Zelle', currency: '$', type: 'Digital', givesChange: false },
     { id: 'pay-04', name: 'Pago Móvil', currency: 'Bs', type: 'Digital', givesChange: false },
     { id: 'pay-05', name: 'Punto de Venta', currency: 'Bs', type: 'Digital', givesChange: false },
 ];
+
+export const getPaymentMethods = () => [...paymentMethods];
+
+export const addPaymentMethod = (method: Omit<typeof paymentMethods[0], 'id'>) => {
+    const newMethod = { ...method, id: `pay-${new Date().getTime()}`};
+    paymentMethods.push(newMethod);
+    return newMethod;
+}
+
+export const updatePaymentMethod = (id: string, updates: Partial<Omit<typeof paymentMethods[0], 'id'>>) => {
+    let methodToUpdate = paymentMethods.find(m => m.id === id);
+    if(methodToUpdate) {
+        Object.assign(methodToUpdate, updates);
+    }
+    return methodToUpdate;
+}
+
+export const deletePaymentMethod = (id: string) => {
+    paymentMethods = paymentMethods.filter(m => m.id !== id);
+}
+
 
 export let exchangeRates = [
     { id: 'RATE003', date: '2024-07-25T09:00:00.000Z', rate: 100.00 },
