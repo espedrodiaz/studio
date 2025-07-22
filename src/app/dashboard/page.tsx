@@ -4,6 +4,7 @@ import {
   DollarSign,
   Package,
   CreditCard,
+  Users,
   LineChart,
 } from "lucide-react";
 import {
@@ -28,16 +29,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { sales, products } from "@/lib/placeholder-data";
+import { sales, products, accountsPayable, accountsReceivable } from "@/lib/placeholder-data";
 
 export default function DashboardPage() {
     const totalInventoryCost = products.reduce((sum, p) => sum + p.purchasePrice * p.stock, 0);
     const totalInventoryValue = products.reduce((sum, p) => sum + p.salePrice * p.stock, 0);
     const estimatedProfit = totalInventoryValue - totalInventoryCost;
+    const totalReceivable = accountsReceivable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
+    const totalPayable = accountsPayable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     
   return (
     <>
-      <div className="grid gap-4 md:grid-cols-2 md:gap-8 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Costo del Inventario</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${totalInventoryCost.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">
+              Inversión total en stock
+            </p>
+          </CardContent>
+        </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
@@ -68,25 +83,25 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Ventas (Este Mes)</CardTitle>
-            <LineChart className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Cuentas por Cobrar</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+${sales.reduce((acc, sale) => acc + sale.total, 0).toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">
-              +12.1% desde el mes pasado
+            <div className="text-2xl font-bold">${totalReceivable.toFixed(2)}</div>
+             <p className="text-xs text-muted-foreground">
+              Deudas de clientes pendientes
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Costo del Inventario</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Cuentas por Pagar</CardTitle>
+            <LineChart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalInventoryCost.toFixed(2)}</div>
+            <div className="text-2xl font-bold">${totalPayable.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              Inversión total en stock
+              Deudas a proveedores pendientes
             </p>
           </CardContent>
         </Card>
