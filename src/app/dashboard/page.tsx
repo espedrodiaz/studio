@@ -42,7 +42,7 @@ import { cn } from "@/lib/utils";
 
 export default async function DashboardPage() {
     // Simulate a 3-second loading time to demonstrate the loading screen.
-    await new Promise(resolve => setTimeout(resolve, 3000));
+    // await new Promise(resolve => setTimeout(resolve, 3000));
 
     const totalInventoryCost = products.reduce((sum, p) => sum + p.purchasePrice * p.stock, 0);
     const totalInventoryValue = products.reduce((sum, p) => sum + p.salePrice * p.stock, 0);
@@ -55,7 +55,7 @@ export default async function DashboardPage() {
 
     if (totalPayable > totalAssets) {
         financialStatus = 'grave';
-    } else if (totalPayable > totalInventoryValue) {
+    } else if (totalPayable > totalReceivable) {
         financialStatus = 'critico';
     } else {
         financialStatus = 'saludable';
