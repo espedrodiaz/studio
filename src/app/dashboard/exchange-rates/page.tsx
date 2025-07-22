@@ -68,7 +68,7 @@ export default function ExchangeRatesPage() {
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
 
   const [isBcvModalOpen, setIsBcvModalOpen] = useState(false);
-  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+  const [isSupplierManagerOpen, setIsSupplierManagerOpen] = useState(false);
   
   const [editingSupplierRate, setEditingSupplierRate] = useState<SupplierRate | null>(null);
   const [supplierRateName, setSupplierRateName] = useState("");
@@ -155,11 +155,16 @@ export default function ExchangeRatesPage() {
     toast({ title: "Tasa Eliminada", description: "La tasa BCV ha sido eliminada del historial.", variant: "destructive" });
   }
 
-  const handleOpenSupplierModal = (rate: SupplierRate | null = null) => {
+  const handleEditSupplierClick = (rate: SupplierRate) => {
     setEditingSupplierRate(rate);
-    setSupplierRateName(rate ? rate.name : "");
-    setSupplierRateAmount(rate ? rate.rate : "");
-    setIsSupplierModalOpen(true);
+    setSupplierRateName(rate.name);
+    setSupplierRateAmount(rate.rate);
+  }
+
+  const clearSupplierForm = () => {
+    setEditingSupplierRate(null);
+    setSupplierRateName("");
+    setSupplierRateAmount("");
   }
 
   const handleSaveSupplierRate = () => {
@@ -178,10 +183,7 @@ export default function ExchangeRatesPage() {
        toast({ title: "Tasa de Proveedor Agregada", description: `La tasa para ${supplierRateName} ha sido registrada.` });
     }
     
-    setIsSupplierModalOpen(false);
-    setEditingSupplierRate(null);
-    setSupplierRateName("");
-    setSupplierRateAmount("");
+    clearSupplierForm();
   }
   
   const handleDeleteSupplierRate = (id: string) => {
@@ -249,15 +251,54 @@ export default function ExchangeRatesPage() {
                         </DialogContent>
                     </Dialog>
                     
-                    <Dialog open={isSupplierModalOpen} onOpenChange={setIsSupplierModalOpen}>
-                        <DialogTrigger asChild><Button variant="outline" className="w-full gap-2" onClick={() => handleOpenSupplierModal()}><PlusCircle className="h-4 w-4"/> Añadir Tasa Proveedor</Button></DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader><DialogTitle>{editingSupplierRate ? "Editar" : "Añadir"} Tasa de Proveedor</DialogTitle><DialogDescription>Registre una tasa de cambio específica de un proveedor.</DialogDescription></DialogHeader>
-                            <div className="grid gap-4 py-4">
+                    <Dialog open={isSupplierManagerOpen} onOpenChange={(isOpen) => { setIsSupplierManagerOpen(isOpen); if (!isOpen) clearSupplierForm(); }}>
+                        <DialogTrigger asChild><Button variant="outline" className="w-full gap-2" onClick={() => setIsSupplierManagerOpen(true)}><PlusCircle className="h-4 w-4"/> Gestionar Tasas Proveedores</Button></DialogTrigger>
+                        <DialogContent className="max-w-3xl">
+                            <DialogHeader>
+                                <DialogTitle>Gestionar Tasas de Proveedores</DialogTitle>
+                                <DialogDescription>Añada, edite o elimine las tasas de cambio de sus proveedores.</DialogDescription>
+                            </DialogHeader>
+                             <div className="grid grid-cols-3 gap-4 py-4 border-b">
                                 <div className="space-y-2"><Label htmlFor="supplier-name">Nombre del Proveedor</Label><Input id="supplier-name" value={supplierRateName} onChange={(e) => setSupplierRateName(e.target.value)} placeholder="Ej: Proveedor XYZ"/></div>
                                 <div className="space-y-2"><Label htmlFor="supplier-rate">Tasa (Bs por 1$)</Label><Input id="supplier-rate" type="number" value={supplierRateAmount} onChange={(e) => setSupplierRateAmount(parseFloat(e.target.value) || "")} placeholder="Ej: 41.20"/></div>
+                                <div className="flex items-end gap-2">
+                                  <Button onClick={handleSaveSupplierRate} className="w-full">{editingSupplierRate ? "Guardar Cambios" : "Añadir Tasa"}</Button>
+                                  {editingSupplierRate && <Button variant="ghost" onClick={clearSupplierForm}>Cancelar</Button>}
+                                </div>
                             </div>
-                            <DialogFooter><Button variant="outline" onClick={() => setIsSupplierModalOpen(false)}>Cancelar</Button><Button onClick={handleSaveSupplierRate}>{editingSupplierRate ? "Guardar Cambios" : "Registrar Tasa"}</Button></DialogFooter>
+                            <div className="max-h-[45vh] overflow-y-auto mt-4">
+                              <Table>
+                                 <TableHeader><TableRow><TableHead>Proveedor</TableHead><TableHead className="text-center">Tasa (Bs/$)</TableHead><TableHead className="text-center">Dif. vs BCV</TableHead><TableHead>Últ. Actualización</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader>
+                                 <TableBody>
+                                  {supplierRates.map(rate => {
+                                      const diff = getSupplierRateDifference(rate.rate);
+                                      return (
+                                      <TableRow key={rate.id}>
+                                          <TableCell className="font-medium">{rate.name}</TableCell>
+                                          <TableCell className="font-medium text-center">{formatBs(rate.rate)}</TableCell>
+                                          <TableCell className={cn("text-xs text-center", diff.difference > 0 ? 'text-red-500' : 'text-green-600')}>
+                                            {diff.difference >= 0 ? '+' : ''}{formatBs(diff.difference)} ({diff.percentage.toFixed(2)}%)
+                                          </TableCell>
+                                          <TableCell className="text-xs">{formatVenezuelanDateTime(rate.lastUpdated)}</TableCell>
+                                          <TableCell>
+                                            <DropdownMenu>
+                                              <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
+                                              <DropdownMenuContent align="end">
+                                                  <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                                  <DropdownMenuItem onClick={() => handleEditSupplierClick(rate)} className="gap-2"><Edit className="h-4 w-4"/> Editar</DropdownMenuItem>
+                                                  <DropdownMenuItem onClick={() => handleDeleteSupplierRate(rate.id)} className="text-destructive gap-2"><Trash2 className="h-4 w-4"/> Eliminar</DropdownMenuItem>
+                                              </DropdownMenuContent>
+                                            </DropdownMenu>
+                                          </TableCell>
+                                      </TableRow>
+                                      )
+                                  })}
+                                 </TableBody>
+                              </Table>
+                            </div>
+                            <DialogFooter>
+                               <Button variant="outline" onClick={() => setIsSupplierManagerOpen(false)}>Cerrar</Button>
+                           </DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </CardContent>
@@ -283,7 +324,7 @@ export default function ExchangeRatesPage() {
                           </CardContent>
                       </Card>
                     )}
-                    <div className="max-h-[45vh] overflow-y-auto">
+                    <div className="max-h-[60vh] overflow-y-auto">
                         <Table>
                             <TableHeader><TableRow><TableHead>Fecha y Hora</TableHead><TableHead className="text-center">Tasa (Bs/$)</TableHead><TableHead className="text-center">Cambio</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader>
                             <TableBody>
@@ -314,42 +355,9 @@ export default function ExchangeRatesPage() {
                     </div>
                 </CardContent>
             </Card>
-            <Card>
-                <CardHeader><CardTitle>Tasas de Proveedores</CardTitle><CardDescription>Tasas de referencia de distintos proveedores.</CardDescription></CardHeader>
-                <CardContent>
-                     <div className="max-h-[45vh] overflow-y-auto">
-                        <Table>
-                           <TableHeader><TableRow><TableHead>Proveedor</TableHead><TableHead className="text-center">Tasa (Bs/$)</TableHead><TableHead className="text-center">Dif. vs BCV</TableHead><TableHead>Últ. Actualización</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader>
-                           <TableBody>
-                            {supplierRates.map(rate => {
-                                const diff = getSupplierRateDifference(rate.rate);
-                                return (
-                                <TableRow key={rate.id}>
-                                    <TableCell className="font-medium">{rate.name}</TableCell>
-                                    <TableCell className="font-medium text-center">{formatBs(rate.rate)}</TableCell>
-                                    <TableCell className={cn("text-xs text-center", diff.difference > 0 ? 'text-red-500' : 'text-green-600')}>
-                                      {diff.difference >= 0 ? '+' : ''}{formatBs(diff.difference)} ({diff.percentage.toFixed(2)}%)
-                                    </TableCell>
-                                    <TableCell className="text-xs">{formatVenezuelanDateTime(rate.lastUpdated)}</TableCell>
-                                    <TableCell>
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                            <DropdownMenuItem onClick={() => handleOpenSupplierModal(rate)} className="gap-2"><Edit className="h-4 w-4"/> Editar</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleDeleteSupplierRate(rate.id)} className="text-destructive gap-2"><Trash2 className="h-4 w-4"/> Eliminar</DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
-                                )
-                            })}
-                           </TableBody>
-                        </Table>
-                     </div>
-                </CardContent>
-            </Card>
         </div>
     </div>
   );
 }
+
+    
