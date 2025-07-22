@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/componen
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { products, customers, paymentMethods, getPaymentMethods } from "@/lib/placeholder-data";
+import { products, customers, getPaymentMethods, getCurrentBcvRate } from "@/lib/placeholder-data";
 import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -25,8 +25,10 @@ export default function PosPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCustomer, setSelectedCustomer] = useState<typeof customers[0] | null>(null);
     const [payments, setPayments] = useState<{methodId: string, amount: number}[]>([]);
+    const [changePayments, setChangePayments] = useState<{methodId: string, amount: number}[]>([]);
     
     const [paymentMethodsList, setPaymentMethodsList] = useState(getPaymentMethods());
+    const bcvRate = getCurrentBcvRate();
 
     useEffect(() => {
         setPaymentMethodsList(getPaymentMethods());
@@ -44,12 +46,12 @@ export default function PosPage() {
         setIsCashDrawerOpen(true);
         toast({
             title: "Caja Abierta",
-            description: `Caja iniciada con $${formatUsd(initialBalances.usd)} y Bs ${formatUsd(initialBalances.ves)}.`,
+            description: `Caja iniciada con $${formatUsd(initialBalances.usd)} y Bs ${formatBs(initialBalances.ves)}.`,
         });
     }
 
     const filteredProducts = useMemo(() => {
-        if (!searchTerm) return products;
+        if (!searchTerm) return [];
         return products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
     }, [searchTerm]);
 
@@ -72,19 +74,44 @@ export default function PosPage() {
         });
     };
 
-    const formatUsd = (amount: number) => {
-        return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
+    const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatBs = (amount: number) => amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    
+    const convertToBs = (amountUsd: number) => amountUsd * bcvRate;
 
     const subtotal = useMemo(() => cart.reduce((acc, item) => acc + item.salePrice * item.quantity, 0), [cart]);
-    const totalPaid = useMemo(() => payments.reduce((acc, p) => acc + p.amount, 0), [payments]);
+    
+    const totalPaid = useMemo(() => {
+        return payments.reduce((acc, p) => {
+            const method = paymentMethodsList.find(m => m.id === p.methodId);
+            if (method?.currency === 'Bs') {
+                return acc + (p.amount / bcvRate);
+            }
+            return acc + p.amount;
+        }, 0);
+    }, [payments, paymentMethodsList, bcvRate]);
+
     const balance = useMemo(() => subtotal - totalPaid, [subtotal, totalPaid]);
-    const change = useMemo(() => balance < 0 ? Math.abs(balance) : 0, [balance]);
+    const changeToGive = useMemo(() => balance < 0 ? Math.abs(balance) : 0, [balance]);
+    
+    const totalChangeGiven = useMemo(() => {
+        return changePayments.reduce((acc, p) => {
+             const method = paymentMethodsList.find(m => m.id === p.methodId);
+            if (method?.currency === 'Bs') {
+                return acc + (p.amount / bcvRate);
+            }
+            return acc + p.amount;
+        }, 0)
+    }, [changePayments, paymentMethodsList, bcvRate]);
+
+    const remainingChange = useMemo(() => changeToGive - totalChangeGiven, [changeToGive, totalChangeGiven]);
+
 
     const addPayment = () => {
-        const firstPaymentMethodId = paymentMethodsList[0]?.id;
-        if (firstPaymentMethodId) {
-            setPayments([...payments, { methodId: firstPaymentMethodId, amount: 0 }]);
+        const firstDigitalMethod = paymentMethodsList.find(m => m.type === 'Digital');
+        const firstMethodId = firstDigitalMethod?.id || paymentMethodsList[0]?.id;
+        if (firstMethodId) {
+            setPayments([...payments, { methodId: firstMethodId, amount: 0 }]);
         }
     };
     
@@ -96,6 +123,36 @@ export default function PosPage() {
 
     const removePayment = (index: number) => {
         setPayments(payments.filter((_, i) => i !== index));
+    };
+
+     const addChangePayment = () => {
+        const changeGivingMethods = paymentMethodsList.filter(m => m.givesChange);
+        const firstChangeMethodId = changeGivingMethods[0]?.id;
+        if (firstChangeMethodId) {
+            setChangePayments([...changePayments, { methodId: firstChangeMethodId, amount: 0 }]);
+        }
+    };
+    
+    const updateChangePayment = (index: number, newPayment: { methodId: string, amount: number }) => {
+        const newPayments = [...changePayments];
+        newPayments[index] = newPayment;
+        setChangePayments(newPayments);
+    };
+
+    const removeChangePayment = (index: number) => {
+        setChangePayments(changePayments.filter((_, i) => i !== index));
+    };
+
+    const handleCompleteSale = () => {
+        // In a real app, this would save the sale, update stock, etc.
+        toast({ title: "Venta Completada", description: "La venta ha sido registrada con éxito." });
+        // Reset state for next sale
+        setStep(1);
+        setCart([]);
+        setSelectedCustomer(null);
+        setPayments([]);
+        setChangePayments([]);
+        setSearchTerm('');
     };
 
     const renderStep = () => {
@@ -117,16 +174,21 @@ export default function PosPage() {
                                         />
                                     </div>
                                 </CardHeader>
-                                <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto">
+                                <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 min-h-[60vh] max-h-[60vh] overflow-y-auto">
                                     {filteredProducts.map(product => (
                                         <Card key={product.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => addToCart(product)}>
                                             <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                                                <img src={`https://placehold.co/100x100.png`} alt={product.name} data-ai-hint="product" className="rounded-md mb-2"/>
                                                 <p className="font-semibold text-sm">{product.name}</p>
-                                                <p className="text-muted-foreground text-xs">${formatUsd(product.salePrice)}</p>
+                                                <p className="text-primary font-bold">{formatBs(convertToBs(product.salePrice))} Bs</p>
+                                                <p className="text-muted-foreground text-xs">(${formatUsd(product.salePrice)})</p>
                                             </CardContent>
                                         </Card>
                                     ))}
+                                    {searchTerm && filteredProducts.length === 0 && (
+                                        <div className="col-span-full text-center text-muted-foreground py-10">
+                                            No se encontraron productos.
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </div>
@@ -173,28 +235,60 @@ export default function PosPage() {
                         <Card className="md:col-span-2">
                             <CardHeader>
                                 <CardTitle>Procesar Pago</CardTitle>
-                                <CardContent className="text-muted-foreground">Cliente: {selectedCustomer?.name || 'Cliente Ocasional'}</CardContent>
+                                <CardContent className="text-muted-foreground p-0 pt-2">Cliente: {selectedCustomer?.name || 'Cliente Ocasional'}</CardContent>
                             </CardHeader>
                              <CardContent className="space-y-4">
-                                {payments.map((payment, index) => (
-                                    <div key={index} className="flex gap-2 items-end p-4 border rounded-lg">
-                                        <div className="flex-1">
-                                            <Label>Método de Pago</Label>
-                                            <Select value={payment.methodId} onValueChange={(value) => updatePayment(index, { ...payment, methodId: value })}>
-                                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                                <SelectContent>
-                                                    {paymentMethodsList.map(method => <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
+                                <Label className="font-semibold">Recibir Pago</Label>
+                                {payments.map((payment, index) => {
+                                    const method = paymentMethodsList.find(m => m.id === payment.methodId);
+                                    return (
+                                        <div key={index} className="flex gap-2 items-end p-4 border rounded-lg">
+                                            <div className="flex-1">
+                                                <Label>Método de Pago</Label>
+                                                <Select value={payment.methodId} onValueChange={(value) => updatePayment(index, { ...payment, methodId: value, amount: 0 })}>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        {paymentMethodsList.map(method => <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="flex-1">
+                                                <Label>Monto ({method?.currency})</Label>
+                                                <Input type="number" value={payment.amount} onChange={(e) => updatePayment(index, { ...payment, amount: parseFloat(e.target.value) || 0 })} />
+                                            </div>
+                                            <Button variant="ghost" size="icon" onClick={() => removePayment(index)}><X className="h-4 w-4"/></Button>
                                         </div>
-                                        <div className="flex-1">
-                                            <Label>Monto</Label>
-                                            <Input type="number" value={payment.amount} onChange={(e) => updatePayment(index, { ...payment, amount: parseFloat(e.target.value) || 0 })} />
-                                        </div>
-                                        <Button variant="ghost" size="icon" onClick={() => removePayment(index)}><X className="h-4 w-4"/></Button>
-                                    </div>
-                                ))}
+                                    )
+                                })}
                                 <Button variant="outline" onClick={addPayment}>Añadir Método de Pago</Button>
+                                 {changeToGive > 0 && (
+                                    <div className="pt-4 mt-4 border-t">
+                                        <Label className="font-semibold">Entregar Vuelto</Label>
+                                        <p className="text-destructive text-sm font-semibold mb-2">Faltan ${formatUsd(remainingChange)} de vuelto por entregar.</p>
+                                        {changePayments.map((payment, index) => {
+                                             const method = paymentMethodsList.find(m => m.id === payment.methodId);
+                                             return (
+                                                <div key={index} className="flex gap-2 items-end p-4 border rounded-lg mt-2">
+                                                    <div className="flex-1">
+                                                        <Label>Método de Vuelto</Label>
+                                                        <Select value={payment.methodId} onValueChange={(value) => updateChangePayment(index, { ...payment, methodId: value, amount: 0 })}>
+                                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                                            <SelectContent>
+                                                                {paymentMethodsList.filter(m => m.givesChange).map(method => <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>)}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <Label>Monto ({method?.currency})</Label>
+                                                        <Input type="number" value={payment.amount} onChange={(e) => updateChangePayment(index, { ...payment, amount: parseFloat(e.target.value) || 0 })} />
+                                                    </div>
+                                                    <Button variant="ghost" size="icon" onClick={() => removeChangePayment(index)}><X className="h-4 w-4"/></Button>
+                                                </div>
+                                             )
+                                        })}
+                                         <Button variant="outline" className="mt-2" onClick={addChangePayment}>Añadir Vuelto</Button>
+                                    </div>
+                                 )}
                             </CardContent>
                         </Card>
                         {renderCart()}
@@ -218,7 +312,6 @@ export default function PosPage() {
                     <div className="space-y-4">
                         {cart.map(item => (
                             <div key={item.id} className="flex items-center gap-4">
-                                <img src={`https://placehold.co/40x40.png`} data-ai-hint="product item" alt={item.name} className="w-10 h-10 rounded-md" />
                                 <div className="flex-grow">
                                     <p className="font-semibold text-sm">{item.name}</p>
                                     <p className="text-xs text-muted-foreground">${formatUsd(item.salePrice)}</p>
@@ -228,7 +321,10 @@ export default function PosPage() {
                                     <span>{item.quantity}</span>
                                     <Button size="icon" variant="ghost" onClick={() => updateQuantity(item.id, item.quantity + 1)}><PlusCircle className="h-4 w-4" /></Button>
                                 </div>
-                                <p className="font-semibold w-20 text-right">${formatUsd(item.salePrice * item.quantity)}</p>
+                                <div className="w-28 text-right">
+                                    <p className="font-semibold text-sm">{formatBs(convertToBs(item.salePrice * item.quantity))} Bs</p>
+                                    <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -239,23 +335,37 @@ export default function PosPage() {
                     <Separator />
                     <div className="flex justify-between font-semibold">
                         <span>Subtotal</span>
-                        <span>${formatUsd(subtotal)}</span>
+                        <span>
+                            {formatBs(convertToBs(subtotal))} Bs
+                            <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(subtotal)})</span>
+                        </span>
                     </div>
                     {step === 3 && (
                        <>
                         <div className="flex justify-between text-muted-foreground">
                             <span>Pagado</span>
-                            <span>${formatUsd(totalPaid)}</span>
+                             <span>
+                                {formatBs(convertToBs(totalPaid))} Bs
+                                <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(totalPaid)})</span>
+                            </span>
                         </div>
                         <Separator />
                         <div className={`flex justify-between font-bold text-lg ${balance > 0 ? 'text-destructive' : 'text-primary'}`}>
                             <span>{balance > 0 ? 'Faltante' : 'Total'}</span>
-                            <span>${balance > 0 ? formatUsd(balance) : formatUsd(subtotal)}</span>
+                             <span>
+                                {balance > 0 
+                                    ? `${formatBs(convertToBs(balance))} Bs`
+                                    : `${formatBs(convertToBs(subtotal))} Bs`
+                                }
+                            </span>
                         </div>
-                        {change > 0 && (
+                        {changeToGive > 0 && (
                             <div className="flex justify-between font-bold text-lg text-green-600">
                                 <span>Vuelto</span>
-                                <span>${formatUsd(change)}</span>
+                                <span>
+                                    {formatBs(convertToBs(changeToGive))} Bs
+                                    <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(changeToGive)})</span>
+                                </span>
                             </div>
                         )}
                         </>
@@ -322,7 +432,7 @@ export default function PosPage() {
                                 Siguiente <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                         ) : (
-                            <Button disabled={balance > 0}>Completar Venta</Button>
+                            <Button onClick={handleCompleteSale} disabled={balance > 0 || (changeToGive > 0 && remainingChange > 0.001)}>Completar Venta</Button>
                         )}
                     </div>
                 </>
