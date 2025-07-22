@@ -268,7 +268,7 @@ export default function ExchangeRatesPage() {
                             </div>
                             <div className="max-h-[45vh] overflow-y-auto mt-4">
                               <Table>
-                                 <TableHeader><TableRow><TableHead className="w-[40%]">Proveedor / Tasa</TableHead><TableHead className="text-center">Dif. vs BCV</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader>
+                                 <TableHeader><TableRow><TableHead className="w-[40%]">Proveedor / Tasa</TableHead><TableHead className="text-center">Dif. vs BCV</TableHead><TableHead className="text-right">Acciones</TableHead></TableRow></TableHeader>
                                  <TableBody>
                                   {supplierRates.map(rate => {
                                       const diff = getSupplierRateDifference(rate.rate);
@@ -284,15 +284,17 @@ export default function ExchangeRatesPage() {
                                           <TableCell className={cn("text-sm text-center align-top", diff.difference > 0 ? 'text-red-500' : 'text-green-600')}>
                                             {diff.difference >= 0 ? '+' : ''}{formatBs(diff.difference)} ({diff.percentage.toFixed(2)}%)
                                           </TableCell>
-                                          <TableCell className="align-top">
-                                            <DropdownMenu>
-                                              <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
-                                              <DropdownMenuContent align="end">
-                                                  <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                                  <DropdownMenuItem onClick={() => handleEditSupplierClick(rate)} className="gap-2"><Edit className="h-4 w-4"/> Editar</DropdownMenuItem>
-                                                  <DropdownMenuItem onClick={() => handleDeleteSupplierRate(rate.id)} className="text-destructive gap-2"><Trash2 className="h-4 w-4"/> Eliminar</DropdownMenuItem>
-                                              </DropdownMenuContent>
-                                            </DropdownMenu>
+                                          <TableCell className="align-top text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <Button aria-haspopup="true" size="icon" variant="ghost" onClick={() => handleEditSupplierClick(rate)}>
+                                                    <Edit className="h-4 w-4" />
+                                                    <span className="sr-only">Editar</span>
+                                                </Button>
+                                                <Button aria-haspopup="true" size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDeleteSupplierRate(rate.id)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                    <span className="sr-only">Eliminar</span>
+                                                </Button>
+                                            </div>
                                           </TableCell>
                                       </TableRow>
                                       )
@@ -364,4 +366,5 @@ export default function ExchangeRatesPage() {
   );
 }
 
+    
     
