@@ -63,6 +63,17 @@ export default function PosPage() {
     const [customerForm, setCustomerForm] = useState<Omit<Customer, 'id'>>({ name: '', idNumber: '', email: '', phone: '', vehicles: [] });
     const [vehicleForm, setVehicleForm] = useState<Vehicle>({ brand: '', model: '', engine: '', year: '' });
 
+    // Local state for quantity inputs
+    const [quantityInputs, setQuantityInputs] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        const newInputs: Record<string, string> = {};
+        cart.forEach(item => {
+            newInputs[item.id] = String(item.quantity);
+        });
+        setQuantityInputs(newInputs);
+    }, [cart]);
+
 
     useEffect(() => {
         setPaymentMethodsList(getPaymentMethods());
@@ -161,7 +172,7 @@ export default function PosPage() {
             if (existingItem) {
                 return prevCart.map(item => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item);
             }
-            return [...prevCart, { ...product, quantity: 1 }];
+            return [...prevCart, { ...product, quantity: 1, salePrice: product.salePrice }];
         });
         setProductSearchTerm('');
     };
@@ -174,6 +185,23 @@ export default function PosPage() {
             return prevCart.map(item => item.id === productId ? { ...item, quantity: newQuantity } : item);
         });
     };
+    
+    const handleQuantityInputChange = (productId: string, value: string) => {
+        setQuantityInputs(prev => ({ ...prev, [productId]: value }));
+    };
+
+    const handleQuantityInputBlur = (productId: string) => {
+        const newQuantity = parseInt(quantityInputs[productId], 10) || 1;
+        updateQuantity(productId, newQuantity);
+    };
+
+    const handleQuantityInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>, productId: string) => {
+        if (event.key === 'Enter') {
+            handleQuantityInputBlur(productId);
+            event.currentTarget.blur();
+        }
+    };
+
 
     const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const formatBs = (amount: number) => amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -570,7 +598,7 @@ export default function PosPage() {
                       <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>
                   </div>
               )}
-              <CardContent className={cn("max-h-[50vh] overflow-y-auto", { 'pt-0': !isCartExpanded })}>
+              <CardContent className={cn("max-h-[50vh] overflow-y-auto pr-4", { 'pt-0': !isCartExpanded })}>
                   {cart.length === 0 ? (
                        <div className="py-12 flex flex-col items-center justify-center text-center text-muted-foreground">
                           <ShoppingCart className="h-12 w-12 mb-4" />
@@ -581,30 +609,44 @@ export default function PosPage() {
                       <div className="space-y-4">
                           {selectedCustomer && isCartExpanded && <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>}
                           {cart.map(item => (
-                            <div key={item.id} className="grid grid-cols-[1fr_auto_auto_auto_auto] items-center gap-2">
-                                <div className="flex-grow">
-                                    <p className="font-semibold text-sm">{item.name}</p>
-                                    <p className="text-xs text-muted-foreground">${formatUsd(item.salePrice)}</p>
+                              <Card key={item.id} className="p-4">
+                                <p className="font-semibold text-sm mb-2">{item.name}</p>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Input
+                                            type="number"
+                                            value={quantityInputs[item.id] || ''}
+                                            onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
+                                            onBlur={() => handleQuantityInputBlur(item.id)}
+                                            onKeyDown={(e) => handleQuantityInputKeyDown(e, item.id)}
+                                            className="h-8 w-16 text-center"
+                                        />
+                                        <span className="text-muted-foreground text-sm">x ${formatUsd(item.salePrice)}</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-1">
+                                        <div className="text-right">
+                                            <p className="font-semibold text-base">{formatBs(convertToVes(item.salePrice * item.quantity))}</p>
+                                            <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
+                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handlePriceEdit(item)}>
+                                                    <Pencil className="mr-2 h-4 w-4"/> Editar Precio
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem className="text-destructive" onClick={() => updateQuantity(item.id, 0)}>
+                                                    <Trash2 className="mr-2 h-4 w-4"/> Eliminar
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
                                 </div>
-                                <div className="w-16">
-                                    <Input
-                                        type="number"
-                                        value={item.quantity}
-                                        onChange={(e) => updateQuantity(item.id, parseInt(e.target.value, 10) || 0)}
-                                        className="h-8 text-center p-1"
-                                    />
-                                </div>
-                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handlePriceEdit(item)}>
-                                    <Pencil className="h-4 w-4" />
-                                </Button>
-                                <div className="w-24 text-right">
-                                    <p className="font-semibold text-sm">{formatBs(convertToVes(item.salePrice * item.quantity))}</p>
-                                    <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
-                                </div>
-                                <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => updateQuantity(item.id, 0)}>
-                                  <X className="h-4 w-4"/>
-                                </Button>
-                            </div>
+                            </Card>
                           ))}
                       </div>
                   )}
