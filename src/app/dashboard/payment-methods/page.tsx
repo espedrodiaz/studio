@@ -130,7 +130,7 @@ export default function PaymentMethodsPage() {
               <TableHead>Nombre</TableHead>
               <TableHead>Moneda</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead>Da Vuelto</TableHead>
+              <TableHead>Se usa para vuelto</TableHead>
               <TableHead>
                 <span className="sr-only">Acciones</span>
               </TableHead>
@@ -210,7 +210,7 @@ export default function PaymentMethodsPage() {
                     htmlFor="givesChange"
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                   Esta forma de pago permite dar vuelto
+                   Usar esta forma de pago para dar vuelto
                 </label>
             </div>
           </div>
@@ -223,4 +223,3 @@ export default function PaymentMethodsPage() {
     </Card>
   );
 }
-
