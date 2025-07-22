@@ -150,7 +150,7 @@ export default function ExchangeRatesPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Fecha y Hora (VET)</TableHead>
+                                <TableHead>Fecha y Hora</TableHead>
                                 <TableHead className="text-right">Tasa (Bs/$)</TableHead>
                                 <TableHead className="text-center">Cambio</TableHead>
                                 <TableHead><span className="sr-only">Acciones</span></TableHead>
