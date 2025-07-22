@@ -67,11 +67,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Costo del Inventario</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+            <CreditCard className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">${formatUsd(totalInventoryCost)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold">${formatUsd(totalInventoryCost)}</div>
+            <p className="text-xs text-green-600">
               Bs {formatBs(totalInventoryCost)}
             </p>
           </CardContent>
@@ -79,11 +79,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Valor del Inventario</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <Package className="h-4 w-4 text-sky-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-sky-600">${formatUsd(totalInventoryValue)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold">${formatUsd(totalInventoryValue)}</div>
+            <p className="text-xs text-green-600">
                Bs {formatBs(totalInventoryValue)}
             </p>
           </CardContent>
@@ -91,11 +91,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Ganancia Estimada</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-green-700" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-700">${formatUsd(estimatedProfit)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold">${formatUsd(estimatedProfit)}</div>
+            <p className="text-xs text-green-600">
               Bs {formatBs(estimatedProfit)}
             </p>
           </CardContent>
@@ -103,11 +103,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Cuentas por Cobrar</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <Users className="h-4 w-4 text-orange-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">${formatUsd(totalReceivable)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold">${formatUsd(totalReceivable)}</div>
+            <p className="text-xs text-green-600">
                Bs {formatBs(totalReceivable)}
             </p>
           </CardContent>
@@ -115,11 +115,11 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle>Cuentas por Pagar</CardTitle>
-            <LineChart className="h-4 w-4 text-muted-foreground" />
+            <LineChart className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">${formatUsd(totalPayable)}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold">${formatUsd(totalPayable)}</div>
+            <p className="text-xs text-green-600">
                Bs {formatBs(totalPayable)}
             </p>
           </CardContent>
