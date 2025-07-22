@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 
 type CartItem = typeof products[0] & { quantity: number; salePrice: number };
 type CashMovement = typeof initialCashMovements[0];
+type PaymentMethod = ReturnType<typeof getPaymentMethods>[0];
 
 
 export default function PosPage() {
@@ -65,6 +66,11 @@ export default function PosPage() {
 
     // Local state for quantity inputs
     const [quantityInputs, setQuantityInputs] = useState<Record<string, string>>({});
+
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<PaymentMethod | null>(null);
+    const [paymentAmount, setPaymentAmount] = useState<number | ''>('');
+
 
     useEffect(() => {
         const newInputs: Record<string, string> = {};
@@ -180,7 +186,10 @@ export default function PosPage() {
     const updateQuantity = (productId: string, newQuantity: number) => {
         setCart(prevCart => {
             if (newQuantity <= 0) {
-                return prevCart.filter(item => item.id !== productId);
+                 const currentItem = cart.find(item => item.id === productId);
+                 setQuantityInputs(prev => ({...prev, [productId]: String(currentItem?.quantity || 1)}));
+                 toast({title: "Cantidad no válida", description: "La cantidad debe ser mayor a cero.", variant: "destructive"});
+                 return prevCart;
             }
             return prevCart.map(item => item.id === productId ? { ...item, quantity: newQuantity } : item);
         });
@@ -192,11 +201,11 @@ export default function PosPage() {
 
     const handleQuantityInputBlur = (productId: string) => {
         const newQuantity = parseInt(quantityInputs[productId], 10);
-        if (isNaN(newQuantity) || newQuantity <= 0) {
+        if (!isNaN(newQuantity) && newQuantity > 0) {
+            updateQuantity(productId, newQuantity);
+        } else {
             const currentItem = cart.find(item => item.id === productId);
             setQuantityInputs(prev => ({ ...prev, [productId]: String(currentItem?.quantity || 1) }));
-        } else {
-            updateQuantity(productId, newQuantity);
         }
     };
 
@@ -333,7 +342,27 @@ export default function PosPage() {
 
     const balance = useMemo(() => subtotal - totalPaid, [subtotal, totalPaid]);
     const changeToGive = useMemo(() => balance < 0 ? Math.abs(balance) : 0, [balance]);
+
+    const openPaymentModal = (method: PaymentMethod) => {
+        setSelectedPaymentMethod(method);
+        setIsPaymentModalOpen(true);
+    };
+
+    const handleAddPayment = () => {
+        if (selectedPaymentMethod && typeof paymentAmount === 'number' && paymentAmount > 0) {
+            setPayments([...payments, { methodId: selectedPaymentMethod.id, amount: paymentAmount }]);
+            setPaymentAmount('');
+            setSelectedPaymentMethod(null);
+            setIsPaymentModalOpen(false);
+        } else {
+             toast({ title: "Error", description: "Ingrese un monto válido.", variant: "destructive" });
+        }
+    };
     
+    const removePayment = (index: number) => {
+        setPayments(payments.filter((_, i) => i !== index));
+    };
+
     const totalChangeGiven = useMemo(() => {
         return changePayments.reduce((acc, p) => {
              const method = paymentMethodsList.find(m => m.id === p.methodId);
@@ -345,25 +374,6 @@ export default function PosPage() {
     }, [changePayments, paymentMethodsList, bcvRate]);
 
     const remainingChange = useMemo(() => changeToGive - totalChangeGiven, [changeToGive, totalChangeGiven]);
-
-
-    const addPayment = () => {
-        const firstDigitalMethod = paymentMethodsList.find(m => m.type === 'Digital');
-        const firstMethodId = firstDigitalMethod?.id || paymentMethodsList[0]?.id;
-        if (firstMethodId) {
-            setPayments([...payments, { methodId: firstMethodId, amount: 0 }]);
-        }
-    };
-    
-    const updatePayment = (index: number, newPayment: { methodId: string, amount: number }) => {
-        const newPayments = [...payments];
-        newPayments[index] = newPayment;
-        setPayments(newPayments);
-    };
-
-    const removePayment = (index: number) => {
-        setPayments(payments.filter((_, i) => i !== index));
-    };
 
      const addChangePayment = () => {
         const changeGivingMethods = paymentMethodsList.filter(m => m.givesChange);
@@ -494,7 +504,7 @@ export default function PosPage() {
                                 <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
                             </Button>
                             <div className="flex gap-4">
-                                <div className="text-center">
+                               <div className="text-center">
                                     <Button variant="secondary" onClick={handleOmitCustomer}>Omitir</Button>
                                     <p className="text-xs text-muted-foreground mt-1">Usar Cliente Genérico</p>
                                 </div>
@@ -514,29 +524,36 @@ export default function PosPage() {
                                 <p className="text-sm text-muted-foreground pt-2">Cliente: {selectedCustomer?.name || 'Cliente Ocasional'}</p>
                             </CardHeader>
                              <CardContent className="space-y-4">
-                                <Label className="font-semibold">Recibir Pago</Label>
-                                {payments.map((payment, index) => {
-                                    const method = paymentMethodsList.find(m => m.id === payment.methodId);
-                                    return (
-                                        <div key={index} className="flex gap-2 items-end p-4 border rounded-lg">
-                                            <div className="flex-1">
-                                                <Label>Método de Pago</Label>
-                                                <Select value={payment.methodId} onValueChange={(value) => updatePayment(index, { ...payment, methodId: value, amount: 0 })}>
-                                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        {paymentMethodsList.map(method => <SelectItem key={method.id} value={method.id}>{method.name}</SelectItem>)}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="flex-1">
-                                                <Label>Monto ({method?.currency})</Label>
-                                                <Input type="number" value={payment.amount} onChange={(e) => updatePayment(index, { ...payment, amount: parseFloat(e.target.value) || 0 })} />
-                                            </div>
-                                            <Button variant="ghost" size="icon" onClick={() => removePayment(index)}><X className="h-4 w-4"/></Button>
+                                <Label className="font-semibold">Seleccione un método de pago</Label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                    {paymentMethodsList.map(method => (
+                                        <Button key={method.id} variant="outline" className="h-16 flex-col gap-1" onClick={() => openPaymentModal(method)}>
+                                            <span className="font-semibold">{method.name}</span>
+                                            <span className="text-xs text-muted-foreground">{method.currency} - {method.type}</span>
+                                        </Button>
+                                    ))}
+                                </div>
+
+                                 {payments.length > 0 && (
+                                    <div className="pt-4 mt-4 border-t">
+                                        <Label className="font-semibold">Pagos Recibidos</Label>
+                                        <div className="space-y-2 mt-2">
+                                            {payments.map((p, index) => {
+                                                const method = paymentMethodsList.find(m => m.id === p.methodId);
+                                                return (
+                                                    <div key={index} className="flex justify-between items-center p-2 border rounded-lg">
+                                                        <span>{method?.name}</span>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-semibold">{method?.currency === 'Bs' ? formatBs(p.amount) : formatUsd(p.amount)} {method?.currency}</span>
+                                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removePayment(index)}><X className="h-4 w-4"/></Button>
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
                                         </div>
-                                    )
-                                })}
-                                <Button variant="outline" onClick={addPayment}>Añadir Método de Pago</Button>
+                                    </div>
+                                 )}
+
                                  {changeToGive > 0 && (
                                     <div className="pt-4 mt-4 border-t">
                                         <Label className="font-semibold">Entregar Vuelto</Label>
@@ -617,13 +634,12 @@ export default function PosPage() {
                   ) : (
                       <div className="space-y-4">
                           {selectedCustomer && isCartExpanded && <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>}
-                          {cart.map(item => (
+                           {cart.map(item => (
                             <Card key={item.id} className="p-4">
-                                <p className="font-semibold text-sm mb-2">{item.name}</p>
-                                <div className="grid grid-cols-[80px_1fr_auto] items-center gap-4">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-muted-foreground text-sm">Cant:</span>
-                                        <Input
+                                <p className="font-semibold mb-2">{item.name}</p>
+                                <div className="grid grid-cols-[1fr_auto] items-center gap-4">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                       <Input
                                             type="number"
                                             value={quantityInputs[item.id] || ''}
                                             onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
@@ -631,11 +647,8 @@ export default function PosPage() {
                                             onKeyDown={(e) => handleQuantityInputKeyDown(e, item.id)}
                                             className="h-8 w-16 text-center"
                                         />
+                                        <span>x ${formatUsd(item.salePrice)}</span>
                                     </div>
-                                    <div className="text-left text-sm text-muted-foreground">
-                                       x ${formatUsd(item.salePrice)}
-                                    </div>
-
                                     <div className="flex items-center gap-1">
                                         <div className="text-right">
                                             <p className="font-semibold text-base">{formatBs(convertToVes(item.salePrice * item.quantity))}</p>
@@ -651,7 +664,7 @@ export default function PosPage() {
                                                 <DropdownMenuItem onClick={() => handlePriceEdit(item)}>
                                                     <Pencil className="mr-2 h-4 w-4"/> Editar Precio
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive" onClick={() => updateQuantity(item.id, 0)}>
+                                                <DropdownMenuItem className="text-destructive" onClick={() => setCart(cart.filter(c => c.id !== item.id))}>
                                                     <Trash2 className="mr-2 h-4 w-4"/> Eliminar
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -986,6 +999,34 @@ export default function PosPage() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+             <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Añadir Pago</DialogTitle>
+                        <DialogDescription>
+                            Ingrese el monto recibido para <span className="font-semibold">{selectedPaymentMethod?.name}</span>.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="space-y-2">
+                             <Label htmlFor="payment-amount">Monto ({selectedPaymentMethod?.currency})</Label>
+                             <Input 
+                                id="payment-amount"
+                                type="number"
+                                value={paymentAmount}
+                                onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || '')}
+                                placeholder="0.00"
+                             />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                         <Button variant="outline" onClick={() => setIsPaymentModalOpen(false)}>Cancelar</Button>
+                         <Button onClick={handleAddPayment}>Añadir Pago</Button>
+                    </DialogFooter>
+                </DialogContent>
+             </Dialog>
+
 
             {isCashDrawerOpen && (
                 <>
