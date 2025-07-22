@@ -29,7 +29,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { sales, products, accountsPayable, accountsReceivable } from "@/lib/placeholder-data";
+import { sales, products, accountsPayable, accountsReceivable, exchangeRates } from "@/lib/placeholder-data";
 
 export default function DashboardPage() {
     const totalInventoryCost = products.reduce((sum, p) => sum + p.purchasePrice * p.stock, 0);
@@ -38,6 +38,10 @@ export default function DashboardPage() {
     const totalReceivable = accountsReceivable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     const totalPayable = accountsPayable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     
+    const formatBs = (amount: number) => {
+        return (amount * exchangeRates.bcv).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
   return (
     <>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
@@ -49,7 +53,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">${totalInventoryCost.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              Inversión total en stock
+              {formatBs(totalInventoryCost)} Bs
             </p>
           </CardContent>
         </Card>
@@ -63,7 +67,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">${totalInventoryValue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              Basado en precios de venta
+              {formatBs(totalInventoryValue)} Bs
             </p>
           </CardContent>
         </Card>
@@ -77,7 +81,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">${estimatedProfit.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              (Valor de Venta - Costo)
+              {formatBs(estimatedProfit)} Bs
             </p>
           </CardContent>
         </Card>
@@ -89,7 +93,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">${totalReceivable.toFixed(2)}</div>
              <p className="text-xs text-muted-foreground">
-              Deudas de clientes pendientes
+               {formatBs(totalReceivable)} Bs
             </p>
           </CardContent>
         </Card>
@@ -101,7 +105,7 @@ export default function DashboardPage() {
           <CardContent>
             <div className="text-2xl font-bold">${totalPayable.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
-              Deudas a proveedores pendientes
+              {formatBs(totalPayable)} Bs
             </p>
           </CardContent>
         </Card>

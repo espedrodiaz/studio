@@ -1,8 +1,8 @@
 import Link from "next/link";
 import {
   PanelLeft,
-  Search,
   User,
+  LineChart,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -14,9 +14,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
+import { exchangeRates } from "@/lib/placeholder-data";
 
 export default function DashboardLayout({
   children,
@@ -46,16 +46,10 @@ export default function DashboardLayout({
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
-            <form>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Buscar productos, clientes..."
-                  className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
-                />
-              </div>
-            </form>
+             <div className="flex items-center gap-2 text-sm font-medium">
+                <LineChart className="h-4 w-4 text-muted-foreground" />
+                <span>Tasa BCV: <span className="font-semibold">{exchangeRates.bcv.toFixed(2)} Bs/$</span></span>
+            </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
