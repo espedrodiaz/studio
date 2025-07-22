@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MoreHorizontal, PlusCircle, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, Minus, Edit } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, Minus, Edit, CalendarDays } from "lucide-react";
 import { 
   exchangeRates as initialBcvRates, 
   supplierRates as initialSupplierRates,
@@ -43,6 +43,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 type ExchangeRate = {
   id: string;
@@ -253,9 +254,9 @@ export default function ExchangeRatesPage() {
                     
                     <Dialog open={isSupplierManagerOpen} onOpenChange={(isOpen) => { setIsSupplierManagerOpen(isOpen); if (!isOpen) clearSupplierForm(); }}>
                         <DialogTrigger asChild><Button variant="outline" className="w-full gap-2" onClick={() => setIsSupplierManagerOpen(true)}><PlusCircle className="h-4 w-4"/> Gestionar Tasas Proveedores</Button></DialogTrigger>
-                        <DialogContent className="max-w-3xl">
-                            <DialogHeader>
-                                <DialogTitle>Gestionar Tasas de Proveedores</DialogTitle>
+                        <DialogContent className="max-w-2xl">
+                             <DialogHeader>
+                                <DialogTitle>Tasas de Proveedores</DialogTitle>
                                 <DialogDescription>Añada, edite o elimine las tasas de cambio de sus proveedores.</DialogDescription>
                             </DialogHeader>
                              <div className="grid grid-cols-3 gap-4 py-4 border-b">
@@ -263,46 +264,45 @@ export default function ExchangeRatesPage() {
                                 <div className="space-y-2"><Label htmlFor="supplier-rate">Tasa (Bs por 1$)</Label><Input id="supplier-rate" type="number" value={supplierRateAmount} onChange={(e) => setSupplierRateAmount(parseFloat(e.target.value) || "")} placeholder="Ej: 41.20"/></div>
                                 <div className="flex items-end gap-2">
                                   <Button onClick={handleSaveSupplierRate} className="w-full">{editingSupplierRate ? "Guardar Cambios" : "Añadir Tasa"}</Button>
-                                  {editingSupplierRate && <Button variant="ghost" onClick={clearSupplierForm}>Cancelar</Button>}
+                                  {editingSupplierRate && <Button variant="ghost" size="sm" onClick={clearSupplierForm}>Cancelar</Button>}
                                 </div>
                             </div>
-                            <div className="max-h-[45vh] overflow-y-auto mt-4">
-                              <Table>
-                                 <TableHeader><TableRow><TableHead className="w-[40%]">Proveedor / Tasa</TableHead><TableHead className="text-center">Dif. vs BCV</TableHead><TableHead className="text-right">Acciones</TableHead></TableRow></TableHeader>
-                                 <TableBody>
-                                  {supplierRates.map(rate => {
-                                      const diff = getSupplierRateDifference(rate.rate);
-                                      return (
-                                      <TableRow key={rate.id}>
-                                          <TableCell>
-                                            <div className="font-medium">{rate.name}</div>
-                                            <div className="text-base font-semibold">{formatBs(rate.rate)} Bs/$</div>
-                                            <div className="text-xs text-muted-foreground">
-                                                Act. {formatVenezuelanDateTime(rate.lastUpdated)}
+                            <div className="max-h-[50vh] overflow-y-auto mt-4 space-y-4 pr-2">
+                               {supplierRates.map(rate => {
+                                    const diff = getSupplierRateDifference(rate.rate);
+                                    const diffColor = diff.difference > 0 ? 'text-red-500 bg-red-100/60' : 'text-green-600 bg-green-100/60';
+                                    return (
+                                        <Card key={rate.id} className="p-4">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-semibold">{rate.name}</p>
+                                                    <p className="text-2xl font-bold tracking-tight">{formatBs(rate.rate)} <span className="text-sm font-normal text-muted-foreground">Bs/$</span></p>
+                                                </div>
+                                                <Badge className={cn("text-xs font-bold", diffColor)} variant="secondary">
+                                                    {diff.difference >= 0 ? '+' : ''}{diff.percentage.toFixed(2)}%
+                                                </Badge>
                                             </div>
-                                          </TableCell>
-                                          <TableCell className={cn("text-sm text-center align-top", diff.difference > 0 ? 'text-red-500' : 'text-green-600')}>
-                                            {diff.difference >= 0 ? '+' : ''}{formatBs(diff.difference)} ({diff.percentage.toFixed(2)}%)
-                                          </TableCell>
-                                          <TableCell className="align-top text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Button aria-haspopup="true" size="icon" variant="ghost" onClick={() => handleEditSupplierClick(rate)}>
-                                                    <Edit className="h-4 w-4" />
-                                                    <span className="sr-only">Editar</span>
-                                                </Button>
-                                                <Button aria-haspopup="true" size="icon" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => handleDeleteSupplierRate(rate.id)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                    <span className="sr-only">Eliminar</span>
-                                                </Button>
+                                            <div className="flex justify-between items-center mt-3 text-muted-foreground">
+                                                <div className="flex items-center gap-2 text-xs">
+                                                   <CalendarDays className="h-3 w-3" />
+                                                   <span>Act. {formatVenezuelanDateTime(rate.lastUpdated)}</span>
+                                                </div>
+                                                <div className="flex items-center">
+                                                    <Button aria-haspopup="true" size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditSupplierClick(rate)}>
+                                                        <Edit className="h-4 w-4" />
+                                                        <span className="sr-only">Editar</span>
+                                                    </Button>
+                                                    <Button aria-haspopup="true" size="icon" variant="ghost" className="text-destructive hover:text-destructive h-8 w-8" onClick={() => handleDeleteSupplierRate(rate.id)}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                        <span className="sr-only">Eliminar</span>
+                                                    </Button>
+                                                </div>
                                             </div>
-                                          </TableCell>
-                                      </TableRow>
-                                      )
-                                  })}
-                                 </TableBody>
-                              </Table>
+                                        </Card>
+                                    )
+                               })}
                             </div>
-                            <DialogFooter>
+                            <DialogFooter className="pt-4">
                                <Button variant="outline" onClick={() => setIsSupplierManagerOpen(false)}>Cerrar</Button>
                            </DialogFooter>
                         </DialogContent>
