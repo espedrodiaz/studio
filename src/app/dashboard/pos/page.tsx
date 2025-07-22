@@ -37,7 +37,7 @@ export default function PosPage() {
     useEffect(() => {
         setPaymentMethodsList(getPaymentMethods());
         setCurrentDate(new Date().toLocaleDateString('es-VE', {
-            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            weekday: 'long', month: 'long', day: 'numeric'
         }));
     }, []);
 
