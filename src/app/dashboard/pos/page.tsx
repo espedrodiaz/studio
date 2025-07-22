@@ -191,8 +191,13 @@ export default function PosPage() {
     };
 
     const handleQuantityInputBlur = (productId: string) => {
-        const newQuantity = parseInt(quantityInputs[productId], 10) || 1;
-        updateQuantity(productId, newQuantity);
+        const newQuantity = parseInt(quantityInputs[productId], 10);
+        if (isNaN(newQuantity) || newQuantity <= 0) {
+            setQuantityInputs(prev => ({ ...prev, [productId]: '1' }));
+            updateQuantity(productId, 1);
+        } else {
+            updateQuantity(productId, newQuantity);
+        }
     };
 
     const handleQuantityInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>, productId: string) => {
@@ -483,13 +488,16 @@ export default function PosPage() {
                             </CardContent>
                         </Card>
                         {renderCart()}
-                        <div className="flex justify-between mt-4">
+                        <div className="flex justify-between items-end mt-4">
                              <Button variant="outline" onClick={() => goToStep(1)}>
                                 <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
                             </Button>
                             <div className="flex gap-4">
-                                <Button variant="secondary" onClick={handleOmitCustomer}>Omitir y Usar Cliente Ocasional</Button>
-                                <Button onClick={() => goToStep(3)} disabled={!selectedCustomer}>
+                                <div className="text-center">
+                                    <Button variant="secondary" onClick={handleOmitCustomer}>Omitir</Button>
+                                    <p className="text-xs text-muted-foreground mt-1">Usar Cliente Genérico</p>
+                                </div>
+                                <Button onClick={() => goToStep(3)} disabled={!selectedCustomer} className="self-end">
                                     Siguiente <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </div>
