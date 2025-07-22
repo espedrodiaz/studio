@@ -193,8 +193,8 @@ export default function PosPage() {
     const handleQuantityInputBlur = (productId: string) => {
         const newQuantity = parseInt(quantityInputs[productId], 10);
         if (isNaN(newQuantity) || newQuantity <= 0) {
-            setQuantityInputs(prev => ({ ...prev, [productId]: '1' }));
-            updateQuantity(productId, 1);
+            const currentItem = cart.find(item => item.id === productId);
+            setQuantityInputs(prev => ({ ...prev, [productId]: String(currentItem?.quantity || 1) }));
         } else {
             updateQuantity(productId, newQuantity);
         }
@@ -620,8 +620,9 @@ export default function PosPage() {
                           {cart.map(item => (
                             <Card key={item.id} className="p-4">
                                 <p className="font-semibold text-sm mb-2">{item.name}</p>
-                                <div className="flex items-center justify-between">
+                                <div className="grid grid-cols-[80px_1fr_auto] items-center gap-4">
                                     <div className="flex items-center gap-2">
+                                        <span className="text-muted-foreground text-sm">Cant:</span>
                                         <Input
                                             type="number"
                                             value={quantityInputs[item.id] || ''}
@@ -630,7 +631,9 @@ export default function PosPage() {
                                             onKeyDown={(e) => handleQuantityInputKeyDown(e, item.id)}
                                             className="h-8 w-16 text-center"
                                         />
-                                        <span className="text-muted-foreground text-sm">x ${formatUsd(item.salePrice)}</span>
+                                    </div>
+                                    <div className="text-left text-sm text-muted-foreground">
+                                       x ${formatUsd(item.salePrice)}
                                     </div>
 
                                     <div className="flex items-center gap-1">
@@ -726,9 +729,9 @@ export default function PosPage() {
                                     </div>
                                     <button
                                         onClick={() => goToStep(s.id)}
-                                        className="relative flex h-8 w-8 items-center justify-center rounded-full bg-primary hover:bg-primary/90"
+                                        className="relative flex h-6 w-6 items-center justify-center rounded-full bg-primary hover:bg-primary/90"
                                     >
-                                        <CheckCircle2 className="h-5 w-5 text-white" aria-hidden="true" />
+                                        <CheckCircle2 className="h-4 w-4 text-white" aria-hidden="true" />
                                         <span className="sr-only">{s.name}</span>
                                     </button>
                                 </>
@@ -738,10 +741,10 @@ export default function PosPage() {
                                         <div className="h-0.5 w-full bg-gray-200" />
                                     </div>
                                     <div
-                                        className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-primary bg-background"
+                                        className="relative flex h-6 w-6 items-center justify-center rounded-full border-2 border-primary bg-background"
                                         aria-current="step"
                                     >
-                                        <span className="h-2.5 w-2.5 rounded-full bg-primary" aria-hidden="true" />
+                                        <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" />
                                         <span className="sr-only">{s.name}</span>
                                     </div>
                                 </>
@@ -751,16 +754,16 @@ export default function PosPage() {
                                         <div className="h-0.5 w-full bg-gray-200" />
                                     </div>
                                     <div
-                                        className="group relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-gray-300 bg-background hover:border-gray-400"
+                                        className="group relative flex h-6 w-6 items-center justify-center rounded-full border-2 border-gray-300 bg-background hover:border-gray-400"
                                     >
-                                        <span className="h-2.5 w-2.5 rounded-full bg-transparent group-hover:bg-gray-300" aria-hidden="true" />
+                                        <span className="h-2 w-2 rounded-full bg-transparent group-hover:bg-gray-300" aria-hidden="true" />
                                         <span className="sr-only">{s.name}</span>
                                     </div>
                                 </>
                             )}
-                             <p className={cn("absolute -bottom-6 w-max text-xs", 
+                             <p className={cn("absolute -bottom-5 w-max text-xs", 
                                 s.id <= step ? 'font-semibold text-primary' : 'text-muted-foreground',
-                                { 'left-[-50%]': s.id > 1 && s.id < steps.length,
+                                { 'left-[-50%] transform translate-x-1/4 md:translate-x-1/2': s.id > 1 && s.id < steps.length,
                                 'left-0' : s.id === 1,
                                 'right-0 text-right': s.id === steps.length
                                 }
@@ -1032,8 +1035,8 @@ export default function PosPage() {
                         </CardHeader>
                     </Card>
 
-                    <div className="space-y-8">
-                         <div className="px-4 pt-4 pb-8">
+                    <div className="space-y-6">
+                         <div className="px-4 pt-2 pb-6">
                             <Stepper />
                         </div>
                         {renderStep()}
