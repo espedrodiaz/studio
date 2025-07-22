@@ -1,3 +1,4 @@
+
 import Link from "next/link";
 import {
   PanelLeft,
@@ -16,13 +17,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
-import { exchangeRates } from "@/lib/placeholder-data";
+import { getCurrentBcvRate } from "@/lib/placeholder-data";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const bcvRate = getCurrentBcvRate();
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
@@ -48,7 +50,7 @@ export default function DashboardLayout({
           <div className="w-full flex-1">
              <div className="flex items-center gap-2 text-sm font-medium">
                 <LineChart className="h-4 w-4 text-muted-foreground" />
-                <span>Tasa BCV: <span className="font-semibold text-green-600">{exchangeRates.bcv.toFixed(2)} Bs/$</span></span>
+                <span>Tasa BCV: <span className="font-semibold text-green-600">{bcvRate.toFixed(2)} Bs/$</span></span>
             </div>
           </div>
           <DropdownMenu>

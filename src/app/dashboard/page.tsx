@@ -32,7 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { sales, products, accountsPayable, accountsReceivable, exchangeRates } from "@/lib/placeholder-data";
+import { sales, products, accountsPayable, accountsReceivable, getCurrentBcvRate } from "@/lib/placeholder-data";
 
 export default function DashboardPage() {
     const totalInventoryCost = products.reduce((sum, p) => sum + p.purchasePrice * p.stock, 0);
@@ -42,9 +42,10 @@ export default function DashboardPage() {
     const totalPayable = accountsPayable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     
     const isCritical = totalPayable > (totalInventoryValue + totalReceivable);
+    const bcvRate = getCurrentBcvRate();
 
     const formatBs = (amount: number) => {
-        return (amount * exchangeRates.bcv).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return (amount * bcvRate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     const formatUsd = (amount: number) => {

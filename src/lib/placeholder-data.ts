@@ -48,6 +48,13 @@ export const paymentMethods = [
     { id: 'pay-05', name: 'Punto de Venta', currency: 'Bs', type: 'Digital', givesChange: false },
 ];
 
-export const exchangeRates = {
-    bcv: 100.00,
-};
+export const exchangeRates = [
+    { id: 'RATE003', date: '2024-07-25', rate: 100.00 },
+    { id: 'RATE002', date: '2024-07-24', rate: 98.50 },
+    { id: 'RATE001', date: '2024-07-23', rate: 99.20 },
+];
+
+export const getCurrentBcvRate = () => {
+    // Assuming rates are sorted by date descending
+    return exchangeRates[0]?.rate || 0;
+}
