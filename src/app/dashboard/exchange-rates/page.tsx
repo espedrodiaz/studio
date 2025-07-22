@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,8 +28,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, PlusCircle, Trash2, ArrowUp, ArrowDown } from "lucide-react";
-import { exchangeRates as initialRates, getCurrentBcvRate } from "@/lib/placeholder-data";
+import { exchangeRates as initialRates, updateCurrentBcvRate, getCurrentBcvRate, bcvRateSubject } from "@/lib/placeholder-data";
 import { toast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 type ExchangeRate = {
   id: string;
@@ -39,11 +40,18 @@ type ExchangeRate = {
 
 export default function ExchangeRatesPage() {
   const [rates, setRates] = useState<ExchangeRate[]>(
-    initialRates.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    [...initialRates].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   );
   const [newRate, setNewRate] = useState<number | "">("");
+  const [currentRate, setCurrentRate] = useState(getCurrentBcvRate());
 
-  const currentRate = getCurrentBcvRate();
+  useEffect(() => {
+    const subscription = bcvRateSubject.subscribe(rate => {
+      setCurrentRate(rate);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
 
   const handleAddRate = () => {
     if (typeof newRate !== 'number' || newRate <= 0) {
@@ -61,6 +69,7 @@ export default function ExchangeRatesPage() {
     };
     const updatedRates = [newRateEntry, ...rates].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     setRates(updatedRates);
+    updateCurrentBcvRate(newRateEntry);
     setNewRate("");
     toast({
       title: "Tasa Agregada",
@@ -69,7 +78,17 @@ export default function ExchangeRatesPage() {
   };
 
   const handleDeleteRate = (id: string) => {
-    setRates(rates.filter(rate => rate.id !== id));
+    const newRates = rates.filter(rate => rate.id !== id);
+    setRates(newRates);
+    
+    // If the deleted rate was the current one, update to the next most recent
+    const sorted = [...newRates].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    if (sorted.length > 0) {
+        updateCurrentBcvRate(sorted[0]);
+    } else {
+        updateCurrentBcvRate({rate: 0}); // or some default state
+    }
+
      toast({
       title: "Tasa Eliminada",
       description: "La tasa ha sido eliminada del historial.",
@@ -83,10 +102,18 @@ export default function ExchangeRatesPage() {
       }
       const current = rates[index].rate;
       const previous = rates[index + 1].rate;
+      const difference = current - previous;
+      const percentage = (difference / previous) * 100;
 
-      if(current > previous) return "up";
-      if(current < previous) return "down";
-      return null;
+      let trend: 'up' | 'down' | null = null;
+      if (difference > 0) trend = 'up';
+      if (difference < 0) trend = 'down';
+
+      return {
+          trend,
+          difference,
+          percentage
+      }
   }
   
   const formatVenezuelanDateTime = (isoString: string) => {
@@ -100,6 +127,14 @@ export default function ExchangeRatesPage() {
         hour12: true,
     });
   }
+
+  const formatBs = (amount: number) => {
+    const fixedAmount = amount.toFixed(2);
+    const [integer, decimal] = fixedAmount.split('.');
+    const formattedInteger = new Intl.NumberFormat('de-DE').format(Number(integer));
+    return `${formattedInteger},${decimal}`;
+  }
+
 
   return (
     <div className="grid gap-6">
@@ -151,7 +186,7 @@ export default function ExchangeRatesPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Fecha y Hora</TableHead>
-                                <TableHead className="text-right">Tasa (Bs/$)</TableHead>
+                                <TableHead className="text-center">Tasa (Bs/$)</TableHead>
                                 <TableHead className="text-center">Cambio</TableHead>
                                 <TableHead><span className="sr-only">Acciones</span></TableHead>
                             </TableRow>
@@ -161,11 +196,15 @@ export default function ExchangeRatesPage() {
                                 const change = getRateChange(index);
                                 return (
                                 <TableRow key={rate.id}>
-                                    <TableCell>{formatVenezuelanDateTime(rate.date)}</TableCell>
-                                    <TableCell className="font-medium text-right">{rate.rate.toFixed(2)}</TableCell>
-                                    <TableCell className="text-center">
-                                        {change === 'up' && <ArrowUp className="h-4 w-4 text-green-500 inline"/>}
-                                        {change === 'down' && <ArrowDown className="h-4 w-4 text-red-500 inline"/>}
+                                    <TableCell className="text-xs">{formatVenezuelanDateTime(rate.date)}</TableCell>
+                                    <TableCell className="font-medium text-center">{rate.rate.toFixed(2)}</TableCell>
+                                    <TableCell className={cn("text-xs text-center", change?.trend === 'up' ? 'text-green-600' : 'text-red-500')}>
+                                      {change && change.trend && (
+                                        <div className="flex items-center justify-center gap-1">
+                                          {change.trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                                          <span>{formatBs(change.difference)} ({change.percentage.toFixed(2)}%)</span>
+                                        </div>
+                                      )}
                                     </TableCell>
                                     <TableCell>
                                      <DropdownMenu>

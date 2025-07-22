@@ -1,5 +1,29 @@
 
-export const products = [
+// A simple in-memory pub/sub system for real-time rate updates across components.
+// In a real app, this would be replaced by a state management library like Redux or Zustand.
+type Subscriber = (rate: number) => void;
+
+const createSubject = () => {
+  let subscribers: Subscriber[] = [];
+  return {
+    subscribe: (callback: Subscriber) => {
+      subscribers.push(callback);
+      return {
+        unsubscribe: () => {
+          subscribers = subscribers.filter(s => s !== callback);
+        }
+      };
+    },
+    next: (data: number) => {
+      subscribers.forEach(callback => callback(data));
+    }
+  };
+};
+
+export const bcvRateSubject = createSubject();
+
+
+export let products = [
   { id: 'PROD001', name: 'Café Molido 500g', stock: 150, purchasePrice: 4.50, salePrice: 7.00 },
   { id: 'PROD002', name: 'Harina de Maíz 1kg', stock: 200, purchasePrice: 0.80, salePrice: 1.50 },
   { id: 'PROD003', name: 'Arroz Blanco 1kg', stock: 180, purchasePrice: 1.00, salePrice: 1.80 },
@@ -48,13 +72,29 @@ export const paymentMethods = [
     { id: 'pay-05', name: 'Punto de Venta', currency: 'Bs', type: 'Digital', givesChange: false },
 ];
 
-export const exchangeRates = [
+export let exchangeRates = [
     { id: 'RATE003', date: '2024-07-25T09:00:00.000Z', rate: 100.00 },
     { id: 'RATE002', date: '2024-07-24T09:05:00.000Z', rate: 98.50 },
     { id: 'RATE001', date: '2024-07-23T08:55:00.000Z', rate: 99.20 },
 ];
 
+let currentBcvRate = [...exchangeRates].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+
 export const getCurrentBcvRate = () => {
-    const sortedRates = [...exchangeRates].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    return sortedRates[0]?.rate || 0;
+    return currentBcvRate.rate || 0;
 }
+
+export const updateCurrentBcvRate = (newRate: Partial<typeof exchangeRates[0]>) => {
+    // In a real app, this logic would be more robust, potentially involving
+    // sorting the entire list and picking the newest one.
+    // For this placeholder, we directly set it.
+    if (newRate.rate && (!currentBcvRate.date || new Date(newRate.date!) > new Date(currentBcvRate.date))) {
+        currentBcvRate = { ...currentBcvRate, ...newRate };
+    }
+    // Also add to the main list if it's new
+    if (newRate.id && !exchangeRates.find(r => r.id === newRate.id)) {
+        exchangeRates.push(newRate as typeof exchangeRates[0]);
+    }
+
+    bcvRateSubject.next(currentBcvRate.rate);
+};

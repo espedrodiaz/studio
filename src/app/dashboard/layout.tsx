@@ -1,4 +1,6 @@
 
+"use client";
+
 import Link from "next/link";
 import {
   PanelLeft,
@@ -17,14 +19,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
-import { getCurrentBcvRate } from "@/lib/placeholder-data";
+import { getCurrentBcvRate, bcvRateSubject } from "@/lib/placeholder-data";
+import { useState, useEffect } from "react";
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const bcvRate = getCurrentBcvRate();
+  const [bcvRate, setBcvRate] = useState(getCurrentBcvRate());
+
+  useEffect(() => {
+    const subscription = bcvRateSubject.subscribe(rate => {
+      setBcvRate(rate);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
