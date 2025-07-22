@@ -1,6 +1,8 @@
+
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,20 +16,27 @@ import { Label } from "@/components/ui/label";
 import { Gem } from "lucide-react";
 
 export function LoginForm() {
+  const router = useRouter();
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push("/dashboard");
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background">
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader className="space-y-2 text-center">
-            <div className="inline-flex items-center justify-center gap-2">
-                <Gem className="h-8 w-8 text-primary" />
-                <CardTitle className="text-3xl font-bold">FacilPOS</CardTitle>
-            </div>
+          <div className="inline-flex items-center justify-center gap-2">
+            <Gem className="h-8 w-8 text-primary" />
+            <CardTitle className="text-3xl font-bold">FacilPOS</CardTitle>
+          </div>
           <CardDescription>
             Ingrese su correo electrónico para iniciar sesión
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4">
+          <form onSubmit={handleLogin} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Correo electrónico</Label>
               <Input
@@ -55,7 +64,7 @@ export function LoginForm() {
             <Button variant="outline" className="w-full">
               Iniciar sesión con Google
             </Button>
-          </div>
+          </form>
           <div className="mt-4 text-center text-sm">
             ¿No tienes una cuenta?{" "}
             <Link href="/signup" className="underline">
