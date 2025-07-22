@@ -48,7 +48,7 @@ export default function DashboardLayout({
           <div className="w-full flex-1">
              <div className="flex items-center gap-2 text-sm font-medium">
                 <LineChart className="h-4 w-4 text-muted-foreground" />
-                <span>Tasa BCV: <span className="font-semibold">{exchangeRates.bcv.toFixed(2)} Bs/$</span></span>
+                <span>Tasa BCV: <span className="font-semibold text-green-600">{exchangeRates.bcv.toFixed(2)} Bs/$</span></span>
             </div>
           </div>
           <DropdownMenu>
