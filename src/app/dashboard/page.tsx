@@ -41,7 +41,7 @@ export default function DashboardPage() {
     const totalReceivable = accountsReceivable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     const totalPayable = accountsPayable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     
-    const isCritical = totalPayable > (totalInventoryValue + totalReceivable);
+    const isCritical = totalPayable > (totalInventoryCost + totalReceivable);
     const bcvRate = getCurrentBcvRate();
 
     const formatBs = (amount: number) => {
