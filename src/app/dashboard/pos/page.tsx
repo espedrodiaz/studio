@@ -387,6 +387,7 @@ export default function PosPage() {
             description: `Se ha registrado una ${movementType.toLowerCase()} de caja.`,
         });
         resetMovementForm();
+        setIsCashMovementModalOpen(false);
     }
 
 
@@ -415,7 +416,7 @@ export default function PosPage() {
     };
 
     const updateQuantity = (productId: string, newQuantity: number) => {
-        if (newQuantity <= 0) { // If user explicitly sets to 0 or less, remove item
+        if (newQuantity <= 0) {
             setCart(prevCart => prevCart.filter(item => item.id !== productId));
         } else {
             setCart(prevCart => prevCart.map(item => item.id === productId ? { ...item, quantity: newQuantity } : item));
@@ -427,13 +428,17 @@ export default function PosPage() {
     };
 
     const handleQuantityInputBlur = (productId: string) => {
-        const newQuantity = parseInt(quantityInputs[productId], 10);
+        const value = quantityInputs[productId];
+        if (value === '') {
+             const currentItem = cart.find(item => item.id === productId);
+             if (currentItem) {
+                 setQuantityInputs(prev => ({ ...prev, [productId]: String(currentItem.quantity) }));
+             }
+             return;
+        }
+        const newQuantity = parseInt(value, 10);
         if (!isNaN(newQuantity)) {
              updateQuantity(productId, newQuantity);
-        } else if (quantityInputs[productId] === '') {
-             // If input is cleared, restore previous valid quantity
-             const currentItem = cart.find(item => item.id === productId);
-             setQuantityInputs(prev => ({...prev, [productId]: String(currentItem?.quantity || 1)}));
         }
     };
 
@@ -953,12 +958,10 @@ export default function PosPage() {
                           {selectedCustomer && isCartExpanded && <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>}
                            {cart.map(item => (
                             <Card key={item.id} className="p-4">
-                                <div className="grid grid-cols-[1fr_auto] items-start gap-4">
-                                    <div>
-                                        <p className="font-semibold leading-tight">{item.name}</p>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                         <div className="text-right">
+                                <div className="flex justify-between items-start">
+                                    <p className="font-semibold leading-tight flex-1 pr-4">{item.name}</p>
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-right">
                                             <p className="font-semibold text-base">{formatBs(convertToVes(item.salePrice * item.quantity))}</p>
                                             <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
                                         </div>
@@ -988,7 +991,7 @@ export default function PosPage() {
                                         onKeyDown={(e) => handleQuantityInputKeyDown(e, item.id)}
                                         className="h-8 w-16 text-center"
                                     />
-                                    <span>x ${formatUsd(item.salePrice)}</span>
+                                    <span>x {formatBs(convertToVes(item.salePrice))} Bs (${formatUsd(item.salePrice)})</span>
                                 </div>
                             </Card>
                           ))}
@@ -1165,34 +1168,12 @@ export default function PosPage() {
                                     <Separator/>
                                     <div className="flex justify-between font-bold text-base"><span>Saldo Actual en Caja:</span> <span>${formatUsd(totalCashDrawer.final)}</span></div>
                                 </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader><CardTitle>Registrar Movimiento de Caja</CardTitle></CardHeader>
-                                <CardContent className="space-y-4">
-                                     <div className="space-y-2">
-                                        <Label>Tipo de Movimiento</Label>
-                                        <RadioGroup value={movementType} onValueChange={(v) => setMovementType(v as 'Entrada' | 'Salida')} className="flex gap-4">
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="Entrada" id="r-entrada" /><Label htmlFor="r-entrada">Entrada</Label></div>
-                                            <div className="flex items-center space-x-2"><RadioGroupItem value="Salida" id="r-salida" /><Label htmlFor="r-salida">Salida</Label></div>
-                                        </RadioGroup>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="movement-payment-method">Forma de Pago</Label>
-                                        <Select value={movementPaymentMethod} onValueChange={setMovementPaymentMethod}>
-                                            <SelectTrigger id="movement-payment-method"><SelectValue placeholder="Seleccione..." /></SelectTrigger>
-                                            <SelectContent>{paymentMethodsList.map(pm => (<SelectItem key={pm.id} value={pm.id}>{pm.name}</SelectItem>))}</SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="movement-amount">Monto</Label>
-                                        <Input id="movement-amount" type="number" value={movementAmount} onChange={(e) => setMovementAmount(parseFloat(e.target.value) || '')} placeholder="0.00"/>
-                                    </div>
-                                     <div className="space-y-2">
-                                        <Label htmlFor="movement-concept">Concepto</Label>
-                                        <Textarea id="movement-concept" value={movementConcept} onChange={(e) => setMovementConcept(e.target.value)} placeholder="Ej: Pago a proveedor, Compra de hielo..."/>
-                                    </div>
-                                    <Button onClick={handleAddCashMovement} className="w-full">Registrar Movimiento</Button>
-                                </CardContent>
+                                <CardFooter>
+                                    <Button className="w-full" onClick={() => { setIsCashMovementModalOpen(true); resetMovementForm(); }}>
+                                        <ArrowDownUp className="mr-2 h-4 w-4" />
+                                        Registrar Movimiento
+                                    </Button>
+                                </CardFooter>
                             </Card>
                         </div>
                         {/* Right Side: Detailed Breakdown */}
@@ -1227,6 +1208,42 @@ export default function PosPage() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsCashDrawerModalOpen(false)}>Cerrar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+             <Dialog open={isCashMovementModalOpen} onOpenChange={setIsCashMovementModalOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Registrar Movimiento de Caja</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                         <div className="space-y-2">
+                            <Label>Tipo de Movimiento</Label>
+                            <RadioGroup value={movementType} onValueChange={(v) => setMovementType(v as 'Entrada' | 'Salida')} className="flex gap-4">
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="Entrada" id="r-entrada" /><Label htmlFor="r-entrada">Entrada</Label></div>
+                                <div className="flex items-center space-x-2"><RadioGroupItem value="Salida" id="r-salida" /><Label htmlFor="r-salida">Salida</Label></div>
+                            </RadioGroup>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="movement-payment-method">Forma de Pago</Label>
+                            <Select value={movementPaymentMethod} onValueChange={setMovementPaymentMethod}>
+                                <SelectTrigger id="movement-payment-method"><SelectValue placeholder="Seleccione..." /></SelectTrigger>
+                                <SelectContent>{paymentMethodsList.map(pm => (<SelectItem key={pm.id} value={pm.id}>{pm.name}</SelectItem>))}</SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="movement-amount">Monto</Label>
+                            <Input id="movement-amount" type="number" value={movementAmount} onChange={(e) => setMovementAmount(parseFloat(e.target.value) || '')} placeholder="0.00"/>
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="movement-concept">Concepto</Label>
+                            <Textarea id="movement-concept" value={movementConcept} onChange={(e) => setMovementConcept(e.target.value)} placeholder="Ej: Pago a proveedor, Compra de hielo..."/>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                         <Button variant="outline" onClick={() => setIsCashMovementModalOpen(false)}>Cancelar</Button>
+                         <Button onClick={handleAddCashMovement}>Registrar Movimiento</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
