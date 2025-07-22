@@ -29,7 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MoreHorizontal, PlusCircle, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, Minus, Edit, CalendarDays } from "lucide-react";
+import { MoreHorizontal, PlusCircle, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, Minus, Edit, CalendarDays, Save, X } from "lucide-react";
 import { 
   exchangeRates as initialBcvRates, 
   supplierRates as initialSupplierRates,
@@ -259,12 +259,18 @@ export default function ExchangeRatesPage() {
                                 <DialogTitle>Tasas de Proveedores</DialogTitle>
                                 <DialogDescription>Añada, edite o elimine las tasas de cambio de sus proveedores.</DialogDescription>
                             </DialogHeader>
-                             <div className="grid grid-cols-3 gap-4 py-4 border-b">
+                             <div className="grid grid-cols-[1fr_1fr_auto] gap-4 py-4 border-b">
                                 <div className="space-y-2"><Label htmlFor="supplier-name">Nombre del Proveedor</Label><Input id="supplier-name" value={supplierRateName} onChange={(e) => setSupplierRateName(e.target.value)} placeholder="Ej: Proveedor XYZ"/></div>
                                 <div className="space-y-2"><Label htmlFor="supplier-rate">Tasa (Bs por 1$)</Label><Input id="supplier-rate" type="number" value={supplierRateAmount} onChange={(e) => setSupplierRateAmount(parseFloat(e.target.value) || "")} placeholder="Ej: 41.20"/></div>
                                 <div className="flex items-end gap-2">
-                                  <Button onClick={handleSaveSupplierRate} className="w-full">{editingSupplierRate ? "Guardar Cambios" : "Añadir Tasa"}</Button>
-                                  {editingSupplierRate && <Button variant="ghost" size="sm" onClick={clearSupplierForm}>Cancelar</Button>}
+                                  <Button onClick={handleSaveSupplierRate} size="icon" aria-label={editingSupplierRate ? "Guardar Cambios" : "Añadir Tasa"}>
+                                    <Save className="h-4 w-4" />
+                                  </Button>
+                                  {editingSupplierRate && 
+                                    <Button variant="ghost" size="icon" onClick={clearSupplierForm} aria-label="Cancelar edición">
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  }
                                 </div>
                             </div>
                             <div className="max-h-[50vh] overflow-y-auto mt-4 space-y-4 pr-2">
