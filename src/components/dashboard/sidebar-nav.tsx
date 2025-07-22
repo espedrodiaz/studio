@@ -19,15 +19,13 @@ import {
   LineChart,
   DollarSign,
   CreditCard,
-  Gem,
   Settings,
-  User,
-  PanelLeft,
   Store,
   Landmark,
   Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { PosLogo } from "../ui/pos-logo";
 
 const NavLink = ({ href, children, icon: Icon, onClick }: { href: string, children: React.ReactNode, icon: React.ElementType, onClick?: () => void }) => {
     const pathname = usePathname();
@@ -51,10 +49,9 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-16 items-center justify-between border-b px-4 shrink-0">
+      <div className="flex h-16 items-center border-b px-4 shrink-0">
           <Link href="/dashboard" className="flex items-center gap-2 font-semibold" onClick={onLinkClick}>
-              <Gem className="h-6 w-6 text-primary" />
-              <span className="">FacilPOS</span>
+              <PosLogo />
           </Link>
       </div>
       <nav className="flex-1 space-y-2 p-4">

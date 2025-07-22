@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Gem } from "lucide-react";
+import { PosLogo } from "../ui/pos-logo";
 
 export function LoginForm() {
   const router = useRouter();
@@ -31,8 +31,7 @@ export function LoginForm() {
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader className="space-y-2 text-center">
           <div className="inline-flex items-center justify-center gap-2">
-            <Gem className="h-8 w-8 text-primary" />
-            <CardTitle className="text-3xl font-bold">FacilPOS</CardTitle>
+            <PosLogo className="text-3xl" />
           </div>
           <CardDescription>
             Ingrese su correo electrónico para iniciar sesión

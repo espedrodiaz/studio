@@ -3,8 +3,8 @@ import { Toaster } from "@/components/ui/toaster"
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'FacilPOS',
-  description: 'Point of Sale system for small businesses',
+  title: 'Facilito POS Venezuela',
+  description: 'Point of Sale system for small businesses in Venezuela',
 };
 
 export default function RootLayout({
