@@ -1,3 +1,4 @@
+
 export const products = [
   { id: 'PROD001', name: 'Café Molido 500g', stock: 150, purchasePrice: 4.50, salePrice: 7.00 },
   { id: 'PROD002', name: 'Harina de Maíz 1kg', stock: 200, purchasePrice: 0.80, salePrice: 1.50 },
@@ -46,3 +47,7 @@ export const paymentMethods = [
     { id: 'pay-04', name: 'Pago Móvil', currency: 'Bs', type: 'Digital', givesChange: false },
     { id: 'pay-05', name: 'Punto de Venta', currency: 'Bs', type: 'Digital', givesChange: false },
 ];
+
+export const exchangeRates = {
+    bcv: 100.00,
+};

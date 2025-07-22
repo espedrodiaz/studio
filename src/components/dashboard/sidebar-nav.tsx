@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -23,6 +24,7 @@ import {
   User,
   PanelLeft,
   Store,
+  Landmark,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -61,6 +63,7 @@ export function SidebarNav() {
         <NavLink href="/dashboard/inventory" icon={Package}>Inventario</NavLink>
         <NavLink href="/dashboard/customers" icon={Users}>Clientes</NavLink>
         <NavLink href="/dashboard/suppliers" icon={Truck}>Proveedores</NavLink>
+        <NavLink href="/dashboard/exchange-rates" icon={Landmark}>Tasas de Cambio</NavLink>
         
         <Accordion type="single" collapsible defaultValue={isAccountsActive ? "item-1" : ""}>
           <AccordionItem value="item-1" className="border-b-0">
