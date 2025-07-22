@@ -40,6 +40,13 @@ import {
 import { sales, products, accountsPayable, accountsReceivable, getCurrentBcvRate } from "@/lib/placeholder-data";
 import { cn } from "@/lib/utils";
 
+type FinancialStatus = {
+  level: 'grave' | 'critico' | 'saludable';
+  title: string;
+  description: string;
+  icon: React.ElementType;
+}
+
 export default async function DashboardPage() {
     // Simulate a 3-second loading time to demonstrate the loading screen.
     // await new Promise(resolve => setTimeout(resolve, 3000));
@@ -50,15 +57,30 @@ export default async function DashboardPage() {
     const totalReceivable = accountsReceivable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     const totalPayable = accountsPayable.reduce((sum, acc) => acc.status === 'Pendiente' ? sum + acc.amount : sum, 0);
     
-    let financialStatus: 'grave' | 'critico' | 'saludable';
+    let financialStatus: FinancialStatus;
     const totalAssets = totalInventoryValue + totalReceivable;
 
     if (totalPayable > totalAssets) {
-        financialStatus = 'grave';
+        financialStatus = { 
+            level: 'grave',
+            title: 'Grave',
+            description: 'Acción Urgente: Las deudas superan tus activos. Revisa gastos y aumenta ventas.',
+            icon: Ban
+        };
     } else if (totalPayable > totalReceivable) {
-        financialStatus = 'critico';
+        financialStatus = {
+            level: 'critico',
+            title: 'Crítico',
+            description: 'Atención: Las deudas superan tus cobros. Considera liquidar inventario o refinanciar.',
+            icon: AlertTriangle
+        };
     } else {
-        financialStatus = 'saludable';
+        financialStatus = {
+            level: 'saludable',
+            title: 'Saludable',
+            description: '¡Excelente! Tus cobros pendientes cubren tus deudas a corto plazo. ¡Sigue así!',
+            icon: ThumbsUp
+        };
     }
 
     const bcvRate = getCurrentBcvRate();
@@ -159,20 +181,19 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
         <Card className={cn("text-white", {
-              'bg-green-500': financialStatus === 'saludable',
-              'bg-yellow-500': financialStatus === 'critico',
-              'bg-red-600': financialStatus === 'grave',
+              'bg-green-500': financialStatus.level === 'saludable',
+              'bg-yellow-500': financialStatus.level === 'critico',
+              'bg-red-600': financialStatus.level === 'grave',
         })}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-white">Salud Financiera</CardTitle>
              <HeartPulse className="h-4 w-4 text-white" />
           </CardHeader>
-          <CardContent>
-             <div className="text-center text-2xl font-bold text-white pt-2">
-                {financialStatus === 'saludable' && 'Saludable'}
-                {financialStatus === 'critico' && 'Crítico'}
-                {financialStatus === 'grave' && 'Grave'}
-            </div>
+          <CardContent className="text-white">
+             <div className="text-2xl font-bold">{financialStatus.title}</div>
+             <p className="text-xs text-white/90">
+                {financialStatus.description}
+              </p>
           </CardContent>
         </Card>
         <Card>
