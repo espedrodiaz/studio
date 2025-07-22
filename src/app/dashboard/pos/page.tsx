@@ -3,16 +3,18 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { products, customers, getPaymentMethods, getCurrentBcvRate } from "@/lib/placeholder-data";
-import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign } from "lucide-react";
+import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
 
 type CartItem = typeof products[0] & { quantity: number };
 
@@ -30,8 +32,13 @@ export default function PosPage() {
     const [paymentMethodsList, setPaymentMethodsList] = useState(getPaymentMethods());
     const bcvRate = getCurrentBcvRate();
 
+    const [currentDate, setCurrentDate] = useState('');
+
     useEffect(() => {
         setPaymentMethodsList(getPaymentMethods());
+        setCurrentDate(new Date().toLocaleDateString('es-VE', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        }));
     }, []);
 
     const handleOpenCashDrawer = () => {
@@ -46,9 +53,34 @@ export default function PosPage() {
         setIsCashDrawerOpen(true);
         toast({
             title: "Caja Abierta",
-            description: `Caja iniciada con $${formatUsd(initialBalances.usd)} y Bs ${formatBs(convertToBs(initialBalances.usd))}.`,
+            description: `Caja iniciada con $${formatUsd(initialBalances.usd)} y Bs ${formatBs(initialBalances.ves)}.`,
         });
     }
+
+    const handleCloseCashDrawer = (reportType: 'X' | 'Z') => {
+        // In a real app, this would generate and print the report.
+        toast({
+            title: `Reporte ${reportType} Generado`,
+            description: "La funcionalidad de impresión se implementará en el futuro.",
+        });
+
+        if (reportType === 'Z') {
+            setIsCashDrawerOpen(false);
+            // Reset all states
+            setStep(1);
+            setCart([]);
+            setSelectedCustomer(null);
+            setPayments([]);
+            setChangePayments([]);
+            setSearchTerm('');
+            setInitialBalances({ usd: 0, ves: 0 });
+             toast({
+                title: "Caja Cerrada",
+                description: "La sesión de caja ha finalizado. Puede iniciar una nueva.",
+            });
+        }
+    }
+
 
     const filteredProducts = useMemo(() => {
         if (!searchTerm) return [];
@@ -164,7 +196,7 @@ export default function PosPage() {
                         <div className="md:col-span-2">
                              <Card>
                                 <CardHeader>
-                                    <CardTitle>Productos</CardTitle>
+                                    <h3 className="text-2xl font-semibold leading-none tracking-tight">Productos</h3>
                                     <div className="relative mt-2">
                                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                                         <Input 
@@ -201,7 +233,7 @@ export default function PosPage() {
                      <div className="grid md:grid-cols-3 gap-8">
                         <Card className="md:col-span-2">
                             <CardHeader>
-                                <CardTitle>Seleccionar Cliente</CardTitle>
+                                <h3 className="text-2xl font-semibold leading-none tracking-tight">Seleccionar Cliente</h3>
                                 <div className="flex items-center gap-4 mt-2">
                                     <div className="relative flex-grow">
                                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -235,8 +267,8 @@ export default function PosPage() {
                      <div className="grid md:grid-cols-3 gap-8">
                         <Card className="md:col-span-2">
                             <CardHeader>
-                                <CardTitle>Procesar Pago</CardTitle>
-                                <CardContent className="text-muted-foreground p-0 pt-2">Cliente: {selectedCustomer?.name || 'Cliente Ocasional'}</CardContent>
+                                <h3 className="text-2xl font-semibold leading-none tracking-tight">Procesar Pago</h3>
+                                <p className="text-sm text-muted-foreground pt-2">Cliente: {selectedCustomer?.name || 'Cliente Ocasional'}</p>
                             </CardHeader>
                              <CardContent className="space-y-4">
                                 <Label className="font-semibold">Recibir Pago</Label>
@@ -303,8 +335,8 @@ export default function PosPage() {
     const renderCart = () => (
         <Card>
             <CardHeader>
-                <CardTitle>Carrito de Compra</CardTitle>
-                {selectedCustomer && <Badge variant="secondary" className="w-fit">{selectedCustomer.name}</Badge>}
+                <h3 className="text-2xl font-semibold leading-none tracking-tight">Carrito de Compra</h3>
+                {selectedCustomer && <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>}
             </CardHeader>
             <CardContent className="max-h-[50vh] overflow-y-auto">
                 {cart.length === 0 ? (
@@ -394,9 +426,10 @@ export default function PosPage() {
                             <Input
                                 id="usd-balance"
                                 type="number"
-                                value={initialBalances.usd}
+                                value={initialBalances.usd === 0 ? '' : initialBalances.usd}
                                 onChange={(e) => setInitialBalances(b => ({ ...b, usd: parseFloat(e.target.value) || 0 }))}
                                 className="col-span-3"
+                                placeholder="0.00"
                             />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
@@ -406,9 +439,10 @@ export default function PosPage() {
                             <Input
                                 id="ves-balance"
                                 type="number"
-                                value={initialBalances.ves}
+                                 value={initialBalances.ves === 0 ? '' : initialBalances.ves}
                                 onChange={(e) => setInitialBalances(b => ({ ...b, ves: parseFloat(e.target.value) || 0 }))}
                                 className="col-span-3"
+                                placeholder="0.00"
                             />
                         </div>
                     </div>
@@ -423,6 +457,43 @@ export default function PosPage() {
 
             {isCashDrawerOpen && (
                 <>
+                    <Card className="mb-6">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <h3 className="text-lg font-semibold leading-none tracking-tight">Terminal de Venta</h3>
+                                <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                    <CalendarIcon className="h-4 w-4"/> {currentDate}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="text-right">
+                                    <p className="text-sm font-medium">Caja Inicial</p>
+                                    <p className="text-xs text-muted-foreground">${formatUsd(initialBalances.usd)} / {formatBs(initialBalances.ves)} Bs</p>
+                                </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="icon">
+                                            <MoreVertical className="h-4 w-4" />
+                                            <span className="sr-only">Opciones de Caja</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Reportes y Cierre</DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => handleCloseCashDrawer('X')}>
+                                            <FileText className="mr-2 h-4 w-4" />
+                                            <span>Imprimir Cierre X</span>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleCloseCashDrawer('Z')} className="text-destructive">
+                                            <Printer className="mr-2 h-4 w-4" />
+                                            <span>Imprimir Cierre Z y Cerrar Caja</span>
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </CardHeader>
+                    </Card>
+
                     <div className="space-y-4">
                         {renderStep()}
                         <div className="flex justify-between mt-8">
@@ -443,3 +514,5 @@ export default function PosPage() {
         </>
     );
 }
+
+    
