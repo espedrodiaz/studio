@@ -174,15 +174,15 @@ export default function PosPage() {
                                         />
                                     </div>
                                 </CardHeader>
-                                <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 min-h-[60vh] max-h-[60vh] overflow-y-auto">
-                                    {filteredProducts.map(product => (
-                                        <Card key={product.id} className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => addToCart(product)}>
-                                            <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                                                <p className="font-semibold text-sm">{product.name}</p>
+                                <CardContent className="space-y-2 min-h-[60vh] max-h-[60vh] overflow-y-auto p-4">
+                                     {filteredProducts.map(product => (
+                                        <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => addToCart(product)}>
+                                            <p className="font-semibold text-sm flex-1">{product.name}</p>
+                                            <div className="text-right">
                                                 <p className="text-primary font-bold">{formatBs(convertToBs(product.salePrice))} Bs</p>
                                                 <p className="text-muted-foreground text-xs">(${formatUsd(product.salePrice)})</p>
-                                            </CardContent>
-                                        </Card>
+                                            </div>
+                                        </div>
                                     ))}
                                     {searchTerm && filteredProducts.length === 0 && (
                                         <div className="col-span-full text-center text-muted-foreground py-10">
@@ -442,3 +442,5 @@ export default function PosPage() {
         </>
     );
 }
+
+    
