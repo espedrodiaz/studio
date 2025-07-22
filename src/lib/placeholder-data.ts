@@ -85,16 +85,41 @@ export const getCurrentBcvRate = () => {
 }
 
 export const updateCurrentBcvRate = (newRate: Partial<typeof exchangeRates[0]>) => {
-    // In a real app, this logic would be more robust, potentially involving
-    // sorting the entire list and picking the newest one.
-    // For this placeholder, we directly set it.
-    if (newRate.rate && (!currentBcvRate.date || new Date(newRate.date!) > new Date(currentBcvRate.date))) {
+    if (newRate.rate) {
         currentBcvRate = { ...currentBcvRate, ...newRate };
     }
-    // Also add to the main list if it's new
     if (newRate.id && !exchangeRates.find(r => r.id === newRate.id)) {
         exchangeRates.push(newRate as typeof exchangeRates[0]);
     }
-
     bcvRateSubject.next(currentBcvRate.rate);
 };
+
+// Supplier Rates
+export let supplierRates = [
+    { id: 'SRATE001', name: 'Proveedor A', rate: 101.50, lastUpdated: '2024-07-25T10:00:00.000Z' },
+    { id: 'SRATE002', name: 'Proveedor B (Importación)', rate: 99.80, lastUpdated: '2024-07-24T15:30:00.000Z' },
+];
+
+export const addSupplierRate = (rate: {name: string, rate: number}) => {
+    const newRate = {
+        id: `SRATE${new Date().getTime()}`,
+        ...rate,
+        lastUpdated: new Date().toISOString()
+    };
+    supplierRates.push(newRate);
+    return newRate;
+}
+
+export const updateSupplierRate = (id: string, updates: {name: string, rate: number}) => {
+    let rateToUpdate = supplierRates.find(r => r.id === id);
+    if (rateToUpdate) {
+        rateToUpdate.name = updates.name;
+        rateToUpdate.rate = updates.rate;
+        rateToUpdate.lastUpdated = new Date().toISOString();
+    }
+    return rateToUpdate;
+}
+
+export const deleteSupplierRate = (id: string) => {
+    supplierRates = supplierRates.filter(r => r.id !== id);
+}

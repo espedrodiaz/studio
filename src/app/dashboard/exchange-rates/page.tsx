@@ -25,15 +25,24 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { MoreHorizontal, PlusCircle, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, Minus } from "lucide-react";
-import { exchangeRates as initialRates, updateCurrentBcvRate, getCurrentBcvRate, bcvRateSubject } from "@/lib/placeholder-data";
+import { MoreHorizontal, PlusCircle, Trash2, ArrowUp, ArrowDown, TrendingUp, TrendingDown, Minus, Edit } from "lucide-react";
+import { 
+  exchangeRates as initialBcvRates, 
+  supplierRates as initialSupplierRates,
+  updateCurrentBcvRate, 
+  getCurrentBcvRate, 
+  bcvRateSubject,
+  addSupplierRate,
+  updateSupplierRate,
+  deleteSupplierRate
+} from "@/lib/placeholder-data";
 import { toast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 
 type ExchangeRate = {
   id: string;
@@ -41,48 +50,66 @@ type ExchangeRate = {
   rate: number;
 };
 
+type SupplierRate = {
+  id: string;
+  name: string;
+  rate: number;
+  lastUpdated: string;
+}
+
 export default function ExchangeRatesPage() {
-  const [rates, setRates] = useState<ExchangeRate[]>(
-    [...initialRates].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  const [bcvRates, setBcvRates] = useState<ExchangeRate[]>(
+    [...initialBcvRates].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   );
-  const [newRate, setNewRate] = useState<number | "">("");
-  const [currentRate, setCurrentRate] = useState(getCurrentBcvRate());
+  const [supplierRates, setSupplierRates] = useState<SupplierRate[]>(initialSupplierRates);
+
+  const [newBcvRate, setNewBcvRate] = useState<number | "">("");
+  const [currentBcvRate, setCurrentBcvRate] = useState(getCurrentBcvRate());
   const [selectedMonth, setSelectedMonth] = useState<string>("all");
-  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [isBcvModalOpen, setIsBcvModalOpen] = useState(false);
+  const [isSupplierModalOpen, setIsSupplierModalOpen] = useState(false);
+  
+  const [editingSupplierRate, setEditingSupplierRate] = useState<SupplierRate | null>(null);
+  const [supplierRateName, setSupplierRateName] = useState("");
+  const [supplierRateAmount, setSupplierRateAmount] = useState<number | "">("");
+
 
   useEffect(() => {
     const subscription = bcvRateSubject.subscribe(rate => {
-      setCurrentRate(rate);
+      setCurrentBcvRate(rate);
+      // Force re-render of components that depend on supplier rates differences
+      setSupplierRates([...initialSupplierRates]);
     });
     return () => subscription.unsubscribe();
   }, []);
 
   const availableMonths = useMemo(() => {
     const months = new Set<string>();
-    rates.forEach(rate => {
+    bcvRates.forEach(rate => {
       const date = new Date(rate.date);
       const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
       months.add(monthYear);
     });
     return Array.from(months);
-  }, [rates]);
+  }, [bcvRates]);
 
-  const filteredRates = useMemo(() => {
+  const filteredBcvRates = useMemo(() => {
     if (selectedMonth === 'all') {
-      return rates;
+      return bcvRates;
     }
-    return rates.filter(rate => {
+    return bcvRates.filter(rate => {
       const date = new Date(rate.date);
       const monthYear = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
       return monthYear === selectedMonth;
     });
-  }, [rates, selectedMonth]);
+  }, [bcvRates, selectedMonth]);
 
   const monthSummary = useMemo(() => {
-    if (selectedMonth === 'all' || filteredRates.length < 1) {
+    if (selectedMonth === 'all' || filteredBcvRates.length < 1) {
       return null;
     }
-    const monthRates = [...filteredRates].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    const monthRates = [...filteredBcvRates].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     const initialRate = monthRates[0].rate;
     const finalRate = monthRates[monthRates.length - 1].rate;
     const variation = finalRate - initialRate;
@@ -92,132 +119,118 @@ export default function ExchangeRatesPage() {
     if (variation > 0) trend = 'up';
     if (variation < 0) trend = 'down';
 
-    return {
-      initialRate,
-      finalRate,
-      variation,
-      percentage,
-      trend
-    };
-  }, [filteredRates, selectedMonth]);
+    return { initialRate, finalRate, variation, percentage, trend };
+  }, [filteredBcvRates, selectedMonth]);
 
 
-  const handleAddRate = () => {
-    if (typeof newRate !== 'number' || newRate <= 0) {
-        toast({
-            title: "Error",
-            description: "Por favor, ingrese una tasa válida.",
-            variant: "destructive",
-        });
+  const handleAddBcvRate = () => {
+    if (typeof newBcvRate !== 'number' || newBcvRate <= 0) {
+        toast({ title: "Error", description: "Por favor, ingrese una tasa válida.", variant: "destructive" });
         return;
     }
     const newRateEntry: ExchangeRate = {
       id: `RATE${new Date().getTime()}`,
       date: new Date().toISOString(),
-      rate: newRate,
+      rate: newBcvRate,
     };
-    
-    // Add new rate and re-sort
-    const updatedRates = [...rates, newRateEntry].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    setRates(updatedRates);
-    
-    // The most recent rate becomes the current rate
+    const updatedRates = [...bcvRates, newRateEntry].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    setBcvRates(updatedRates);
     if (updatedRates.length > 0) {
       updateCurrentBcvRate(updatedRates[0]);
     }
-    
-    setNewRate("");
-    setIsModalOpen(false);
-    toast({
-      title: "Tasa Agregada",
-      description: `La nueva tasa de ${newRate} Bs/$ ha sido registrada.`,
-    });
+    setNewBcvRate("");
+    setIsBcvModalOpen(false);
+    toast({ title: "Tasa Agregada", description: `La nueva tasa BCV de ${newBcvRate} Bs/$ ha sido registrada.` });
   };
 
-  const handleDeleteRate = (id: string) => {
-    const newRates = rates.filter(rate => rate.id !== id);
-    setRates(newRates);
-    
+  const handleDeleteBcvRate = (id: string) => {
+    const newRates = bcvRates.filter(rate => rate.id !== id);
+    setBcvRates(newRates);
     const sorted = [...newRates].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     if (sorted.length > 0) {
         updateCurrentBcvRate(sorted[0]);
     } else {
         updateCurrentBcvRate({rate: 0});
     }
-
-     toast({
-      title: "Tasa Eliminada",
-      description: "La tasa ha sido eliminada del historial.",
-      variant: "destructive"
-    });
+    toast({ title: "Tasa Eliminada", description: "La tasa BCV ha sido eliminada del historial.", variant: "destructive" });
   }
 
-  const getRateChange = (index: number) => {
-      if (index >= filteredRates.length - 1) {
-          return null; // No previous rate to compare
-      }
-      const current = filteredRates[index].rate;
-      const previous = filteredRates[index + 1].rate;
-      const difference = current - previous;
-      const percentage = (difference / previous) * 100;
+  const handleOpenSupplierModal = (rate: SupplierRate | null = null) => {
+    setEditingSupplierRate(rate);
+    setSupplierRateName(rate ? rate.name : "");
+    setSupplierRateAmount(rate ? rate.rate : "");
+    setIsSupplierModalOpen(true);
+  }
 
-      let trend: 'up' | 'down' | null = 'neutral';
-      if (difference > 0) trend = 'up';
-      if (difference < 0) trend = 'down';
+  const handleSaveSupplierRate = () => {
+    if (!supplierRateName || typeof supplierRateAmount !== 'number' || supplierRateAmount <= 0) {
+      toast({ title: "Error", description: "Por favor, ingrese un nombre y una tasa válidos.", variant: "destructive" });
+      return;
+    }
 
-      return {
-          trend,
-          difference,
-          percentage
-      }
+    if (editingSupplierRate) { // Update
+      const updatedRate = updateSupplierRate(editingSupplierRate.id, { name: supplierRateName, rate: supplierRateAmount });
+      setSupplierRates(supplierRates.map(r => r.id === editingSupplierRate.id ? updatedRate : r));
+      toast({ title: "Tasa Actualizada", description: `La tasa para ${supplierRateName} ha sido actualizada.` });
+    } else { // Create
+      addSupplierRate({ name: supplierRateName, rate: supplierRateAmount });
+       setSupplierRates([...initialSupplierRates]);
+       toast({ title: "Tasa de Proveedor Agregada", description: `La tasa para ${supplierRateName} ha sido registrada.` });
+    }
+    
+    setIsSupplierModalOpen(false);
+    setEditingSupplierRate(null);
+    setSupplierRateName("");
+    setSupplierRateAmount("");
   }
   
-  const formatVenezuelanDateTime = (isoString: string) => {
-    return new Date(isoString).toLocaleString('es-VE', {
-        timeZone: 'America/Caracas',
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: true,
-    });
+  const handleDeleteSupplierRate = (id: string) => {
+    deleteSupplierRate(id);
+    setSupplierRates(supplierRates.filter(r => r.id !== id));
+    toast({ title: "Tasa Eliminada", description: "La tasa del proveedor ha sido eliminada.", variant: "destructive" });
   }
 
+
+  const getBcvRateChange = (index: number) => {
+      if (index >= filteredBcvRates.length - 1) return null;
+      const current = filteredBcvRates[index].rate;
+      const previous = filteredBcvRates[index + 1].rate;
+      const difference = current - previous;
+      const percentage = previous !== 0 ? (difference / previous) * 100 : 0;
+      let trend: 'up' | 'down' | 'neutral' = 'neutral';
+      if (difference > 0) trend = 'up';
+      else if (difference < 0) trend = 'down';
+      return { trend, difference, percentage }
+  }
+  
+  const getSupplierRateDifference = (rate: number) => {
+    if (currentBcvRate === 0) return { difference: 0, percentage: 0 };
+    const difference = rate - currentBcvRate;
+    const percentage = (difference / currentBcvRate) * 100;
+    return { difference, percentage };
+  }
+
+  const formatVenezuelanDateTime = (isoString: string) => new Date(isoString).toLocaleString('es-VE', { timeZone: 'America/Caracas', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true });
   const formatBs = (amount: number) => {
     const fixedAmount = amount.toFixed(2);
     const [integer, decimal] = fixedAmount.split('.');
-    const formattedInteger = new Intl.NumberFormat('de-DE').format(Number(integer));
-    return `${formattedInteger},${decimal}`;
+    return `${new Intl.NumberFormat('de-DE').format(Number(integer))},${decimal}`;
   }
-
 
   return (
     <div className="grid gap-6 md:grid-cols-3">
         <div className="flex flex-col gap-6 md:col-span-1">
             <Card>
-                <CardHeader>
-                    <CardTitle>Tasa Actual</CardTitle>
-                    <CardDescription>VES / USD</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold tracking-tight text-green-600">
-                        {formatBs(currentRate)}
-                    </p>
-                </CardContent>
+                <CardHeader><CardTitle>Tasa Actual (BCV)</CardTitle><CardDescription>VES / USD</CardDescription></CardHeader>
+                <CardContent><p className="text-4xl font-bold tracking-tight text-green-600">{formatBs(currentBcvRate)}</p></CardContent>
             </Card>
              <Card>
-                <CardHeader>
-                    <CardTitle>Acciones</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Acciones</CardTitle></CardHeader>
                 <CardContent className="grid gap-4">
                      <div>
-                         <Label>Filtrar por mes</Label>
+                         <Label>Filtrar Historial BCV por mes</Label>
                          <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Filtrar por mes" />
-                            </SelectTrigger>
+                            <SelectTrigger><SelectValue placeholder="Filtrar por mes" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">Todos los meses</SelectItem>
                                 {availableMonths.map(month => (
@@ -227,99 +240,61 @@ export default function ExchangeRatesPage() {
                         </Select>
                       </div>
 
-                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                        <DialogTrigger asChild>
-                             <Button className="w-full gap-2">
-                                <PlusCircle className="h-4 w-4"/> Añadir Nueva Tasa
-                             </Button>
-                        </DialogTrigger>
+                    <Dialog open={isBcvModalOpen} onOpenChange={setIsBcvModalOpen}>
+                        <DialogTrigger asChild><Button className="w-full gap-2"><PlusCircle className="h-4 w-4"/> Añadir Tasa BCV</Button></DialogTrigger>
                         <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Registrar Nueva Tasa de Cambio</DialogTitle>
-                                <DialogDescription>
-                                    Ingrese el nuevo valor de la tasa en Bolívares por Dólar.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <div className="py-4">
-                               <div className="space-y-2">
-                                    <Label htmlFor="rate">Nueva Tasa (Bs por 1$)</Label>
-                                    <Input
-                                    id="rate"
-                                    type="number"
-                                    placeholder="Ej: 40.50"
-                                    value={newRate}
-                                    onChange={(e) => setNewRate(parseFloat(e.target.value) || "")}
-                                    />
-                                </div>
+                            <DialogHeader><DialogTitle>Registrar Nueva Tasa BCV</DialogTitle><DialogDescription>Ingrese el nuevo valor de la tasa en Bolívares por Dólar.</DialogDescription></DialogHeader>
+                            <div className="py-4"><div className="space-y-2"><Label htmlFor="rate">Nueva Tasa (Bs por 1$)</Label><Input id="rate" type="number" placeholder="Ej: 40.50" value={newBcvRate} onChange={(e) => setNewBcvRate(parseFloat(e.target.value) || "")}/></div></div>
+                            <DialogFooter><Button variant="outline" onClick={() => setIsBcvModalOpen(false)}>Cancelar</Button><Button onClick={handleAddBcvRate} disabled={!newBcvRate || newBcvRate <= 0}>Registrar Tasa</Button></DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                    
+                    <Dialog open={isSupplierModalOpen} onOpenChange={setIsSupplierModalOpen}>
+                        <DialogTrigger asChild><Button variant="outline" className="w-full gap-2" onClick={() => handleOpenSupplierModal()}><PlusCircle className="h-4 w-4"/> Añadir Tasa Proveedor</Button></DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader><DialogTitle>{editingSupplierRate ? "Editar" : "Añadir"} Tasa de Proveedor</DialogTitle><DialogDescription>Registre una tasa de cambio específica de un proveedor.</DialogDescription></DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="space-y-2"><Label htmlFor="supplier-name">Nombre del Proveedor</Label><Input id="supplier-name" value={supplierRateName} onChange={(e) => setSupplierRateName(e.target.value)} placeholder="Ej: Proveedor XYZ"/></div>
+                                <div className="space-y-2"><Label htmlFor="supplier-rate">Tasa (Bs por 1$)</Label><Input id="supplier-rate" type="number" value={supplierRateAmount} onChange={(e) => setSupplierRateAmount(parseFloat(e.target.value) || "")} placeholder="Ej: 41.20"/></div>
                             </div>
-                            <DialogFooter>
-                                <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                                <Button onClick={handleAddRate} disabled={!newRate || newRate <= 0}>
-                                    Registrar Tasa
-                                </Button>
-                            </DialogFooter>
+                            <DialogFooter><Button variant="outline" onClick={() => setIsSupplierModalOpen(false)}>Cancelar</Button><Button onClick={handleSaveSupplierRate}>{editingSupplierRate ? "Guardar Cambios" : "Registrar Tasa"}</Button></DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </CardContent>
              </Card>
         </div>
-        <div className="md:col-span-2">
+        <div className="md:col-span-2 flex flex-col gap-6">
             <Card>
-                <CardHeader>
-                    <CardTitle>Historial de Tasas</CardTitle>
-                    <CardDescription>Seguimiento de las tasas de cambio publicadas.</CardDescription>
-                </CardHeader>
+                <CardHeader><CardTitle>Historial de Tasas BCV</CardTitle><CardDescription>Seguimiento de las tasas de cambio publicadas por el BCV.</CardDescription></CardHeader>
                 <CardContent>
                     {monthSummary && (
                       <Card className="mb-6 bg-muted/30">
-                          <CardHeader className="pb-2">
-                              <CardTitle className="text-base">
-                                Resumen de {new Date(selectedMonth).toLocaleString('es-VE', { month: 'long', year: 'numeric', timeZone: 'UTC' })}
-                              </CardTitle>
-                          </CardHeader>
+                          <CardHeader className="pb-2"><CardTitle className="text-base">Resumen de {new Date(selectedMonth).toLocaleString('es-VE', { month: 'long', year: 'numeric', timeZone: 'UTC' })}</CardTitle></CardHeader>
                           <CardContent className="grid grid-cols-3 gap-4 text-center">
-                              <div>
-                                  <p className="text-sm text-muted-foreground">Tasa Inicial</p>
-                                  <p className="font-semibold">{formatBs(monthSummary.initialRate)}</p>
-                              </div>
-                              <div>
-                                  <p className="text-sm text-muted-foreground">Tasa Final</p>
-                                  <p className="font-semibold">{formatBs(monthSummary.finalRate)}</p>
-                              </div>
+                              <div><p className="text-sm text-muted-foreground">Tasa Inicial</p><p className="font-semibold">{formatBs(monthSummary.initialRate)}</p></div>
+                              <div><p className="text-sm text-muted-foreground">Tasa Final</p><p className="font-semibold">{formatBs(monthSummary.finalRate)}</p></div>
                               <div>
                                 <p className="text-sm text-muted-foreground">Variación</p>
-                                <div className={cn("flex items-center justify-center gap-1 font-semibold", 
-                                  monthSummary.trend === 'up' ? 'text-green-600' : 
-                                  monthSummary.trend === 'down' ? 'text-red-500' : ''
-                                )}>
-                                  {monthSummary.trend === 'up' && <TrendingUp className="h-4 w-4" />}
-                                  {monthSummary.trend === 'down' && <TrendingDown className="h-4 w-4" />}
-                                  {monthSummary.trend === 'neutral' && <Minus className="h-4 w-4" />}
+                                <div className={cn("flex items-center justify-center gap-1 font-semibold", monthSummary.trend === 'up' ? 'text-green-600' : monthSummary.trend === 'down' ? 'text-red-500' : '')}>
+                                  {monthSummary.trend === 'up' && <TrendingUp className="h-4 w-4" />}{monthSummary.trend === 'down' && <TrendingDown className="h-4 w-4" />}{monthSummary.trend === 'neutral' && <Minus className="h-4 w-4" />}
                                   <span>{formatBs(monthSummary.variation)} ({monthSummary.percentage.toFixed(2)}%)</span>
                                 </div>
                               </div>
                           </CardContent>
                       </Card>
                     )}
-                    <div className="max-h-[60vh] overflow-y-auto">
+                    <div className="max-h-[45vh] overflow-y-auto">
                         <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Fecha y Hora</TableHead>
-                                    <TableHead className="text-center">Tasa (Bs/$)</TableHead>
-                                    <TableHead className="text-center">Cambio</TableHead>
-                                    <TableHead><span className="sr-only">Acciones</span></TableHead>
-                                </TableRow>
-                            </TableHeader>
+                            <TableHeader><TableRow><TableHead>Fecha y Hora</TableHead><TableHead className="text-center">Tasa (Bs/$)</TableHead><TableHead className="text-center">Cambio</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {filteredRates.map((rate, index) => {
-                                    const change = getRateChange(index);
+                                {filteredBcvRates.map((rate, index) => {
+                                    const change = getBcvRateChange(index);
                                     return (
                                     <TableRow key={rate.id}>
                                         <TableCell className="text-xs">{formatVenezuelanDateTime(rate.date)}</TableCell>
                                         <TableCell className="font-medium text-center">{rate.rate.toFixed(2)}</TableCell>
                                         <TableCell className={cn("text-xs text-center", change?.trend === 'up' ? 'text-green-600' : change?.trend === 'down' ? 'text-red-500' : '')}>
-                                        {change && change.trend && (
+                                        {change && (
                                             <div className="flex items-center justify-center gap-1">
                                             {change.trend === 'up' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
                                             <span>{formatBs(change.difference)} ({change.percentage.toFixed(2)}%)</span>
@@ -327,18 +302,8 @@ export default function ExchangeRatesPage() {
                                         )}
                                         </TableCell>
                                         <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                            <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                                <span className="sr-only">Toggle menu</span>
-                                            </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => handleDeleteRate(rate.id)} className="text-destructive gap-2">
-                                                <Trash2 className="h-4 w-4" /> Eliminar
-                                            </DropdownMenuItem>
-                                            </DropdownMenuContent>
+                                        <DropdownMenu><DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end"><DropdownMenuItem onClick={() => handleDeleteBcvRate(rate.id)} className="text-destructive gap-2"><Trash2 className="h-4 w-4" /> Eliminar</DropdownMenuItem></DropdownMenuContent>
                                         </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
@@ -347,6 +312,41 @@ export default function ExchangeRatesPage() {
                             </TableBody>
                         </Table>
                     </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader><CardTitle>Tasas de Proveedores</CardTitle><CardDescription>Tasas de referencia de distintos proveedores.</CardDescription></CardHeader>
+                <CardContent>
+                     <div className="max-h-[45vh] overflow-y-auto">
+                        <Table>
+                           <TableHeader><TableRow><TableHead>Proveedor</TableHead><TableHead className="text-center">Tasa (Bs/$)</TableHead><TableHead className="text-center">Dif. vs BCV</TableHead><TableHead>Últ. Actualización</TableHead><TableHead><span className="sr-only">Acciones</span></TableHead></TableRow></TableHeader>
+                           <TableBody>
+                            {supplierRates.map(rate => {
+                                const diff = getSupplierRateDifference(rate.rate);
+                                return (
+                                <TableRow key={rate.id}>
+                                    <TableCell className="font-medium">{rate.name}</TableCell>
+                                    <TableCell className="font-medium text-center">{formatBs(rate.rate)}</TableCell>
+                                    <TableCell className={cn("text-xs text-center", diff.difference > 0 ? 'text-red-500' : 'text-green-600')}>
+                                      {diff.difference >= 0 ? '+' : ''}{formatBs(diff.difference)} ({diff.percentage.toFixed(2)}%)
+                                    </TableCell>
+                                    <TableCell className="text-xs">{formatVenezuelanDateTime(rate.lastUpdated)}</TableCell>
+                                    <TableCell>
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild><Button aria-haspopup="true" size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Toggle menu</span></Button></DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                            <DropdownMenuItem onClick={() => handleOpenSupplierModal(rate)} className="gap-2"><Edit className="h-4 w-4"/> Editar</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleDeleteSupplierRate(rate.id)} className="text-destructive gap-2"><Trash2 className="h-4 w-4"/> Eliminar</DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                                )
+                            })}
+                           </TableBody>
+                        </Table>
+                     </div>
                 </CardContent>
             </Card>
         </div>
