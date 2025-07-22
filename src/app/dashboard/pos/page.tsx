@@ -286,7 +286,9 @@ export default function PosPage() {
                                             <Button variant="outline"><UserPlus className="mr-2 h-4 w-4"/> Nuevo Cliente</Button>
                                         </DialogTrigger>
                                         <DialogContent>
-                                            <DialogHeader><DialogTitle>Crear Nuevo Cliente</DialogTitle></DialogHeader>
+                                            <DialogHeader>
+                                                <DialogTitle>Crear Nuevo Cliente</DialogTitle>
+                                            </DialogHeader>
                                             {/* New Customer Form */}
                                         </DialogContent>
                                     </Dialog>
@@ -526,7 +528,7 @@ export default function PosPage() {
                                     <SelectValue placeholder="Seleccione una caja" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {paymentMethodsList.filter(pm => pm.type === "Efectivo").map(pm => (
+                                    {paymentMethodsList.map(pm => (
                                         <SelectItem key={pm.id} value={pm.id}>{pm.name}</SelectItem>
                                     ))}
                                 </SelectContent>
@@ -627,6 +629,8 @@ export default function PosPage() {
         </>
     );
 }
+
+    
 
     
 
