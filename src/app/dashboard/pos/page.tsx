@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { products, customers, getPaymentMethods, getCurrentBcvRate, cashMovements as initialCashMovements, addCashMovement } from "@/lib/placeholder-data";
-import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp } from "lucide-react";
+import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp, ShoppingCart } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
@@ -232,50 +232,60 @@ export default function PosPage() {
 
     const renderStep = () => {
         switch (step) {
-            case 1: // Product Selection
+            case 1: // Product Selection & Cart
                 return (
-                    <div className="grid md:grid-cols-3 gap-8">
-                        <div className="md:col-span-2">
-                             <Card>
-                                <CardHeader>
-                                    <h3 className="text-2xl font-semibold leading-none tracking-tight">Productos</h3>
-                                    <div className="relative mt-2">
-                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input 
-                                            placeholder="Buscar productos por nombre..." 
-                                            className="pl-8"
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                        />
+                    <div className="flex flex-col gap-8">
+                       <Card>
+                          <CardHeader>
+                            <CardTitle>Buscar Productos</CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                             <div className="relative">
+                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                <Input 
+                                    placeholder="Buscar productos por nombre..." 
+                                    className="pl-8"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                                {searchTerm && (
+                                <div className="absolute top-full left-0 right-0 z-10 mt-2 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto">
+                                    {filteredProducts.length > 0 ? (
+                                    filteredProducts.map(product => (
+                                        <div key={product.id} className="flex items-center justify-between p-3 border-b last:border-b-0 cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => addToCart(product)}>
+                                        <p className="font-semibold text-sm flex-1">{product.name}</p>
+                                        <div className="text-right">
+                                            <p className="text-primary font-bold">{formatBs(convertToBs(product.salePrice))} Bs</p>
+                                            <p className="text-muted-foreground text-xs">(${formatUsd(product.salePrice)})</p>
+                                        </div>
+                                        </div>
+                                    ))
+                                    ) : (
+                                    <div className="p-4 text-center text-sm text-muted-foreground">
+                                        No se encontraron productos.
                                     </div>
-                                </CardHeader>
-                                <CardContent className="space-y-2 min-h-[60vh] max-h-[60vh] overflow-y-auto p-4">
-                                     {filteredProducts.map(product => (
-                                        <div key={product.id} className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => addToCart(product)}>
-                                            <p className="font-semibold text-sm flex-1">{product.name}</p>
-                                            <div className="text-right">
-                                                <p className="text-primary font-bold">{formatBs(convertToBs(product.salePrice))} Bs</p>
-                                                <p className="text-muted-foreground text-xs">(${formatUsd(product.salePrice)})</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {searchTerm && filteredProducts.length === 0 && (
-                                        <div className="col-span-full text-center text-muted-foreground py-10">
-                                            No se encontraron productos.
-                                        </div>
                                     )}
-                                </CardContent>
-                            </Card>
-                        </div>
-                        {renderCart()}
+                                </div>
+                                )}
+                            </div>
+                          </CardContent>
+                       </Card>
+
+                       {renderCart()}
+
+                       <div className="flex justify-end mt-4">
+                           <Button onClick={() => setStep(2)} disabled={cart.length === 0}>
+                                Siguiente <ArrowRight className="ml-2 h-4 w-4" />
+                           </Button>
+                       </div>
                     </div>
                 );
-            case 2: // Customer Selection
-                return (
-                     <div className="grid md:grid-cols-3 gap-8">
-                        <Card className="md:col-span-2">
+            case 2: // Customer Selection & Cart
+                 return (
+                     <div className="flex flex-col gap-8">
+                        <Card>
                             <CardHeader>
-                                <h3 className="text-2xl font-semibold leading-none tracking-tight">Seleccionar Cliente</h3>
+                                <CardTitle>Seleccionar Cliente</CardTitle>
                                 <div className="flex items-center gap-4 mt-2">
                                     <div className="relative flex-grow">
                                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -304,14 +314,22 @@ export default function PosPage() {
                             </CardContent>
                         </Card>
                         {renderCart()}
+                        <div className="flex justify-between mt-4">
+                            <Button variant="outline" onClick={() => setStep(1)}>
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
+                            </Button>
+                            <Button onClick={() => setStep(3)} disabled={!selectedCustomer}>
+                                Siguiente <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 );
-            case 3: // Payment
+            case 3: // Payment & Cart
                 return (
-                     <div className="grid md:grid-cols-3 gap-8">
-                        <Card className="md:col-span-2">
+                     <div className="flex flex-col gap-8">
+                        <Card>
                             <CardHeader>
-                                <h3 className="text-2xl font-semibold leading-none tracking-tight">Procesar Pago</h3>
+                                <CardTitle>Procesar Pago</CardTitle>
                                 <p className="text-sm text-muted-foreground pt-2">Cliente: {selectedCustomer?.name || 'Cliente Ocasional'}</p>
                             </CardHeader>
                              <CardContent className="space-y-4">
@@ -369,6 +387,12 @@ export default function PosPage() {
                             </CardContent>
                         </Card>
                         {renderCart()}
+                        <div className="flex justify-between mt-4">
+                            <Button variant="outline" onClick={() => setStep(2)}>
+                                <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
+                            </Button>
+                            <Button onClick={handleCompleteSale} disabled={balance > 0 || (changeToGive > 0 && remainingChange > 0.001)}>Completar Venta</Button>
+                        </div>
                     </div>
                 );
             default:
@@ -379,12 +403,19 @@ export default function PosPage() {
     const renderCart = () => (
         <Card>
             <CardHeader>
-                <h3 className="text-2xl font-semibold leading-none tracking-tight">Carrito de Compra</h3>
+                <CardTitle className="flex items-center gap-2">
+                   <ShoppingCart className="h-6 w-6" />
+                   <span>Carrito ({cart.reduce((acc, item) => acc + item.quantity, 0)})</span>
+                </CardTitle>
                 {selectedCustomer && <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>}
             </CardHeader>
             <CardContent className="max-h-[50vh] overflow-y-auto">
                 {cart.length === 0 ? (
-                    <p className="text-muted-foreground text-center py-8">El carrito está vacío</p>
+                     <div className="py-12 flex flex-col items-center justify-center text-center text-muted-foreground">
+                        <ShoppingCart className="h-12 w-12 mb-4" />
+                        <p className="font-semibold">El carrito está vacío</p>
+                        <p className="text-sm">Busca un producto para empezar a vender.</p>
+                    </div>
                 ) : (
                     <div className="space-y-4">
                         {cart.map(item => (
@@ -566,10 +597,10 @@ export default function PosPage() {
                     <Card className="mb-6">
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <h3 className="text-lg font-semibold leading-none tracking-tight">Terminal de Venta</h3>
-                                <p className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+                                <CardTitle>Terminal de Venta</CardTitle>
+                                <CardDescription className="flex items-center gap-2 mt-1">
                                     <CalendarIcon className="h-4 w-4"/> {currentDate}
-                                </p>
+                                </CardDescription>
                             </div>
                             <div className="flex items-center gap-4">
                                 <div className="text-right">
@@ -611,27 +642,9 @@ export default function PosPage() {
 
                     <div className="space-y-4">
                         {renderStep()}
-                        <div className="flex justify-between mt-8">
-                            <Button variant="outline" onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}>
-                                <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
-                            </Button>
-                            {step < 3 ? (
-                                <Button onClick={() => setStep(s => Math.min(3, s + 1))} disabled={cart.length === 0 || (step === 2 && !selectedCustomer)}>
-                                    Siguiente <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            ) : (
-                                <Button onClick={handleCompleteSale} disabled={balance > 0 || (changeToGive > 0 && remainingChange > 0.001)}>Completar Venta</Button>
-                            )}
-                        </div>
                     </div>
                 </>
             )}
         </>
     );
 }
-
-    
-
-    
-
-    
