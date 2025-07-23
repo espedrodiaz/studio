@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { MoreHorizontal, PlusCircle, UserPlus, Car, Trash2, Plus, Users, MessageSquare } from "lucide-react";
+import { MoreHorizontal, PlusCircle, UserPlus, Car, Trash2, Plus, Users, MessageSquare, Home, Eye } from "lucide-react";
 import { customers as initialCustomers } from "@/lib/placeholder-data";
 import { Customer, Vehicle } from "@/lib/types";
 import { Input } from "@/components/ui/input";
@@ -131,7 +131,7 @@ export default function CustomersPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {customers.map((customer) => (
                         <Card key={customer.id} className="flex flex-col">
-                            <CardHeader className="flex-row gap-4 items-center pb-4">
+                            <CardHeader className="flex-row gap-4 items-start pb-4">
                                <div className="flex-1">
                                     <CardTitle className="text-lg">{customer.name}</CardTitle>
                                     <CardDescription>{customer.idNumber}</CardDescription>
@@ -145,6 +145,7 @@ export default function CustomersPage() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                        <DropdownMenuItem onClick={() => openCustomerModal(customer)}><Eye className="mr-2 h-4 w-4" />Ver Detalles</DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => openCustomerModal(customer)}>Editar</DropdownMenuItem>
                                         <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteCustomer(customer.id)}>
                                             Eliminar
@@ -161,12 +162,21 @@ export default function CustomersPage() {
                                     <MessageSquare className="h-4 w-4" />
                                     <span>{customer.phone}</span>
                                 </Link>
-                                 {showVehiclesTab && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Home className="h-4 w-4" />
+                                    <span className="truncate">{customer.address}</span>
+                                </div>
+                                 {showVehiclesTab && customer.vehicles.length > 0 && (
                                      <>
                                         <Separator/>
-                                         <div className="flex items-center gap-2 text-muted-foreground">
-                                             <Car className="h-4 w-4" />
-                                             <span>{customer.vehicles.length} vehículo(s)</span>
+                                         <div className="flex items-start gap-2 text-muted-foreground">
+                                             <Car className="h-4 w-4 mt-0.5" />
+                                             <div>
+                                                 <p className="font-medium text-foreground">{customer.vehicles[0].brand} {customer.vehicles[0].model} ({customer.vehicles[0].year})</p>
+                                                 {customer.vehicles.length > 1 && (
+                                                    <p className="text-xs">+ {customer.vehicles.length -1} vehículo(s) más</p>
+                                                 )}
+                                             </div>
                                          </div>
                                      </>
                                  )}
@@ -275,5 +285,3 @@ export default function CustomersPage() {
     </>
   );
 }
-
-    
