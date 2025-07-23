@@ -37,11 +37,12 @@ import {
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { useBusinessContext } from "@/hooks/use-business-context";
+import Loading from "../loading";
 
 
 export default function UsersPage() {
     const [users, setUsers] = useState<RegisteredUser[]>(getRegisteredUsers());
-    const { user } = useBusinessContext();
+    const { user, isLoading } = useBusinessContext();
 
     // THIS IS A TEMPORARY ADMIN CHECK
     const isAdmin = user && user.email === 'diaznelson.sistemas@gmail.com'; 
@@ -63,6 +64,10 @@ export default function UsersPage() {
             description: "El registro del negocio ha sido eliminado.",
             variant: "destructive"
         });
+    }
+    
+    if (isLoading) {
+        return <Loading />
     }
 
     if (!isAdmin) {
@@ -169,4 +174,3 @@ export default function UsersPage() {
     </Card>
   );
 }
-

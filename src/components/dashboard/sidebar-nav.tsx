@@ -58,7 +58,7 @@ const NavLink = ({ href, children, icon: Icon, onClick, disabled = false }: { hr
 
 export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
-  const { userData, isTrialExpired } = useBusinessContext();
+  const { user, userData, isTrialExpired } = useBusinessContext();
   const isAccountsActive = pathname.startsWith('/dashboard/accounts');
   const isProductsActive = pathname.startsWith('/dashboard/inventory') || 
                            pathname.startsWith('/dashboard/categories') ||
@@ -68,6 +68,8 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                            pathname.startsWith('/dashboard/import-export');
 
   const navDisabled = isTrialExpired;
+  
+  const isAdmin = user && user.email === 'diaznelson.sistemas@gmail.com';
 
   return (
     <div className="flex h-full flex-col">
@@ -140,8 +142,13 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                 </AccordionContent>
             </AccordionItem>
             </Accordion>
-             <Separator className="my-4" />
-             <NavLink href="/dashboard/users" icon={ShieldCheck} onClick={onLinkClick}>Gestionar Usuarios</NavLink>
+             
+             {isAdmin && (
+                <>
+                    <Separator className="my-4" />
+                    <NavLink href="/dashboard/users" icon={ShieldCheck} onClick={onLinkClick}>Gestionar Usuarios</NavLink>
+                </>
+             )}
 
         </nav>
       </div>
@@ -161,4 +168,3 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
     </div>
   );
 }
-
