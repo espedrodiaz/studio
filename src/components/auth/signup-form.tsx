@@ -16,7 +16,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PosLogo } from "../ui/pos-logo";
-import { MailCheck } from "lucide-react";
+import { MailCheck, Loader2 } from "lucide-react";
+import { auth, db } from "@/lib/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { toast } from "@/hooks/use-toast";
 
 const businessCategories = [
     "Abastos y Bodegas",
@@ -34,12 +38,81 @@ const businessCategories = [
 export function SignupForm() {
   const router = useRouter();
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    businessName: "",
+    businessCategory: "",
+    rif: "",
+    email: "",
+    password: "",
+  });
 
-  const handleSignup = (event: React.FormEvent) => {
+  const generateLicenseKey = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let key = '';
+    for (let i = 0; i < 4; i++) {
+        for (let j = 0; j < 4; j++) {
+            key += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        if (i < 3) key += '-';
+    }
+    return key;
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSelectChange = (value: string) => {
+    setFormData({ ...formData, businessCategory: value });
+  };
+
+  const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
-    // Here you would typically handle the form submission, e.g., API call
-    // For now, we'll just simulate the success state.
-    setIsSubmitted(true);
+    if ( !formData.businessCategory ) {
+        toast({ title: "Error", description: "Por favor, selecciona una categoría de negocio.", variant: "destructive"});
+        return;
+    }
+
+    setIsLoading(true);
+
+    try {
+        // 1. Create user in Firebase Auth
+        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        const user = userCredential.user;
+
+        // 2. Create user document in Firestore
+        const licenseKey = generateLicenseKey();
+        await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            fullName: formData.fullName,
+            businessName: formData.businessName,
+            businessCategory: formData.businessCategory,
+            rif: formData.rif,
+            email: formData.email,
+            licenseKey: licenseKey,
+            status: "Pending Activation",
+            createdAt: new Date().toISOString(),
+        });
+        
+        setIsSubmitted(true);
+
+    } catch (error: any) {
+        let description = "Ocurrió un error inesperado. Por favor, intenta de nuevo.";
+        if (error.code === 'auth/email-already-in-use') {
+            description = "Este correo electrónico ya está registrado. Por favor, intenta con otro o inicia sesión.";
+        } else if (error.code === 'auth/weak-password') {
+            description = "La contraseña es muy débil. Debe tener al menos 6 caracteres.";
+        }
+        toast({
+            title: "Error de Registro",
+            description: description,
+            variant: "destructive"
+        })
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   if (isSubmitted) {
@@ -79,18 +152,18 @@ export function SignupForm() {
           <form onSubmit={handleSignup} className="grid gap-4">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="full-name">Nombre completo</Label>
-                <Input id="full-name" placeholder="Tu Nombre" required />
+                <Label htmlFor="fullName">Nombre completo</Label>
+                <Input id="fullName" placeholder="Tu Nombre" required onChange={handleInputChange} value={formData.fullName} />
               </div>
                <div className="grid gap-2">
-                <Label htmlFor="business-name">Nombre de Empresa o Emprendimiento</Label>
-                <Input id="business-name" placeholder="Tu Negocio C.A." required />
+                <Label htmlFor="businessName">Nombre de Empresa o Emprendimiento</Label>
+                <Input id="businessName" placeholder="Tu Negocio C.A." required onChange={handleInputChange} value={formData.businessName}/>
               </div>
             </div>
              <div className="grid md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                     <Label htmlFor="business-category">Categoría del Negocio</Label>
-                    <Select required>
+                    <Select required onValueChange={handleSelectChange}>
                         <SelectTrigger id="business-category">
                             <SelectValue placeholder="Selecciona una categoría" />
                         </SelectTrigger>
@@ -103,23 +176,19 @@ export function SignupForm() {
                 </div>
                  <div className="grid gap-2">
                     <Label htmlFor="rif">RIF</Label>
-                    <Input id="rif" placeholder="J-12345678-9" required />
+                    <Input id="rif" placeholder="J-12345678-9" required onChange={handleInputChange} value={formData.rif}/>
                 </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="address">Dirección</Label>
-              <Input
-                id="address"
-                type="text"
-                placeholder="Av. Principal, Local 1, Ciudad"
-                required
-              />
+              <Label htmlFor="email">Correo electrónico</Label>
+              <Input id="email" type="email" placeholder="nombre@ejemplo.com" required onChange={handleInputChange} value={formData.email}/>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Contraseña</Label>
-              <Input id="password" type="password" required />
+              <Input id="password" type="password" required onChange={handleInputChange} value={formData.password} />
             </div>
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Registrar mi Negocio
             </Button>
           </form>
@@ -134,5 +203,3 @@ export function SignupForm() {
     </div>
   );
 }
-
-    
