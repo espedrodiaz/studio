@@ -287,7 +287,7 @@ export default function SalesPage() {
                     {selectedDate ? `Mostrando totales para el ${format(selectedDate, 'PPP', {locale: es})}` : `Mostrando totales para ${dateRangeLabel}`}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
+            <CardContent className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
                {paymentMethods.map(pm => {
                  const totals = totalsByPaymentMethod[pm.id] || { usd: 0, ves: 0 };
                  const totalAmount = pm.currency === '$' ? totals.usd : totals.ves;
@@ -344,7 +344,7 @@ export default function SalesPage() {
                                                 <div className="flex items-center p-4 cursor-pointer hover:bg-muted/10 group">
                                                     <div className="flex-1 font-medium">{sale.customer}</div>
                                                     <div className="flex-1 text-right font-semibold">
-                                                        <div className="font-semibold">Bs {formatBs(sale.total * bcvRate)}</div>
+                                                        <div className="text-sm">Bs {formatBs(sale.total * bcvRate)}</div>
                                                         <div className="text-xs text-muted-foreground font-normal">(${formatUsd(sale.total)})</div>
                                                     </div>
                                                     <div className="flex-1 flex justify-end items-center">
@@ -381,8 +381,8 @@ export default function SalesPage() {
                                                                     <TableCell>{item.quantity}</TableCell>
                                                                     <TableCell>{item.name}</TableCell>
                                                                     <TableCell className="text-right">
-                                                                        <div className="font-semibold">Bs {formatBs(item.price * item.quantity * bcvRate)}</div>
-                                                                        <div className="text-muted-foreground">(${formatUsd(item.price * item.quantity)})</div>
+                                                                        <div className="font-semibold text-xs">Bs {formatBs(item.price * item.quantity * bcvRate)}</div>
+                                                                        <div className="text-muted-foreground text-xs">(${formatUsd(item.price * item.quantity)})</div>
                                                                     </TableCell>
                                                                 </TableRow>
                                                             ))}
@@ -408,3 +408,5 @@ export default function SalesPage() {
     </div>
   );
 }
+
+    
