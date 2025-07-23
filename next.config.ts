@@ -19,15 +19,6 @@ const nextConfig = {
       },
     ],
   },
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: 'https://studio--facilitoposvzla.us-central1.hosted.app/welcome',
-        permanent: true,
-      },
-    ]
-  },
 };
 
 module.exports = nextConfig;
