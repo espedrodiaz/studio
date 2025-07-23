@@ -25,14 +25,16 @@ import {
 } from "@/components/ui/select";
 import { businessCategories } from "@/lib/placeholder-data";
 import { auth, db } from "@/lib/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
+import { Separator } from "../ui/separator";
 
 export function SignupForm() {
   const router = useRouter();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   
   // Form state
   const [fullName, setFullName] = useState("");
@@ -42,58 +44,99 @@ export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const handleSuccessfulRegistration = async (user: User) => {
+     // Check if user already exists (could happen with Google sign-in)
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
 
-  const handleSignup = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!businessCategory) {
-        toast({ title: "Error", description: "Por favor, selecciona una categoría de negocio.", variant: "destructive" });
+    if (userDoc.exists()) {
+        toast({ title: "Bienvenido de nuevo", description: "Hemos iniciado sesión por ti." });
+        router.push("/dashboard");
         return;
     }
-    setIsLoading(true);
+
+    if (!businessCategory || !fullName || !businessName || !rif) {
+        // This is a scenario for Google Sign-up where form fields might not be filled yet.
+        // We can handle this more gracefully later, e.g., by redirecting to a profile completion page.
+        // For now, we will show a toast and let them fill the form.
+        toast({ title: "Información Faltante", description: "Por favor, completa todos los campos del negocio para continuar.", variant: "destructive" });
+        setIsGoogleLoading(false); // Stop loading indicator
+        return;
+    }
+
+    const licenseKey = `FPV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
     try {
-        // 1. Create user in Firebase Auth
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-
-        // 2. Generate a unique license key (simple version)
-        const licenseKey = `FPV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-        
-        const sevenDaysFromNow = new Date();
-        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-
-        // 3. Save user business data to Firestore
         await setDoc(doc(db, "users", user.uid), {
             uid: user.uid,
             fullName,
             businessName,
             businessCategory,
             rif,
-            email,
+            email: user.email,
             licenseKey,
-            status: "Trial", // Start as Trial
+            status: "Trial",
             createdAt: new Date().toISOString(),
             trialEndsAt: sevenDaysFromNow.toISOString(),
         });
         
         setIsSubmitted(true);
+    } catch (error) {
+         toast({ title: "Error de Base de Datos", description: "No se pudo guardar la información del negocio. Por favor, revisa tu conexión e intenta de nuevo.", variant: "destructive"});
+         // We might need to delete the created auth user if firestore fails, to allow retry.
+         // For now, we just inform the user.
+    }
+  }
 
+
+  const handleSignup = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsLoading(true);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await handleSuccessfulRegistration(userCredential.user);
     } catch (error: any) {
-        let description = "Ocurrió un error inesperado. Por favor, intenta de nuevo.";
-        if (error.code === 'auth/email-already-in-use') {
-            description = "Este correo electrónico ya está registrado. Por favor, intenta con otro o inicia sesión.";
-        } else if (error.code === 'auth/weak-password') {
-            description = "La contraseña es muy débil. Debe tener al menos 6 caracteres.";
-        }
-        toast({
-            title: "Error de Registro",
-            description: description,
-            variant: "destructive"
-        })
+      let description = "Ocurrió un error inesperado. Por favor, intenta de nuevo.";
+      if (error.code === 'auth/email-already-in-use') {
+        description = "Este correo electrónico ya está registrado. Por favor, intenta con otro o inicia sesión.";
+      } else if (error.code === 'auth/weak-password') {
+        description = "La contraseña es muy débil. Debe tener al menos 6 caracteres.";
+      }
+      toast({
+          title: "Error de Registro",
+          description: description,
+          variant: "destructive"
+      })
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
+
+  const handleGoogleSignup = async () => {
+      setIsGoogleLoading(true);
+      const provider = new GoogleAuthProvider();
+      try {
+          const result = await signInWithPopup(auth, provider);
+          // Set email and name from Google, then check if we can complete registration
+          setEmail(result.user.email || "");
+          setFullName(result.user.displayName || "");
+
+          // Since the user used Google, other form fields are likely empty.
+          // We trigger the registration function which will now check for missing business info.
+          await handleSuccessfulRegistration(result.user);
+      } catch (error: any) {
+          toast({
+              title: "Error con Google",
+              description: "No se pudo iniciar sesión con Google. Por favor, intenta de nuevo.",
+              variant: "destructive",
+          });
+      } finally {
+          // The loading state is managed inside handleSuccessfulRegistration for the google path
+      }
+  }
+
 
   if (isSubmitted) {
     return (
@@ -129,7 +172,23 @@ export function SignupForm() {
           <CardDescription>Completa el formulario para registrarte.</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignup} className="grid gap-4">
+            <div className="grid gap-4">
+                 <Button variant="outline" className="w-full" onClick={handleGoogleSignup} disabled={isLoading || isGoogleLoading}>
+                    {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 21.2 172.9 56.2L381.2 150.1C344.3 117.7 300.6 96 248 96c-88.8 0-160.1 71.1-160.1 160.1s71.3 160.1 160.1 160.1c92.2 0 148.2-64.2 154.7-98.3H248v-65.4h239.1c1.3 12.2 2.1 24.4 2.1 37.8z"></path></svg>}
+                    Registrarse con Google
+                </Button>
+
+                <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-background px-2 text-muted-foreground">O continuar con</span>
+                    </div>
+                </div>
+            </div>
+
+          <form onSubmit={handleSignup} className="grid gap-4 mt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2 col-span-2">
                 <Label htmlFor="fullName">Nombre y Apellido</Label>
@@ -142,7 +201,7 @@ export function SignupForm() {
             </div>
              <div className="grid gap-2">
                 <Label htmlFor="businessCategory">Categoría del Negocio</Label>
-                 <Select value={businessCategory} onValueChange={setBusinessCategory}>
+                 <Select value={businessCategory} onValueChange={setBusinessCategory} required>
                     <SelectTrigger id="businessCategory">
                         <SelectValue placeholder="Selecciona una categoría..." />
                     </SelectTrigger>
@@ -165,7 +224,7 @@ export function SignupForm() {
               <Label htmlFor="password">Contraseña</Label>
               <Input id="password" type="password" required onChange={(e) => setPassword(e.target.value)} value={password} />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Crear Cuenta e Iniciar Prueba
             </Button>

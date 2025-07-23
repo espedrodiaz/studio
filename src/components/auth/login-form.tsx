@@ -58,29 +58,21 @@ export function LoginForm() {
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-            // If user is new, create a document in Firestore
-             const sevenDaysFromNow = new Date();
-             sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-             const licenseKey = `FPV-G-${Date.now().toString(36).toUpperCase()}`;
-
-            await setDoc(userDocRef, {
-                uid: user.uid,
-                fullName: user.displayName || "Usuario de Google",
-                businessName: `${user.displayName?.split(' ')[0]}'s Store` || "Mi Negocio",
-                businessCategory: "Otro",
-                rif: "N/A",
-                email: user.email,
-                licenseKey: licenseKey,
-                status: "Trial",
-                createdAt: new Date().toISOString(),
-                trialEndsAt: sevenDaysFromNow.toISOString(),
-            });
-             toast({ title: "¡Bienvenido!", description: "Tu cuenta ha sido creada y tu prueba de 7 días ha comenzado." });
+            // If user is new from the login page, we need to prompt them to complete registration
+            // For now, we'll redirect them to signup with a message.
+            // A more advanced flow would pass the user info to the signup page.
+             toast({ 
+                title: "Completa tu Registro", 
+                description: "Parece que eres nuevo. Por favor, completa tus datos de negocio para continuar.",
+                duration: 5000,
+             });
+             // We could sign them out here or just redirect. Redirecting is simpler for now.
+             await auth.signOut();
+             router.push("/signup");
         } else {
              toast({ title: "Inicio de Sesión Exitoso", description: "¡Bienvenido de nuevo!" });
+             router.push("/dashboard");
         }
-        
-        router.push("/dashboard");
 
     } catch (error: any) {
         toast({
