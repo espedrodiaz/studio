@@ -53,6 +53,7 @@ import {
     parseISO,
     isWithinInterval,
     startOfDay,
+    endOfDay,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -67,28 +68,48 @@ export default function SalesPage() {
   
   const bcvRate = getCurrentBcvRate();
 
-  const firstSaleDate = useMemo(() => {
-    if (sales.length === 0) return new Date();
-    const sortedSales = [...sales].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return startOfDay(parseISO(sortedSales[0].date));
-  }, []);
+  const sortedSales = useMemo(() => 
+    [...sales].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+  []);
 
-  const { interval, dateRangeLabel, isPrevDisabled } = useMemo(() => {
-    let start, end, label, prevIntervalStart;
+  const firstSaleDate = useMemo(() => {
+    if (sortedSales.length === 0) return new Date();
+    return startOfDay(parseISO(sortedSales[0].date));
+  }, [sortedSales]);
+
+  const lastSaleDate = useMemo(() => {
+      if (sortedSales.length === 0) return new Date();
+      return endOfDay(parseISO(sortedSales[sortedSales.length - 1].date));
+  }, [sortedSales]);
+
+
+  const { interval, dateRangeLabel, isPrevDisabled, isNextDisabled } = useMemo(() => {
+    let start, end, label, prevIntervalEnd, nextIntervalStart;
+
     if (viewMode === 'week') {
       start = startOfWeek(currentDate, { weekStartsOn: 1 });
       end = endOfWeek(currentDate, { weekStartsOn: 1 });
       label = `${format(start, 'd/L')} - ${format(end, 'd/L/yyyy')}`;
-      prevIntervalStart = startOfWeek(subDays(currentDate, 7), { weekStartsOn: 1 });
-    } else {
+      prevIntervalEnd = endOfWeek(subDays(currentDate, 7), { weekStartsOn: 1 });
+      nextIntervalStart = startOfWeek(addDays(currentDate, 7), { weekStartsOn: 1 });
+    } else { // month
       start = startOfMonth(currentDate);
       end = endOfMonth(currentDate);
       label = format(currentDate, 'MMMM yyyy', { locale: es });
-      prevIntervalStart = startOfMonth(subMonths(currentDate, 1));
+      prevIntervalEnd = endOfMonth(subMonths(currentDate, 1));
+      nextIntervalStart = startOfMonth(addMonths(currentDate, 1));
     }
-    const disabled = prevIntervalStart < firstSaleDate;
-    return { interval: { start, end }, dateRangeLabel: label, isPrevDisabled: disabled };
-  }, [currentDate, viewMode, firstSaleDate]);
+    
+    const prevDisabled = prevIntervalEnd < firstSaleDate;
+    const nextDisabled = nextIntervalStart > lastSaleDate;
+
+    return { 
+      interval: { start, end }, 
+      dateRangeLabel: label, 
+      isPrevDisabled: prevDisabled,
+      isNextDisabled: nextDisabled
+    };
+  }, [currentDate, viewMode, firstSaleDate, lastSaleDate]);
 
   const daysInInterval = useMemo(() => {
      if (viewMode === 'week') {
@@ -99,6 +120,7 @@ export default function SalesPage() {
 
   const handleDateChange = (direction: 'prev' | 'next') => {
       if (direction === 'prev' && isPrevDisabled) return;
+      if (direction === 'next' && isNextDisabled) return;
 
       if (viewMode === 'week') {
           setCurrentDate(direction === 'prev' ? subDays(currentDate, 7) : addDays(currentDate, 7));
@@ -109,12 +131,15 @@ export default function SalesPage() {
   }
   
   const salesForPeriod = useMemo(() => {
-    const period = selectedDate ? { start: startOfDay(selectedDate), end: startOfDay(selectedDate) } : interval;
-    return sales.filter(sale => {
-      const saleDate = startOfDay(parseISO(sale.date));
-      return saleDate >= period.start && saleDate <= period.end;
+    const period = selectedDate 
+      ? { start: startOfDay(selectedDate), end: endOfDay(selectedDate) } 
+      : { start: startOfDay(interval.start), end: endOfDay(interval.end) };
+      
+    return sortedSales.filter(sale => {
+      const saleDate = parseISO(sale.date);
+      return isWithinInterval(saleDate, period);
     });
-  }, [sales, interval, selectedDate]);
+  }, [sortedSales, interval, selectedDate]);
   
   const totalsByPaymentMethod = useMemo(() => {
     const totals: { [key: string]: { usd: number, ves: number } } = {};
@@ -137,7 +162,7 @@ export default function SalesPage() {
     });
 
     return totals;
-  }, [salesForPeriod, paymentMethods]);
+  }, [salesForPeriod]);
 
   const totalSoldInPeriod = useMemo(() => {
     let totalUsd = 0;
@@ -151,10 +176,7 @@ export default function SalesPage() {
 
   const groupedSalesByDay = useMemo(() => {
     const grouped: { [key: string]: Sale[] } = {};
-    sales.filter(sale => {
-        const saleDate = parseISO(sale.date);
-        return isWithinInterval(saleDate, interval)
-    }).forEach(sale => {
+    salesForPeriod.forEach(sale => {
       const dayKey = format(parseISO(sale.date), 'yyyy-MM-dd');
       if (!grouped[dayKey]) {
         grouped[dayKey] = [];
@@ -162,7 +184,7 @@ export default function SalesPage() {
       grouped[dayKey].push(sale);
     });
     return Object.entries(grouped).sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime());
-  }, [sales, interval]);
+  }, [salesForPeriod]);
 
   const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const formatBs = (amount: number) => (amount * bcvRate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -215,7 +237,7 @@ export default function SalesPage() {
                     <p className="font-semibold">{viewMode === 'week' ? 'Semana' : 'Mes'}</p>
                     <p className="text-sm text-muted-foreground">{dateRangeLabel}</p>
                 </div>
-                <Button variant="outline" size="icon" onClick={() => handleDateChange('next')}>
+                <Button variant="outline" size="icon" onClick={() => handleDateChange('next')} disabled={isNextDisabled}>
                     <ChevronRight className="h-4 w-4" />
                 </Button>
             </CardHeader>
@@ -272,7 +294,7 @@ export default function SalesPage() {
         </Card>
 
         <div className="space-y-4">
-             {groupedSalesByDay.map(([day, sales]) => {
+             {groupedSalesByDay.length > 0 ? groupedSalesByDay.map(([day, sales]) => {
                 const dayDate = parseISO(day);
                 const dayTotal = sales.reduce((sum, s) => sum + s.total, 0);
                 return (
@@ -333,8 +355,7 @@ export default function SalesPage() {
                         </Card>
                     </Collapsible>
                 )
-            })}
-             {salesForPeriod.length === 0 && (
+            }) : (
                 <div className="text-center p-8 text-muted-foreground border-2 border-dashed rounded-lg">
                     <History className="mx-auto h-12 w-12 mb-4" />
                     <h3 className="text-lg font-semibold">No hay ventas registradas</h3>
@@ -345,3 +366,5 @@ export default function SalesPage() {
     </div>
   );
 }
+
+    
