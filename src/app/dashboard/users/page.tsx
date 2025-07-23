@@ -74,6 +74,7 @@ export default function UsersPage() {
             <TableRow>
               <TableHead>Nombre del Negocio</TableHead>
               <TableHead>RIF</TableHead>
+              <TableHead>Clave de Producto</TableHead>
               <TableHead>Categoría</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead>
@@ -89,6 +90,7 @@ export default function UsersPage() {
                     <div className="text-xs text-muted-foreground">{user.fullName}</div>
                 </TableCell>
                 <TableCell>{user.rif}</TableCell>
+                <TableCell className="font-mono text-xs">{user.licenseKey}</TableCell>
                 <TableCell>{user.businessCategory}</TableCell>
                 <TableCell>
                   <Badge variant={
