@@ -9,7 +9,7 @@ export default function RedirectToWelcome() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/welcome');
+    router.replace('/login');
   }, [router]);
 
   // Render nothing, or a loading spinner, while redirecting.

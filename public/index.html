@@ -5,22 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bienvenido a FacilitoPOS</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
         body { 
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Roboto', sans-serif; 
             text-align: center; 
             margin: 0;
             padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             background-color: #f8f9fa;
             color: #212529;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
         }
         .container {
             max-width: 600px;
+            width: 100%;
         }
         .logo {
             font-weight: 700;
@@ -32,51 +33,54 @@
         .logo .s { color: #CE1126; }
         h1 {
             font-size: 2rem;
-            margin-bottom: 0.5rem;
+            font-weight: 700;
             color: #28a745; /* Verde Esmeralda */
+            margin-bottom: 0.5rem;
         }
         p {
             font-size: 1.1rem;
             color: #6c757d;
+            line-height: 1.6;
             margin-bottom: 2rem;
         }
-        a.button {
+        .button { 
             display: inline-block;
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            font-weight: bold;
-            cursor: pointer;
-            background-color: #28a745; /* Verde Esmeralda */
-            color: white;
-            border: none;
-            border-radius: 8px;
+            padding: 15px 35px; 
+            font-size: 1.2rem; 
+            font-weight: 500;
+            cursor: pointer; 
+            background-color: #007bff; /* Azul Cielo */
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
             text-decoration: none;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
-        a.button:hover {
-            background-color: #218838;
+        .button:hover { 
+            background-color: #0056b3;
+            transform: translateY(-2px);
         }
-        footer {
-            position: absolute;
-            bottom: 20px;
+        .footer {
+            margin-top: 3rem;
             font-size: 0.8rem;
-            color: #6c757d;
+            color: #adb5bd;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="logo">
-            Facilito<span class="p">P</span><span class="o">O</span><span class="s">S</span>
+            <span>Facilito</span><span class="p">P</span><span class="o">O</span><span class="s">S</span>
         </div>
-        <h1>La Gestión de tu Negocio, Simplificada</h1>
-        <p>Controla tu inventario, ventas y finanzas en un solo lugar. Diseñado para Venezuela.</p>
+        <h1>El Punto de Venta Inteligente para tu Negocio</h1>
+        <p>Has llegado a la puerta de entrada de tu sistema de gestión. Haz clic abajo para acceder a tu panel de control y empezar a vender.</p>
         <a href="https://studio--facilitoposvzla.us-central1.hosted.app" class="button">
             Acceder a la Aplicación
         </a>
+        <div class="footer">
+            <p>&copy; 2024 FacilitoPOS. Tecnología impulsada por DiazSoft.</p>
+        </div>
     </div>
-    <footer>
-        <p>&copy; 2024 FacilitoPOS | Desarrollado por DiazSoft</p>
-    </footer>
 </body>
 </html>
