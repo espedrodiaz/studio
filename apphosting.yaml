@@ -5,7 +5,7 @@
 runtime: nodejs20
 
 # The command that starts your app.
-entrypoint: node server.js
+entrypoint: node .next/standalone/server.js
 
 runConfig:
   # Increase this value if you'd like to automatically spin up
