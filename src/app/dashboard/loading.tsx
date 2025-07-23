@@ -18,7 +18,7 @@ export default function Loading() {
   useEffect(() => {
     const interval = setInterval(() => {
       setPhraseIndex((prevIndex) => (prevIndex + 1) % loadingPhrases.length);
-    }, 2000); // Change phrase every 2 seconds
+    }, 1200); // 1.2 segundos por frase * 5 frases = 6 segundos de ciclo
 
     return () => clearInterval(interval);
   }, []);
