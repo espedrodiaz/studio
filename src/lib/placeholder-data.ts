@@ -173,6 +173,7 @@ export let sales: Sale[] = [
   { id: 'SALE004', date: '2024-07-28T09:05:00Z', customer: 'Cliente Ocasional', total: 12.80, status: 'Pagada', items: [{productId: 'PROD003', name: 'Arroz Blanco 1kg', quantity: 4, price: 1.80}, {productId: 'PROD005', name: 'Aceite de Girasol 1L', quantity: 2, price: 2.80}], payments: [{ methodId: 'pay-04', amount: 512 }], changeGiven: [], customerData: null, bcvRate: 40.00 },
   { id: 'SALE005', date: '2024-07-27T16:45:00Z', customer: 'Ana Pérez', total: 7.00, status: 'Pagada', items: [{ productId: 'PROD001', name: 'Café Molido 500g', quantity: 1, price: 7.00}], payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [{ methodId: 'pay-01', amount: 3}], customerData: customers.find(c => c.name === 'Ana Pérez'), bcvRate: 39.80 },
   { id: 'SALE006', date: '2024-06-20T16:45:00Z', customer: 'Luis Hernández', total: 50.00, status: 'Pagada', items: [{ productId: 'PROD006', name: 'Azúcar Refinada 1kg', quantity: 25, price: 2.00}], payments: [{ methodId: 'pay-01', amount: 50}], changeGiven: [], customerData: customers.find(c => c.name === 'Luis Hernández'), bcvRate: 38.00 },
+  { id: 'SALE007', date: '2024-07-29T18:00:00Z', customer: 'Luis Hernández', total: 50.00, status: 'Pagada', items: [{ productId: 'PROD006', name: 'Azúcar Refinada 1kg', quantity: 25, price: 2.00}], payments: [{ methodId: 'pay-02', amount: 810 }, { methodId: 'pay-04', amount: 405 }, { methodId: 'pay-05', amount: 810 }], changeGiven: [], customerData: customers.find(c => c.name === 'Luis Hernández'), bcvRate: 40.50 },
 ];
 
 type SaleInput = Omit<Sale, 'id' | 'date'>;
@@ -223,7 +224,7 @@ export let paymentMethods = [
     { id: 'pay-02', name: 'Efectivo VES', currency: 'Bs', type: 'Efectivo', givesChange: true, managesOpeningBalance: true },
     { id: 'pay-03', name: 'Zelle', currency: '$', type: 'Digital', givesChange: false, managesOpeningBalance: false },
     { id: 'pay-04', name: 'Pago Móvil', currency: 'Bs', type: 'Digital', givesChange: false, managesOpeningBalance: false },
-    { id: 'pay-05', name: 'Punto de Venta', currency: 'Bs', type: 'Digital', givesChange: false, managesOpeningBalance: false },
+    { id: 'pay-05', name: 'Tarjeta', currency: 'Bs', type: 'Digital', givesChange: false, managesOpeningBalance: false },
 ];
 
 export const getPaymentMethods = () => [...paymentMethods];
