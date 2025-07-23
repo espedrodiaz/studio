@@ -1,0 +1,146 @@
+
+"use client";
+
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, ShieldCheck, ShieldX, Trash2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { 
+    getRegisteredUsers, 
+    updateUserStatus,
+    deleteUser,
+    RegisteredUser 
+} from "@/lib/placeholder-data";
+import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
+
+
+export default function UsersPage() {
+    const [users, setUsers] = useState<RegisteredUser[]>(getRegisteredUsers());
+
+    const handleUpdateStatus = (userId: string, status: "Active" | "Suspended") => {
+        updateUserStatus(userId, status);
+        setUsers(getRegisteredUsers());
+        toast({
+            title: "Estado Actualizado",
+            description: `La licencia del usuario ha sido ${status === 'Active' ? 'activada' : 'suspendida'}.`
+        });
+    }
+    
+    const handleDeleteUser = (userId: string) => {
+        deleteUser(userId);
+        setUsers(getRegisteredUsers());
+        toast({
+            title: "Usuario Eliminado",
+            description: "El registro del negocio ha sido eliminado.",
+            variant: "destructive"
+        });
+    }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Gestión de Usuarios y Licencias</CardTitle>
+        <CardDescription>
+          Activa, suspende o gestiona los negocios registrados en la plataforma.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nombre del Negocio</TableHead>
+              <TableHead>RIF</TableHead>
+              <TableHead>Categoría</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead>
+                <span className="sr-only">Acciones</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((user) => (
+              <TableRow key={user.id}>
+                <TableCell className="font-medium">
+                    <div>{user.businessName}</div>
+                    <div className="text-xs text-muted-foreground">{user.fullName}</div>
+                </TableCell>
+                <TableCell>{user.rif}</TableCell>
+                <TableCell>{user.businessCategory}</TableCell>
+                <TableCell>
+                  <Badge variant={
+                      user.status === 'Active' ? 'default' : user.status === 'Suspended' ? 'destructive' : 'secondary'
+                  } className={cn({
+                      'bg-green-100 text-green-800': user.status === 'Active',
+                      'bg-yellow-100 text-yellow-800': user.status === 'Pending Activation',
+                  })}>
+                    {user.status === 'Active' ? 'Activa' : user.status === 'Suspended' ? 'Suspendida' : 'Pendiente'}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button aria-haspopup="true" size="icon" variant="ghost">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Toggle menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Acciones de Licencia</DropdownMenuLabel>
+                      {user.status === 'Pending Activation' && (
+                        <DropdownMenuItem onClick={() => handleUpdateStatus(user.id, 'Active')}>
+                            <ShieldCheck className="mr-2 h-4 w-4 text-green-600"/>
+                            Activar Licencia
+                        </DropdownMenuItem>
+                      )}
+                      {user.status === 'Active' && (
+                        <DropdownMenuItem onClick={() => handleUpdateStatus(user.id, 'Suspended')}>
+                            <ShieldX className="mr-2 h-4 w-4 text-destructive"/>
+                            Suspender Licencia
+                        </DropdownMenuItem>
+                      )}
+                      {user.status === 'Suspended' && (
+                        <DropdownMenuItem onClick={() => handleUpdateStatus(user.id, 'Active')}>
+                            <ShieldCheck className="mr-2 h-4 w-4 text-green-600"/>
+                            Re-Activar Licencia
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteUser(user.id)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Eliminar Negocio
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}

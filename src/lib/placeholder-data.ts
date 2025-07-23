@@ -231,4 +231,32 @@ export const addCashMovement = (movement: CashMovement) => {
     return newMovement;
 }
 
-    
+// Registered Users for Admin View
+export type RegisteredUser = {
+    id: string;
+    fullName: string;
+    businessName: string;
+    businessCategory: string;
+    rif: string;
+    status: 'Pending Activation' | 'Active' | 'Suspended';
+}
+
+let registeredUsers: RegisteredUser[] = [
+    { id: 'USER001', fullName: 'Pedro Pascal', businessName: 'Bodega La Bendición', businessCategory: 'Abastos y Bodegas', rif: 'J-12345678-9', status: 'Pending Activation' },
+    { id: 'USER002', fullName: 'Isabella Castillo', businessName: 'Restaurante El Rincón del Sabor', businessCategory: 'Restaurantes y Cafés', rif: 'J-98765432-1', status: 'Active' },
+    { id: 'USER003', fullName: 'Ricardo Mendoza', businessName: 'Auto Partes El Piston', businessCategory: 'Venta de Repuestos', rif: 'J-11223344-5', status: 'Suspended' },
+    { id: 'USER004', fullName: 'Carolina Herrera', businessName: 'Boutique CHic', businessCategory: 'Tiendas de Ropa y Accesorios', rif: 'J-55667788-9', status: 'Active' },
+];
+
+export const getRegisteredUsers = () => [...registeredUsers];
+
+export const updateUserStatus = (userId: string, status: 'Active' | 'Suspended') => {
+    const user = registeredUsers.find(u => u.id === userId);
+    if (user) {
+        user.status = status;
+    }
+}
+
+export const deleteUser = (userId: string) => {
+    registeredUsers = registeredUsers.filter(u => u.id !== userId);
+}

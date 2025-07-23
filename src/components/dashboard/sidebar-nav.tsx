@@ -24,6 +24,7 @@ import {
   Landmark,
   Wallet,
   Building,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PosLogo } from "../ui/pos-logo";
@@ -31,6 +32,7 @@ import { businessCategories } from "@/lib/placeholder-data";
 import { useBusinessContext } from "@/hooks/use-business-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Label } from "../ui/label";
+import { Separator } from "../ui/separator";
 
 const NavLink = ({ href, children, icon: Icon, onClick }: { href: string, children: React.ReactNode, icon: React.ElementType, onClick?: () => void }) => {
     const pathname = usePathname();
@@ -88,6 +90,9 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
                 </AccordionContent>
             </AccordionItem>
             </Accordion>
+             <Separator className="my-4" />
+             <NavLink href="/dashboard/users" icon={ShieldCheck} onClick={onLinkClick}>Gestionar Usuarios</NavLink>
+
         </nav>
       </div>
 
