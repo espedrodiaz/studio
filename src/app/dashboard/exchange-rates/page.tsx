@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
@@ -310,6 +309,9 @@ export default function ExchangeRatesPage() {
                                         </Card>
                                     )
                                })}
+                               {supplierRates.length === 0 && (
+                                   <p className="text-center text-muted-foreground py-8">No hay tasas de proveedores registradas.</p>
+                               )}
                             </div>
                             <DialogFooter className="pt-4">
                                <Button variant="outline" onClick={() => setIsSupplierManagerOpen(false)}>Cerrar</Button>
@@ -370,10 +372,14 @@ export default function ExchangeRatesPage() {
                                 </Card>
                             )
                         })}
+                        {filteredBcvRates.length === 0 && (
+                            <p className="text-center text-muted-foreground py-8">No hay tasas del BCV registradas para este mes.</p>
+                        )}
                     </div>
                 </CardContent>
             </Card>
         </div>
     </div>
   );
-}
+
+    
