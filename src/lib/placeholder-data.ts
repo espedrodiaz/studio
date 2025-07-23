@@ -1,4 +1,5 @@
 
+
 import { Customer } from "./types";
 
 // A simple in-memory pub/sub system for real-time rate updates across components.
@@ -39,12 +40,12 @@ export const businessCategories = [
 
 
 export let products = [
-  { id: 'PROD001', name: 'Café Molido 500g', stock: 150, purchasePrice: 4.50, salePrice: 7.00 },
-  { id: 'PROD002', name: 'Harina de Maíz 1kg', stock: 200, purchasePrice: 0.80, salePrice: 1.50 },
-  { id: 'PROD003', name: 'Arroz Blanco 1kg', stock: 180, purchasePrice: 1.00, salePrice: 1.80 },
-  { id: 'PROD004', name: 'Pasta Larga 500g', stock: 120, purchasePrice: 0.90, salePrice: 1.60 },
-  { id: 'PROD005', name: 'Aceite de Girasol 1L', stock: 90, purchasePrice: 2.50, salePrice: 4.00 },
-  { id: 'PROD006', name: 'Azúcar Refinada 1kg', stock: 250, purchasePrice: 1.10, salePrice: 2.00 },
+  { id: 'PROD001', name: 'Café Molido 500g', stock: 150, purchasePrice: 4.50, salePrice: 7.00, categoryId: 'cat-01', brandId: 'brand-02' },
+  { id: 'PROD002', name: 'Harina de Maíz 1kg', stock: 200, purchasePrice: 0.80, salePrice: 1.50, categoryId: 'cat-01', brandId: 'brand-01' },
+  { id: 'PROD003', name: 'Arroz Blanco 1kg', stock: 180, purchasePrice: 1.00, salePrice: 1.80, categoryId: 'cat-01', brandId: 'brand-03' },
+  { id: 'PROD004', name: 'Pasta Larga 500g', stock: 120, purchasePrice: 0.90, salePrice: 1.60, categoryId: 'cat-01', brandId: 'brand-03' },
+  { id: 'PROD005', name: 'Aceite de Girasol 1L', stock: 90, purchasePrice: 2.50, salePrice: 4.00, categoryId: 'cat-02', brandId: 'brand-04' },
+  { id: 'PROD006', name: 'Azúcar Refinada 1kg', stock: 250, purchasePrice: 1.10, salePrice: 2.00, categoryId: 'cat-01', brandId: 'brand-05' },
 ];
 
 export const customers: Customer[] = [
@@ -261,3 +262,30 @@ export const updateUserStatus = (userId: string, status: 'Active' | 'Suspended')
 export const deleteUser = (userId: string) => {
     registeredUsers = registeredUsers.filter(u => u.id !== userId);
 }
+
+
+// Categories
+export let categories = [
+    { id: 'cat-01', name: 'Alimentos Secos' },
+    { id: 'cat-02', name: 'Aceites y Grasas' },
+    { id: 'cat-03', name: 'Bebidas' },
+    { id: 'cat-04', name: 'Lácteos' },
+];
+
+// Brands
+export let brands = [
+    { id: 'brand-01', name: 'P.A.N.' },
+    { id: 'brand-02', name: 'Fama de América' },
+    { id: 'brand-03', name: 'Mary' },
+    { id: 'brand-04', name: 'Vatel' },
+    { id: 'brand-05', name: 'Montalbán' },
+];
+
+
+// Inventory Movements History
+export const getInventoryMovements = () => [
+    { id: 'IM001', date: '2024-07-26T10:00:00Z', product: 'Harina de Maíz 1kg', type: 'Entrada por Compra', quantityChange: 50, finalStock: 200, user: 'Admin' },
+    { id: 'IM002', date: '2024-07-26T14:30:00Z', product: 'Café Molido 500g', type: 'Salida por Venta', quantityChange: -2, finalStock: 150, user: 'Cajero 1' },
+    { id: 'IM003', date: '2024-07-25T09:15:00Z', product: 'Aceite de Girasol 1L', type: 'Ajuste por Reconteo', quantityChange: -1, finalStock: 90, user: 'Admin' },
+    { id: 'IM004', date: '2024-07-25T18:00:00Z', product: 'Arroz Blanco 1kg', type: 'Salida por Venta', quantityChange: -5, finalStock: 180, user: 'Cajero 1' },
+];
