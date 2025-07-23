@@ -102,8 +102,15 @@ export default function SalesPage() {
       label = format(currentDate, 'MMMM yyyy', { locale: es });
     }
     
-    const prevDisabled = start < firstSaleDate;
-    const nextDisabled = end > lastSaleDate;
+    const prevFn = viewMode === 'week' ? subDays : subMonths;
+    const prevStart = prevFn(start, viewMode === 'week' ? 7 : 1);
+    const prevPeriodSales = sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: prevStart, end: start }));
+    const prevDisabled = start < firstSaleDate || !prevPeriodSales;
+
+    const nextFn = viewMode === 'week' ? addDays : addMonths;
+    const nextStart = nextFn(start, viewMode === 'week' ? 7 : 1);
+    const nextSales = sortedSales.some(s => s.date > format(end, 'yyyy-MM-dd'));
+    const nextDisabled = end > lastSaleDate || !nextSales;
 
     return { 
       interval: { start, end }, 
@@ -111,7 +118,7 @@ export default function SalesPage() {
       isPrevDisabled: prevDisabled,
       isNextDisabled: nextDisabled
     };
-  }, [currentDate, viewMode, firstSaleDate, lastSaleDate]);
+  }, [currentDate, viewMode, firstSaleDate, lastSaleDate, sortedSales]);
 
   const daysInInterval = useMemo(() => {
      if (viewMode === 'week') {
@@ -316,7 +323,7 @@ export default function SalesPage() {
                         <Card>
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50">
-                                    <p className="font-semibold capitalize">{format(dayDate, 'eeee, d \'de\' MMMM \'de\' yyyy', {locale: es})}</p>
+                                    <p className="font-semibold capitalize">{format(dayDate, 'eeee, d', {locale: es})}</p>
                                     <Badge variant="secondary">${formatUsd(dayTotal)}</Badge>
                                 </div>
                             </CollapsibleTrigger>
@@ -328,7 +335,7 @@ export default function SalesPage() {
                                                 <div className="flex items-center p-4 cursor-pointer hover:bg-muted/10 group">
                                                     <div className="flex-1 font-medium">{sale.customer}</div>
                                                     <div className="flex-1 text-right font-semibold">
-                                                        Bs {formatBs(sale.total * bcvRate)}
+                                                        <div className="font-semibold">Bs {formatBs(sale.total * bcvRate)}</div>
                                                         <div className="text-xs text-muted-foreground font-normal">(${formatUsd(sale.total)})</div>
                                                     </div>
                                                     <div className="flex-1 flex justify-end items-center">
