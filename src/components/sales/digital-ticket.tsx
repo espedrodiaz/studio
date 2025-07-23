@@ -9,6 +9,7 @@ import { Printer, Download, Send } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { SaleDataForTicket } from '@/lib/types';
 import { Separator } from '../ui/separator';
+import { PosLogo } from '../ui/pos-logo';
 
 export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTicket | null, onClose: () => void }) => {
     const ticketRef = useRef<HTMLDivElement>(null);
@@ -206,21 +207,37 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                                     <div className='space-y-1'>
                                         {saleData.payments.map((p, index) => {
                                             if (!p.method) return null;
-                                            const amountInBs = p.method.currency === '$' ? p.amount * saleData.bcvRate : p.amount;
+                                            
+                                            let paymentDisplay;
+                                            if (p.method.currency === '$') {
+                                                const amountInBs = p.amount * saleData.bcvRate;
+                                                paymentDisplay = (
+                                                    <div className="text-right">
+                                                        <span className='font-bold'>Bs {formatBsFromVes(amountInBs)}</span>
+                                                        <span className='text-[8px] text-gray-600 block'>(${formatUsd(p.amount)})</span>
+                                                    </div>
+                                                );
+                                            } else {
+                                                paymentDisplay = <span className='font-bold'>Bs {formatBsFromVes(p.amount)}</span>;
+                                            }
+
                                             return (
-                                                <p key={index}>
+                                                <p key={index} className="flex justify-between items-center">
                                                     <span>{p.method.name}:</span>
-                                                    <span className='font-bold'>Bs {formatBsFromVes(amountInBs)}</span>
+                                                    {paymentDisplay}
                                                 </p>
                                             )
                                         })}
                                     </div>
                                     
                                     <div className="separator mt-2"></div>
-                                    <div className='space-y-1'>
+                                     <div className='space-y-1'>
                                         <div className='flex justify-between mt-1'>
                                             <p>Total Pagado:</p>
-                                            <p>Bs {formatBs(saleData.totalPaid)}</p>
+                                            <div className='text-right'>
+                                                <p className="font-bold">Bs {formatBs(saleData.totalPaid)}</p>
+                                                <p className="text-[9px] font-normal text-gray-600">(${formatUsd(saleData.totalPaid)})</p>
+                                            </div>
                                         </div>
                                         {saleData.totalChange > 0 && (
                                             <div className='flex justify-between font-bold'>
