@@ -28,7 +28,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PosLogo } from "../ui/pos-logo";
-import { businessCategories } from "@/lib/placeholder-data";
 import { useBusinessContext } from "@/hooks/use-business-context";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Label } from "../ui/label";
@@ -52,7 +51,7 @@ const NavLink = ({ href, children, icon: Icon, onClick }: { href: string, childr
 
 export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
-  const { businessCategory, setBusinessCategory } = useBusinessContext();
+  const { isActivated, businessName, businessCategory, setBusinessCategory } = useBusinessContext();
   const isAccountsActive = pathname.startsWith('/dashboard/accounts');
 
   return (
@@ -62,6 +61,18 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
               <PosLogo />
           </Link>
       </div>
+       {isActivated && (
+            <div className="p-4 space-y-2 border-b">
+                <Label className="text-xs text-muted-foreground">Negocio Activo</Label>
+                <div className="flex items-center gap-2">
+                    <Building className="h-5 w-5" />
+                    <div>
+                        <p className="font-semibold text-sm leading-none">{businessName}</p>
+                        <p className="text-xs text-muted-foreground">{businessCategory}</p>
+                    </div>
+                </div>
+            </div>
+        )}
       <div className="flex-1 space-y-2 p-4 overflow-y-auto">
         <nav className="flex-1 space-y-2">
             <NavLink href="/dashboard" icon={LayoutDashboard} onClick={onLinkClick}>Resumen</NavLink>
@@ -97,22 +108,15 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
       </div>
 
        <div className="mt-auto border-t p-4 space-y-4">
-        <div className="space-y-2">
+        {!isActivated && (
+          <div className="space-y-2">
             <Label className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
                 <Building className="h-4 w-4" />
                 <span>Simulador de Negocio</span>
             </Label>
-            <Select value={businessCategory} onValueChange={setBusinessCategory}>
-                <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Seleccionar Categoría" />
-                </SelectTrigger>
-                <SelectContent>
-                    {businessCategories.map(category => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        </div>
+            <p className="text-xs text-muted-foreground">Activa tu licencia para ver tu información.</p>
+          </div>
+        )}
         <NavLink href="/dashboard/settings" icon={Settings} onClick={onLinkClick}>Ajustes</NavLink>
       </div>
     </div>

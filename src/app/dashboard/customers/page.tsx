@@ -69,8 +69,8 @@ export default function CustomersPage() {
   const [customerForm, setCustomerForm] = useState<Omit<Customer, 'id'>>({ name: '', idNumber: '', address: '', phone: '', secondaryPhone: '', vehicles: [] });
   const [vehicleForm, setVehicleForm] = useState<Vehicle>({ brand: '', model: '', engine: '', year: '' });
   
-  const { businessCategory } = useBusinessContext();
-  const showVehiclesTab = businessCategory === 'Venta de Repuestos';
+  const { businessCategory, isActivated } = useBusinessContext();
+  const showVehiclesTab = isActivated && businessCategory === 'Venta de Repuestos';
 
   const filteredCustomers = useMemo(() => {
     if (!searchTerm) {
@@ -244,8 +244,8 @@ export default function CustomersPage() {
             ) : (
                  <div className="flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed rounded-lg p-12">
                     <Users className="h-12 w-12 mb-4" />
-                    <h3 className="text-lg font-semibold">No se encontraron clientes</h3>
-                    <p className="text-sm">Intenta con otro término de búsqueda o añade un nuevo cliente.</p>
+                    <h3 className="text-lg font-semibold">{isActivated ? "No tienes clientes registrados" : "No se encontraron clientes"}</h3>
+                    <p className="text-sm">{isActivated ? "Comienza añadiendo tu primer cliente." : "Intenta con otro término de búsqueda o añade un nuevo cliente."}</p>
                 </div>
             )}
         </CardContent>
