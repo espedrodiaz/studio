@@ -215,16 +215,18 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                              </div>
                             
                             <div className="separator mt-2"></div>
-                            <div className='flex justify-between mt-1'>
-                                <p>Total Pagado:</p>
-                                <p>Bs {formatBs(saleData.totalPaid)}</p>
-                            </div>
-                             {saleData.totalChange > 0 && (
-                                <div className='flex justify-between font-bold'>
-                                    <p>Vuelto:</p>
-                                    <p>Bs {formatBs(saleData.totalChange)}</p>
+                             <div className='space-y-1'>
+                                <div className='flex justify-between mt-1'>
+                                    <p>Total Pagado:</p>
+                                    <p>Bs {formatBs(saleData.totalPaid)}</p>
                                 </div>
-                            )}
+                                {saleData.totalChange > 0 && (
+                                    <div className='flex justify-between font-bold'>
+                                        <p>Vuelto:</p>
+                                        <p>Bs {formatBs(saleData.totalChange)}</p>
+                                    </div>
+                                )}
+                             </div>
                         </div>
 
                         <div className="separator"></div>
@@ -232,7 +234,7 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                         <p className="text-center text-[8px] mt-1">Tasa: {formatBsFromVes(saleData.bcvRate)} Bs/USD</p>
 
                          <div className="text-center mt-2">
-                            <span className="font-bold text-sm">
+                           <span className="font-bold text-sm">
                                 Facilito
                                 <span style={{ color: '#FFCD00' }}>P</span>
                                 <span style={{ color: '#0033A0' }}>O</span>
