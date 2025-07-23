@@ -102,15 +102,11 @@ export default function SalesPage() {
       label = format(currentDate, 'MMMM yyyy', { locale: es });
     }
     
-    const prevFn = viewMode === 'week' ? subDays : subMonths;
-    const prevStart = prevFn(start, viewMode === 'week' ? 7 : 1);
-    const prevPeriodSales = sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: prevStart, end: start }));
-    const prevDisabled = start < firstSaleDate || !prevPeriodSales;
+    const hasSalesInPrevPeriod = sortedSales.some(s => parseISO(s.date) < start);
+    const hasSalesInNextPeriod = sortedSales.some(s => parseISO(s.date) > end);
 
-    const nextFn = viewMode === 'week' ? addDays : addMonths;
-    const nextStart = nextFn(start, viewMode === 'week' ? 7 : 1);
-    const nextSales = sortedSales.some(s => s.date > format(end, 'yyyy-MM-dd'));
-    const nextDisabled = end > lastSaleDate || !nextSales;
+    const prevDisabled = !hasSalesInPrevPeriod;
+    const nextDisabled = !hasSalesInNextPeriod;
 
     return { 
       interval: { start, end }, 
@@ -118,7 +114,7 @@ export default function SalesPage() {
       isPrevDisabled: prevDisabled,
       isNextDisabled: nextDisabled
     };
-  }, [currentDate, viewMode, firstSaleDate, lastSaleDate, sortedSales]);
+  }, [currentDate, viewMode, sortedSales]);
 
   const daysInInterval = useMemo(() => {
      if (viewMode === 'week') {
@@ -151,7 +147,7 @@ export default function SalesPage() {
   const salesForPeriod = useMemo(() => {
     const period = selectedDate 
       ? { start: startOfDay(selectedDate), end: endOfDay(selectedDate) } 
-      : { start: startOfDay(interval.start), end: endOfDay(interval.end) };
+      : interval;
       
     return sortedSales.filter(sale => {
       const saleDate = parseISO(sale.date);
@@ -286,7 +282,7 @@ export default function SalesPage() {
                     {selectedDate ? `Mostrando totales para el ${format(selectedDate, 'PPP', {locale: es})}` : `Mostrando totales para ${dateRangeLabel}`}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-2">
                {paymentMethods.map(pm => {
                  const totals = totalsByPaymentMethod[pm.id] || { usd: 0, ves: 0 };
                  const totalAmount = pm.currency === '$' ? totals.usd : totals.ves;
@@ -295,7 +291,7 @@ export default function SalesPage() {
 
                  return (
                     <Card key={pm.id}>
-                        <CardContent className="p-4 flex flex-col gap-2">
+                        <CardContent className="p-4 flex flex-col gap-1">
                             <div className="flex items-center justify-between">
                                 <span className="text-xs font-semibold">{pm.name}</span>
                                 {getPaymentMethodIcon(pm.name)}
@@ -319,12 +315,15 @@ export default function SalesPage() {
                 const dayDate = parseISO(day);
                 const dayTotal = sales.reduce((sum, s) => sum + s.total, 0);
                 return (
-                    <Collapsible key={day} defaultOpen={selectedDate ? isSameDay(dayDate, selectedDate) : true}>
+                    <Collapsible key={day} defaultOpen={selectedDate ? isSameDay(dayDate, selectedDate) : false}>
                         <Card>
                             <CollapsibleTrigger asChild>
-                                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50">
+                                <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 group">
                                     <p className="font-semibold capitalize">{format(dayDate, 'eeee, d', {locale: es})}</p>
-                                    <Badge variant="secondary">${formatUsd(dayTotal)}</Badge>
+                                    <div className='flex items-center gap-2'>
+                                        <Badge variant="secondary">${formatUsd(dayTotal)}</Badge>
+                                        <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                    </div>
                                 </div>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
@@ -399,3 +398,4 @@ export default function SalesPage() {
     </div>
   );
 }
+
