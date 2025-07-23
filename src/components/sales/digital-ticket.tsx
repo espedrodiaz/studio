@@ -9,6 +9,7 @@ import { Printer, Download, Send } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { SaleDataForTicket } from '@/lib/types';
 import { Separator } from '../ui/separator';
+import { PosLogo } from '../ui/pos-logo';
 
 export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTicket | null, onClose: () => void }) => {
     const ticketRef = useRef<HTMLDivElement>(null);
@@ -135,24 +136,24 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                             <p>Telf: {businessData.phone}</p>
                         </div>
                         
-                        <div className="separator"></div>
+                        <div className="separator mt-2"></div>
 
                         {/* Sale & Client Info */}
-                        <div className='flex justify-between text-[9px]'>
-                             <p>Ticket: {saleData.id}</p>
+                        <div className='flex justify-between text-[9px] mt-2'>
+                             <p className='font-bold'>Ticket: {saleData.id}</p>
                              <p>Fecha: {new Date(saleData.date).toLocaleString('es-VE')}</p>
                         </div>
-                        <div className="mt-1">
+                        <div className="mt-2">
                             <p className='font-bold'>Cliente:</p>
                             <p>{saleData.customer?.name || 'Cliente Ocasional'}</p>
                             <p>{saleData.customer?.idNumber || 'V-00000000'}</p>
                             <p className='truncate'>{saleData.customer?.address || 'N/A'}</p>
                         </div>
 
-                        <div className="separator"></div>
+                        <div className="separator mt-2"></div>
                         
                         {/* Items Table */}
-                        <table className="w-full items-table">
+                        <table className="w-full items-table mt-2">
                             <thead>
                                 <tr>
                                     <th className='w-1/12'>Cant</th>
@@ -199,7 +200,7 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                         <div className="separator"></div>
 
                         {/* Payment Details */}
-                        <div className="mt-1 payment-details">
+                        <div className="mt-2 payment-details">
                             <p className='font-bold mb-1'>Detalle de Pago:</p>
                              <div className='space-y-1'>
                                 {saleData.payments.map((p, index) => {
@@ -234,8 +235,8 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                         <p className="text-center text-[8px] mt-1">Tasa: {formatBsFromVes(saleData.bcvRate)} Bs/USD</p>
 
                          <div className="text-center mt-2">
-                            <p className="text-[9px] font-bold">FacilitoPOS Venezuela</p>
-                            <p className="text-[8px]">Tecnología Impulsada por DiazSoft</p>
+                             <PosLogo className="text-sm" />
+                            <p className="text-[8px] mt-1">Tecnología Impulsada por DiazSoft</p>
                         </div>
                     </div>
                 </div>
