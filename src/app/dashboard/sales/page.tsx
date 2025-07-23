@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -24,6 +25,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { 
     MoreHorizontal, 
@@ -34,9 +36,22 @@ import {
     CreditCard,
     Smartphone,
     ChevronDown,
+    Printer,
+    FileWarning,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { sales, paymentMethods, getCurrentBcvRate } from "@/lib/placeholder-data";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+
+import { sales as initialSales, paymentMethods, getCurrentBcvRate, voidSale } from "@/lib/placeholder-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
     startOfWeek, 
@@ -59,19 +74,23 @@ import {
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-
-type Sale = typeof sales[0];
+import { Sale, SaleDataForTicket, CartItem } from '@/lib/types';
+import { DigitalTicket } from '@/components/sales/digital-ticket';
+import { toast } from '@/hooks/use-toast';
 
 export default function SalesPage() {
+  const [sales, setSales] = useState<Sale[]>(initialSales);
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   
+  const [saleForTicket, setSaleForTicket] = useState<SaleDataForTicket | null>(null);
+
   const bcvRate = getCurrentBcvRate();
 
   const sortedSales = useMemo(() => 
     [...sales].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
-  []);
+  [sales]);
 
   const { firstSaleDate, lastSaleDate } = useMemo(() => {
     if (sortedSales.length === 0) return { firstSaleDate: new Date(), lastSaleDate: new Date() };
@@ -145,8 +164,46 @@ export default function SalesPage() {
       setCurrentDate(d => changeFn(d, amount));
       setSelectedDate(null);
   }
-
   
+  const handleVoidSale = (saleId: string) => {
+      voidSale(saleId);
+      setSales([...sales]); // Trigger re-render
+      toast({
+          title: "Venta Anulada",
+          description: `El ticket ${saleId} ha sido anulado. El stock ha sido actualizado.`,
+          variant: "destructive",
+      });
+  }
+  
+  const handleShowTicket = (sale: Sale) => {
+      const ticketData: SaleDataForTicket = {
+        id: sale.id,
+        date: sale.date,
+        customer: sale.customerData || null,
+        items: sale.items.map(item => ({...item, salePrice: item.price, stock:0, purchasePrice: 0, categoryId:'', brandId: '', ref: '', model: '', longDescription: '', location: '' })), // Adapt to CartItem
+        subtotal: sale.total,
+        payments: sale.payments.map(p => ({
+            method: paymentMethods.find(pm => pm.id === p.methodId),
+            amount: p.amount
+        })),
+        totalPaid: sale.payments.reduce((acc, p) => {
+            const method = paymentMethods.find(m => m.id === p.methodId);
+            if (method?.currency === 'Bs') return acc + (p.amount / bcvRate);
+            return acc + p.amount;
+        }, 0),
+        changeGiven: sale.changeGiven.map(p => ({
+            method: paymentMethods.find(pm => pm.id === p.methodId),
+            amount: p.amount
+        })),
+        totalChange: sale.changeGiven.reduce((acc, p) => {
+            const method = paymentMethods.find(m => m.id === p.methodId);
+            if (method?.currency === 'Bs') return acc + (p.amount / bcvRate);
+            return acc + p.amount;
+        }, 0)
+    };
+    setSaleForTicket(ticketData);
+  }
+
   const salesForPeriod = useMemo(() => {
     const period = selectedDate 
       ? { start: startOfDay(selectedDate), end: endOfDay(selectedDate) } 
@@ -168,6 +225,7 @@ export default function SalesPage() {
     });
 
     salesForPeriod.forEach(sale => {
+      if (sale.status === 'Anulada') return; // Do not count voided sales
       sale.payments.forEach(p => {
         const method = paymentMethods.find(pm => pm.id === p.methodId);
         if (method) {
@@ -229,6 +287,7 @@ export default function SalesPage() {
 
   return (
     <div className="flex flex-col gap-6">
+        <DigitalTicket saleData={saleForTicket} onClose={() => setSaleForTicket(null)} />
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-2xl">
@@ -318,20 +377,18 @@ export default function SalesPage() {
         <div className="space-y-4">
              {groupedSalesByDay.length > 0 ? groupedSalesByDay.map(([day, sales]) => {
                 const dayDate = parseISO(day);
-                const dayTotal = sales.reduce((sum, s) => sum + s.total, 0);
+                const dayTotal = sales.filter(s => s.status !== 'Anulada').reduce((sum, s) => sum + s.total, 0);
                 return (
-                    <Collapsible key={day} defaultOpen={false} className="space-y-2">
+                    <Collapsible key={day} defaultOpen={isSameDay(dayDate, selectedDate || new Date(0))} className="space-y-2">
                         <Card>
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 group">
                                     <p className="font-semibold capitalize">{format(dayDate, "eeee, d", {locale: es})}</p>
                                     <div className='flex items-center gap-2'>
-                                        <Badge variant="secondary" className="h-auto">
-                                          <div className="text-right">
+                                        <div className="text-right">
                                             <div className="font-semibold text-sm">Bs {formatBs(dayTotal * bcvRate)}</div>
                                             <div className="text-xs text-muted-foreground font-normal">(${formatUsd(dayTotal)})</div>
                                           </div>
-                                        </Badge>
                                         <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                     </div>
                                 </div>
@@ -339,12 +396,12 @@ export default function SalesPage() {
                             <CollapsibleContent>
                                 <div className="border-t">
                                     {sales.map((sale) => (
-                                        <Collapsible key={sale.id} className="border-b last:border-b-0">
+                                        <Collapsible key={sale.id} className={cn("border-b last:border-b-0", {"bg-red-50/50 text-red-900": sale.status === 'Anulada'})}>
                                             <CollapsibleTrigger asChild>
                                                 <div className="flex items-center p-4 cursor-pointer hover:bg-muted/10 group">
                                                     <div className="flex-1 font-medium">{sale.customer}</div>
-                                                    <div className="flex-1 text-right font-semibold">
-                                                        <div className="text-sm">Bs {formatBs(sale.total * bcvRate)}</div>
+                                                    <div className={cn("flex-1 text-right font-semibold", {"line-through text-muted-foreground": sale.status === 'Anulada'})}>
+                                                        <div className="text-sm font-semibold">Bs {formatBs(sale.total * bcvRate)}</div>
                                                         <div className="text-xs text-muted-foreground font-normal">(${formatUsd(sale.total)})</div>
                                                     </div>
                                                     <div className="flex-1 flex justify-end items-center">
@@ -357,8 +414,37 @@ export default function SalesPage() {
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
                                                                 <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                                                <DropdownMenuItem>Ver Detalles</DropdownMenuItem>
-                                                                <DropdownMenuItem>Imprimir Ticket</DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleShowTicket(sale)}>
+                                                                    <Printer className="mr-2 h-4 w-4" />
+                                                                    Imprimir Ticket
+                                                                </DropdownMenuItem>
+                                                                {sale.status !== 'Anulada' && (
+                                                                    <>
+                                                                    <DropdownMenuSeparator />
+                                                                    <AlertDialog>
+                                                                        <AlertDialogTrigger asChild>
+                                                                             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                                                                                <FileWarning className="mr-2 h-4 w-4" />
+                                                                                Anular Venta
+                                                                            </DropdownMenuItem>
+                                                                        </AlertDialogTrigger>
+                                                                        <AlertDialogContent>
+                                                                            <AlertDialogHeader>
+                                                                                <AlertDialogTitle>¿Está seguro de anular esta venta?</AlertDialogTitle>
+                                                                                <AlertDialogDescription>
+                                                                                    Esta acción no se puede deshacer. Se anulará el ingreso y se devolverán los productos al inventario.
+                                                                                </AlertDialogDescription>
+                                                                            </AlertDialogHeader>
+                                                                            <AlertDialogFooter>
+                                                                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                                                <AlertDialogAction onClick={() => handleVoidSale(sale.id)} className="bg-destructive hover:bg-destructive/90">
+                                                                                    Sí, anular venta
+                                                                                </AlertDialogAction>
+                                                                            </AlertDialogFooter>
+                                                                        </AlertDialogContent>
+                                                                    </AlertDialog>
+                                                                    </>
+                                                                )}
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                          <ChevronDown className="h-4 w-4 ml-2 transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -408,5 +494,3 @@ export default function SalesPage() {
     </div>
   );
 }
-
-    

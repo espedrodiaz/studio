@@ -1,6 +1,6 @@
 
 
-import { Customer, Product } from "./types";
+import { Customer, Product, Sale } from "./types";
 
 // A simple in-memory pub/sub system for real-time rate updates across components.
 // In a real app, this would be replaced by a state management library like Redux or Zustand.
@@ -166,30 +166,16 @@ export const suppliers = [
   { id: 'SUP003', name: 'Inversiones Primor', contact: 'Ricardo Solis', phone: '0241-8745011' },
 ];
 
-export let sales: {
-    id: string;
-    date: string;
-    customer: string;
-    total: number;
-    status: 'Pagada' | 'Pendiente';
-    items: {
-        productId: string;
-        name: string;
-        quantity: number;
-        price: number; // Price per unit at time of sale
-    }[];
-    payments: { methodId: string, amount: number }[];
-    changeGiven: { methodId: string, amount: number }[];
-}[] = [
-  { id: 'SALE001', date: '2024-07-29T10:00:00Z', customer: 'Ana Pérez', total: 10.00, status: 'Pagada', items: [{ productId: 'PROD001', name: 'Café Molido 500g', quantity: 1, price: 7.00}, { productId: 'PROD002', name: 'Harina de Maíz 1kg', quantity: 2, price: 1.50}], payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [] },
-  { id: 'SALE002', date: '2024-07-29T14:30:00Z', customer: 'Carlos Gómez', total: 25.50, status: 'Pagada', items: [{ productId: 'PROD005', name: 'Aceite de Girasol 1L', quantity: 5, price: 4.00}, {productId: 'PROD006', name: 'Azúcar Refinada 1kg', quantity: 2, price: 2.00}, {productId: 'PROD002', name: 'Harina de Maíz 1kg', quantity: 1, price: 1.50}], payments: [{ methodId: 'pay-03', amount: 25.50}], changeGiven: [] },
-  { id: 'SALE003', date: '2024-07-28T11:20:00Z', customer: 'María Rodríguez', total: 5.40, status: 'Pagada', items: [{productId: 'PROD004', name: 'Pasta Larga 500g', quantity: 3, price: 1.80}], payments: [{ methodId: 'pay-02', amount: 216 }], changeGiven: [] },
-  { id: 'SALE004', date: '2024-07-28T09:05:00Z', customer: 'Cliente Ocasional', total: 12.80, status: 'Pagada', items: [{productId: 'PROD003', name: 'Arroz Blanco 1kg', quantity: 4, price: 1.80}, {productId: 'PROD005', name: 'Aceite de Girasol 1L', quantity: 2, price: 2.80}], payments: [{ methodId: 'pay-04', amount: 512 }], changeGiven: [] },
-  { id: 'SALE005', date: '2024-07-27T16:45:00Z', customer: 'Ana Pérez', total: 7.00, status: 'Pagada', items: [{ productId: 'PROD001', name: 'Café Molido 500g', quantity: 1, price: 7.00}], payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [{ methodId: 'pay-01', amount: 3}] },
-  { id: 'SALE006', date: '2024-06-20T16:45:00Z', customer: 'Luis Hernández', total: 50.00, status: 'Pagada', items: [{ productId: 'PROD006', name: 'Azúcar Refinada 1kg', quantity: 25, price: 2.00}], payments: [{ methodId: 'pay-01', amount: 50}], changeGiven: [] },
+export let sales: Sale[] = [
+  { id: 'SALE001', date: '2024-07-29T10:00:00Z', customer: 'Ana Pérez', total: 10.00, status: 'Pagada', items: [{ productId: 'PROD001', name: 'Café Molido 500g', quantity: 1, price: 7.00}, { productId: 'PROD002', name: 'Harina de Maíz 1kg', quantity: 2, price: 1.50}], payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [], customerData: customers.find(c => c.name === 'Ana Pérez') },
+  { id: 'SALE002', date: '2024-07-29T14:30:00Z', customer: 'Carlos Gómez', total: 25.50, status: 'Pagada', items: [{ productId: 'PROD005', name: 'Aceite de Girasol 1L', quantity: 5, price: 4.00}, {productId: 'PROD006', name: 'Azúcar Refinada 1kg', quantity: 2, price: 2.00}, {productId: 'PROD002', name: 'Harina de Maíz 1kg', quantity: 1, price: 1.50}], payments: [{ methodId: 'pay-03', amount: 25.50}], changeGiven: [], customerData: customers.find(c => c.name === 'Carlos Gómez') },
+  { id: 'SALE003', date: '2024-07-28T11:20:00Z', customer: 'María Rodríguez', total: 5.40, status: 'Pagada', items: [{productId: 'PROD004', name: 'Pasta Larga 500g', quantity: 3, price: 1.80}], payments: [{ methodId: 'pay-02', amount: 216 }], changeGiven: [], customerData: customers.find(c => c.name === 'María Rodríguez') },
+  { id: 'SALE004', date: '2024-07-28T09:05:00Z', customer: 'Cliente Ocasional', total: 12.80, status: 'Pagada', items: [{productId: 'PROD003', name: 'Arroz Blanco 1kg', quantity: 4, price: 1.80}, {productId: 'PROD005', name: 'Aceite de Girasol 1L', quantity: 2, price: 2.80}], payments: [{ methodId: 'pay-04', amount: 512 }], changeGiven: [], customerData: null },
+  { id: 'SALE005', date: '2024-07-27T16:45:00Z', customer: 'Ana Pérez', total: 7.00, status: 'Pagada', items: [{ productId: 'PROD001', name: 'Café Molido 500g', quantity: 1, price: 7.00}], payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [{ methodId: 'pay-01', amount: 3}], customerData: customers.find(c => c.name === 'Ana Pérez') },
+  { id: 'SALE006', date: '2024-06-20T16:45:00Z', customer: 'Luis Hernández', total: 50.00, status: 'Pagada', items: [{ productId: 'PROD006', name: 'Azúcar Refinada 1kg', quantity: 25, price: 2.00}], payments: [{ methodId: 'pay-01', amount: 50}], changeGiven: [], customerData: customers.find(c => c.name === 'Luis Hernández') },
 ];
 
-type SaleInput = Omit<typeof sales[0], 'id' | 'date'>;
+type SaleInput = Omit<Sale, 'id' | 'date'>;
 
 export const addSale = (sale: SaleInput) => {
     const newSale = {
@@ -197,8 +183,27 @@ export const addSale = (sale: SaleInput) => {
         id: `SALE${new Date().getTime()}`,
         date: new Date().toISOString(),
     };
-    sales.push(newSale);
+    sales.unshift(newSale); // Add to the beginning of the array
     return newSale;
+}
+
+export const voidSale = (saleId: string) => {
+    const sale = sales.find(s => s.id === saleId);
+    if (sale) {
+        sale.status = 'Anulada';
+        // In a real app, you would also revert inventory and financial records.
+        // For this placeholder, we just update the status.
+        console.log(`Sale ${saleId} has been voided.`);
+        // Simulate returning items to stock
+        sale.items.forEach(item => {
+            const product = products.find(p => p.id === item.productId);
+            if (product) {
+                product.stock += item.quantity;
+                console.log(`Returned ${item.quantity} of ${product.name} to stock.`);
+            }
+        });
+    }
+    return sale;
 }
 
 
