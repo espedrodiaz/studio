@@ -57,6 +57,7 @@ export type Sale = {
     payments: { methodId: string, amount: number }[];
     changeGiven: { methodId: string, amount: number }[];
     customerData?: Customer | null;
+    bcvRate: number; // Store the exchange rate at the time of sale
 };
 
 // Type for the Digital Ticket component props
@@ -70,5 +71,6 @@ export type SaleDataForTicket = {
     totalPaid: number;
     changeGiven: { method?: { name: string; currency: string; }; amount: number }[];
     totalChange: number;
+    bcvRate: number; // Pass the historical rate to the ticket
 };
     

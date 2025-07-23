@@ -550,7 +550,8 @@ export default function PosPage() {
             status: 'Pagada',
             items: cart.map(item => ({ productId: item.id, name: item.name, quantity: item.quantity, price: item.salePrice })),
             payments: salePayments,
-            changeGiven: saleChange
+            changeGiven: saleChange,
+            bcvRate: bcvRate,
         });
 
         setSales(prev => [...prev, newSale]);
@@ -570,7 +571,8 @@ export default function PosPage() {
                 method: paymentMethodsList.find(m => m.id === p.methodId),
                 amount: p.amount
             })),
-            totalChange: totalChangeGiven
+            totalChange: totalChangeGiven,
+            bcvRate: bcvRate,
         };
         setLastCompletedSale(saleForTicket);
 

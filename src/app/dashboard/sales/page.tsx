@@ -74,9 +74,11 @@ import {
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Sale, SaleDataForTicket, CartItem } from '@/lib/types';
+import { Sale, SaleDataForTicket } from '@/lib/types';
 import { DigitalTicket } from '@/components/sales/digital-ticket';
 import { toast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+
 
 export default function SalesPage() {
   const [sales, setSales] = useState<Sale[]>(initialSales);
@@ -167,7 +169,7 @@ export default function SalesPage() {
   
   const handleVoidSale = (saleId: string) => {
       voidSale(saleId);
-      setSales([...sales]); // Trigger re-render
+      setSales([...initialSales]); // Trigger re-render by creating a new array reference
       toast({
           title: "Venta Anulada",
           description: `El ticket ${saleId} ha sido anulado. El stock ha sido actualizado.`,
@@ -176,6 +178,14 @@ export default function SalesPage() {
   }
   
   const handleShowTicket = (sale: Sale) => {
+      const saleRate = sale.bcvRate || bcvRate;
+      const totalPaid = sale.payments.reduce((acc, p) => {
+            const method = paymentMethods.find(m => m.id === p.methodId);
+            if (!method) return acc;
+            const amountInUsd = method.currency === 'Bs' ? p.amount / saleRate : p.amount;
+            return acc + amountInUsd;
+        }, 0);
+        
       const ticketData: SaleDataForTicket = {
         id: sale.id,
         date: sale.date,
@@ -186,20 +196,18 @@ export default function SalesPage() {
             method: paymentMethods.find(pm => pm.id === p.methodId),
             amount: p.amount
         })),
-        totalPaid: sale.payments.reduce((acc, p) => {
-            const method = paymentMethods.find(m => m.id === p.methodId);
-            if (method?.currency === 'Bs') return acc + (p.amount / bcvRate);
-            return acc + p.amount;
-        }, 0),
+        totalPaid: totalPaid,
         changeGiven: sale.changeGiven.map(p => ({
             method: paymentMethods.find(pm => pm.id === p.methodId),
             amount: p.amount
         })),
         totalChange: sale.changeGiven.reduce((acc, p) => {
             const method = paymentMethods.find(m => m.id === p.methodId);
-            if (method?.currency === 'Bs') return acc + (p.amount / bcvRate);
-            return acc + p.amount;
-        }, 0)
+            if (!method) return acc;
+            const amountInUsd = method.currency === 'Bs' ? p.amount / saleRate : p.amount;
+            return acc + amountInUsd;
+        }, 0),
+        bcvRate: saleRate,
     };
     setSaleForTicket(ticketData);
   }
@@ -225,17 +233,28 @@ export default function SalesPage() {
     });
 
     salesForPeriod.forEach(sale => {
-      if (sale.status === 'Anulada') return; // Do not count voided sales
-      sale.payments.forEach(p => {
-        const method = paymentMethods.find(pm => pm.id === p.methodId);
-        if (method) {
+      if (sale.status === 'Anulada') return;
+
+      let remainingSaleTotalUsd = sale.total;
+
+      for (const payment of sale.payments) {
+          if (remainingSaleTotalUsd <= 0) break;
+
+          const method = paymentMethods.find(pm => pm.id === payment.methodId);
+          if (!method) continue;
+
+          const paymentAmountInUsd = method.currency === 'Bs' ? payment.amount / sale.bcvRate : payment.amount;
+          
+          const amountToApplyUsd = Math.min(paymentAmountInUsd, remainingSaleTotalUsd);
+          
           if (method.currency === '$') {
-            totals[method.id].usd += p.amount;
+              totals[method.id].usd += amountToApplyUsd;
           } else {
-            totals[method.id].ves += p.amount;
+              totals[method.id].ves += amountToApplyUsd * sale.bcvRate;
           }
-        }
-      });
+          
+          remainingSaleTotalUsd -= amountToApplyUsd;
+      }
     });
 
     return totals;
@@ -245,7 +264,7 @@ export default function SalesPage() {
     let totalUsd = 0;
     Object.values(totalsByPaymentMethod).forEach(total => {
         totalUsd += total.usd;
-        if (bcvRate > 0) {
+        if (bcvRate > 0) { // Use current rate for VES conversion for the grand total for simplicity
             totalUsd += total.ves / bcvRate;
         }
     });
@@ -322,7 +341,7 @@ export default function SalesPage() {
                 </Button>
             </CardHeader>
             {viewMode === 'week' && (
-                <CardContent className="flex justify-center flex-wrap gap-0.5">
+                 <CardContent className="flex justify-center flex-wrap gap-0.5">
                     {daysInInterval.map(day => (
                         <Button 
                             key={day.toString()} 
@@ -378,19 +397,20 @@ export default function SalesPage() {
              {groupedSalesByDay.length > 0 ? groupedSalesByDay.map(([day, sales]) => {
                 const dayDate = parseISO(day);
                 const dayTotal = sales.filter(s => s.status !== 'Anulada').reduce((sum, s) => sum + s.total, 0);
+                const dayRate = sales[0]?.bcvRate || bcvRate;
                 return (
                     <Collapsible key={day} defaultOpen={isSameDay(dayDate, selectedDate || new Date(0))} className="space-y-2">
                         <Card>
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 group">
                                     <p className="font-semibold capitalize">{format(dayDate, "eeee, d", {locale: es})}</p>
-                                    <div className='flex items-center gap-2'>
+                                    <Badge variant="secondary" className="h-auto">
                                         <div className="text-right">
-                                            <div className="font-semibold text-sm">Bs {formatBs(dayTotal * bcvRate)}</div>
+                                            <div className="font-semibold text-sm">Bs {formatBs(dayTotal * dayRate)}</div>
                                             <div className="text-xs text-muted-foreground font-normal">(${formatUsd(dayTotal)})</div>
-                                          </div>
-                                        <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                                    </div>
+                                        </div>
+                                    </Badge>
+                                    <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                 </div>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
@@ -400,8 +420,8 @@ export default function SalesPage() {
                                             <CollapsibleTrigger asChild>
                                                 <div className="flex items-center p-4 cursor-pointer hover:bg-muted/10 group">
                                                     <div className="flex-1 font-medium">{sale.customer}</div>
-                                                    <div className={cn("flex-1 text-right font-semibold", {"line-through text-muted-foreground": sale.status === 'Anulada'})}>
-                                                        <div className="text-sm font-semibold">Bs {formatBs(sale.total * bcvRate)}</div>
+                                                    <div className={cn("flex-1 text-right", {"line-through text-muted-foreground": sale.status === 'Anulada'})}>
+                                                        <div className="font-semibold text-sm">Bs {formatBs(sale.total * sale.bcvRate)}</div>
                                                         <div className="text-xs text-muted-foreground font-normal">(${formatUsd(sale.total)})</div>
                                                     </div>
                                                     <div className="flex-1 flex justify-end items-center">
@@ -467,7 +487,7 @@ export default function SalesPage() {
                                                                     <TableCell>{item.quantity}</TableCell>
                                                                     <TableCell>{item.name}</TableCell>
                                                                     <TableCell className="text-right">
-                                                                        <div className="font-semibold text-xs">Bs {formatBs(item.price * item.quantity * bcvRate)}</div>
+                                                                        <div className="font-semibold text-xs">Bs {formatBs(item.price * item.quantity * sale.bcvRate)}</div>
                                                                         <div className="text-muted-foreground text-xs">(${formatUsd(item.price * item.quantity)})</div>
                                                                     </TableCell>
                                                                 </TableRow>

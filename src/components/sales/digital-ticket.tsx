@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useRef } from 'react';
@@ -6,7 +7,6 @@ import html2canvas from 'html2canvas';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Printer, Download, Send } from "lucide-react";
-import { getCurrentBcvRate } from "@/lib/placeholder-data";
 import { cn } from '@/lib/utils';
 import { PosLogo } from '@/components/ui/pos-logo';
 import { SaleDataForTicket } from '@/lib/types';
@@ -15,11 +15,13 @@ import { SaleDataForTicket } from '@/lib/types';
 export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTicket | null, onClose: () => void }) => {
     const ticketRef = useRef<HTMLDivElement>(null);
 
-    const bcvRate = getCurrentBcvRate();
-    const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const formatBs = (amount: number) => (amount * bcvRate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
     if (!saleData) return null;
+    
+    const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatBs = (amount: number) => (amount * saleData.bcvRate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatBsFromVes = (amount: number) => amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 
     const handlePrint = () => {
         const printWindow = window.open('', '', 'height=800,width=800');
@@ -82,7 +84,9 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
             message += `\n*Subtotal: Bs ${formatBs(saleData.subtotal)}*\n\n`;
             message += `*--- Pagos ---*\n`;
             saleData.payments.forEach(p => {
-                message += `${p.method?.name}: Bs ${formatBs(p.method?.currency === '$' ? p.amount : p.amount / bcvRate)}\n`;
+                if (!p.method) return;
+                const amountInBs = p.method.currency === '$' ? p.amount * saleData.bcvRate : p.amount;
+                message += `${p.method.name}: Bs ${formatBsFromVes(amountInBs)}\n`;
             });
              message += `\n*Total Pagado: Bs ${formatBs(saleData.totalPaid)}*\n`;
              if (saleData.totalChange > 0) {
@@ -147,11 +151,15 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                     <div className="separator"></div>
 
                     <p className="text-xs font-bold">Forma de Pago:</p>
-                    {saleData.payments.map((p, index) => (
-                         <table key={index} className="totals-table">
-                            <tbody><tr><td>{p.method?.name}</td><td className="text-right">Bs {formatBs(p.method?.currency === '$' ? p.amount : p.amount / bcvRate)}</td></tr></tbody>
-                         </table>
-                    ))}
+                    {saleData.payments.map((p, index) => {
+                         if (!p.method) return null;
+                         const amountInBs = p.method.currency === '$' ? p.amount * saleData.bcvRate : p.amount;
+                         return (
+                            <table key={index} className="totals-table">
+                                <tbody><tr><td>{p.method?.name}</td><td className="text-right">Bs {formatBsFromVes(amountInBs)}</td></tr></tbody>
+                            </table>
+                         )
+                    })}
                     <table className="totals-table font-bold">
                         <tbody><tr><td>TOTAL PAGADO:</td><td className="text-right">Bs {formatBs(saleData.totalPaid)}</td></tr></tbody>
                     </table>
