@@ -50,30 +50,9 @@ export function LoginForm() {
     setIsGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-        const result = await signInWithPopup(auth, provider);
-        const user = result.user;
-
-        // Check if user already exists in Firestore
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (!userDoc.exists()) {
-            // If user is new from the login page, we need to prompt them to complete registration
-            // For now, we'll redirect them to signup with a message.
-            // A more advanced flow would pass the user info to the signup page.
-             toast({ 
-                title: "Completa tu Registro", 
-                description: "Parece que eres nuevo. Por favor, completa tus datos de negocio para continuar.",
-                duration: 5000,
-             });
-             // We could sign them out here or just redirect. Redirecting is simpler for now.
-             await auth.signOut();
-             router.push("/signup");
-        } else {
-             toast({ title: "Inicio de Sesión Exitoso", description: "¡Bienvenido de nuevo!" });
-             router.push("/dashboard");
-        }
-
+        await signInWithPopup(auth, provider);
+        // The onAuthStateChanged listener in use-business-context will handle the redirect and data creation.
+        router.push("/dashboard");
     } catch (error: any) {
         toast({
             title: "Error con Google",

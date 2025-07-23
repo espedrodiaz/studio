@@ -44,55 +44,40 @@ export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleSuccessfulRegistration = async (user: User) => {
-    // Check if user already exists (could happen with Google sign-in)
-    const userDocRef = doc(db, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (userDoc.exists()) {
-        toast({ title: "Bienvenido de nuevo", description: "Hemos iniciado sesión por ti." });
-        router.push("/dashboard");
-        return;
-    }
-
-    if (!businessCategory || !fullName || !businessName || !rif) {
-        toast({ title: "Información Faltante", description: "Por favor, completa todos los campos del negocio para continuar.", variant: "destructive" });
-        setIsGoogleLoading(false); // Stop loading indicator
-        setIsLoading(false);
-        return;
-    }
-
-    const licenseKey = `FPV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    const sevenDaysFromNow = new Date();
-    sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-
-    try {
-        await setDoc(doc(db, "users", user.uid), {
-            uid: user.uid,
-            fullName,
-            businessName,
-            businessCategory,
-            rif,
-            email: user.email,
-            licenseKey,
-            status: "Trial",
-            createdAt: new Date().toISOString(),
-            trialEndsAt: sevenDaysFromNow.toISOString(),
-        });
-        
-        setIsSubmitted(true);
-    } catch (error) {
-         toast({ title: "Error de Base de Datos", description: "No se pudo guardar la información del negocio. Por favor, revisa tu conexión e intenta de nuevo.", variant: "destructive"});
-    }
-  };
-
 
   const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
+
+    if (!businessCategory || !fullName || !businessName || !rif) {
+        toast({ title: "Información Faltante", description: "Por favor, completa todos los campos del negocio para continuar.", variant: "destructive" });
+        setIsLoading(false);
+        return;
+    }
+
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await handleSuccessfulRegistration(userCredential.user);
+      const user = userCredential.user;
+
+      const licenseKey = `FPV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const sevenDaysFromNow = new Date();
+      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+      await setDoc(doc(db, "users", user.uid), {
+          uid: user.uid,
+          fullName,
+          businessName,
+          businessCategory,
+          rif,
+          email: user.email,
+          licenseKey,
+          status: "Trial",
+          createdAt: new Date().toISOString(),
+          trialEndsAt: sevenDaysFromNow.toISOString(),
+      });
+        
+      setIsSubmitted(true);
+
     } catch (error: any) {
       let description = "Ocurrió un error inesperado. Por favor, intenta de nuevo.";
       if (error.code === 'auth/email-already-in-use') {
@@ -114,10 +99,9 @@ export function SignupForm() {
       setIsGoogleLoading(true);
       const provider = new GoogleAuthProvider();
       try {
-          const result = await signInWithPopup(auth, provider);
-          setEmail(result.user.email || "");
-          setFullName(result.user.displayName || "");
-          await handleSuccessfulRegistration(result.user);
+          // This will sign the user in and the onAuthStateChanged listener in use-business-context will handle data creation
+          await signInWithPopup(auth, provider);
+          router.push('/dashboard');
       } catch (error: any) {
           toast({
               title: "Error con Google",

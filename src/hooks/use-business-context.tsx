@@ -3,16 +3,21 @@
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 
 type UserData = {
+    uid: string;
+    fullName: string;
     businessName: string;
     businessCategory: string;
-    status: 'Trial' | 'Active' | 'Suspended';
-    trialEndsAt: string;
+    rif: string;
+    email: string | null;
     licenseKey: string;
+    status: 'Trial' | 'Active' | 'Suspended';
+    createdAt: string;
+    trialEndsAt: string;
 }
 
 type BusinessContextType = {
@@ -20,7 +25,7 @@ type BusinessContextType = {
   user: User | null;
   userData: UserData | null;
   isTrialExpired: boolean;
-  activateLicense: (licenseKey: string) => boolean; // This is now a placeholder, real logic would be a backend call
+  activateLicense: (licenseKey: string) => boolean; 
 };
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
@@ -37,35 +42,53 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       if (user) {
         setUser(user);
-        // Fetch user data from Firestore
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
           const data = userDoc.data() as UserData;
           setUserData(data);
-
-          // Check license and trial status
           if (data.status !== 'Active') {
             const trialEndDate = new Date(data.trialEndsAt);
-            if (new Date() > trialEndDate) {
-              setIsTrialExpired(true);
-            } else {
-              setIsTrialExpired(false);
-            }
+            setIsTrialExpired(new Date() > trialEndDate);
           } else {
-              setIsTrialExpired(false);
+            setIsTrialExpired(false);
           }
         } else {
-            // This case might happen if a user is created in Auth but not in Firestore, e.g. Google Sign-in first time
-            // Or if we need to log them out because their data is missing.
-             setUserData(null);
-             router.push('/login');
+            // User is authenticated but doesn't have a user document.
+            // This is a new user (likely from Google Sign-In). Create their document.
+            const licenseKey = `FPV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+            const sevenDaysFromNow = new Date();
+            sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+            
+            const newUserDocData: UserData = {
+                uid: user.uid,
+                fullName: user.displayName || "Usuario de Google",
+                businessName: "Mi Negocio", // Placeholder
+                businessCategory: "Otro", // Placeholder
+                rif: "J-00000000-0", // Placeholder
+                email: user.email,
+                licenseKey,
+                status: "Trial",
+                createdAt: new Date().toISOString(),
+                trialEndsAt: sevenDaysFromNow.toISOString(),
+            };
+            
+            await setDoc(userDocRef, newUserDocData);
+            setUserData(newUserDocData);
+            setIsTrialExpired(false);
+            // Optional: redirect to a profile completion page
+            // router.push('/dashboard/complete-profile');
         }
 
       } else {
         setUser(null);
         setUserData(null);
+        setIsTrialExpired(false);
+        const publicRoutes = ['/login', '/signup', '/'];
+        if (!publicRoutes.includes(window.location.pathname)) {
+           router.push('/login');
+        }
       }
       setIsLoading(false);
     });
@@ -74,14 +97,14 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
   }, [router]);
 
   const activateLicense = (licenseKey: string): boolean => {
-    // In a REAL app, this would trigger a backend call (e.g., a Firebase Function)
-    // to validate the key and update the user's status in Firestore.
-    // For now, we simulate this.
     if (userData && licenseKey === userData.licenseKey) {
         // This is a simulation. A backend would update the doc and this client would get the update via a listener.
         const updatedUserData = { ...userData, status: 'Active' as 'Active' };
         setUserData(updatedUserData); 
         setIsTrialExpired(false);
+        // In a real app, you would also update the document in Firestore.
+        // const userDocRef = doc(db, "users", userData.uid);
+        // setDoc(userDocRef, { status: 'Active' }, { merge: true });
         return true;
     }
     return false;

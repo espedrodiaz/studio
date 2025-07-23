@@ -24,7 +24,7 @@ export default function Loading() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center h-full">
+    <div className="flex flex-col items-center justify-center h-full w-full">
       <div className="text-center">
         <div className="mb-8">
             <PosLogo className="text-5xl" />

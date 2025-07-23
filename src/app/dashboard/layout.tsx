@@ -131,13 +131,13 @@ const DashboardLayoutContent = ({ children }: { children: React.ReactNode }) => 
   }
 
   if (isLoading) {
-      return <Loading />;
+      return <div className="flex items-center justify-center h-screen"><Loading /></div>;
   }
   
   if (!user) {
       // This is a fallback, the auth listener in the provider should handle this.
       router.replace('/login');
-      return <Loading />;
+      return <div className="flex items-center justify-center h-screen"><Loading /></div>;
   }
 
   return (
@@ -179,7 +179,7 @@ const DashboardLayoutContent = ({ children }: { children: React.ReactNode }) => 
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
+                    <DropdownMenuLabel>{userData?.businessName || 'Mi Cuenta'}</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>Ajustes</DropdownMenuItem>
                     <DropdownMenuItem>Soporte</DropdownMenuItem>
