@@ -9,6 +9,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -296,7 +297,9 @@ export default function SalesPage() {
                                             <TableRow key={sale.id}>
                                                 <TableCell className="font-medium">{sale.customer}</TableCell>
                                                 <TableCell>
-                                                <Badge variant={sale.status === 'Pagada' ? 'default' : 'secondary'} className={sale.status === 'Pagada' ? 'bg-green-500/20 text-green-700 hover:bg-green-500/30' : ''}>
+                                                <Badge variant={sale.status === 'Pagada' ? 'default' : 'secondary'} className={cn({
+                                                    'bg-green-100 text-green-800': sale.status === 'Pagada',
+                                                })}>
                                                     {sale.status}
                                                 </Badge>
                                                 </TableCell>
@@ -337,3 +340,4 @@ export default function SalesPage() {
     </div>
   );
 }
+
