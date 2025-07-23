@@ -16,27 +16,65 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PosLogo } from "../ui/pos-logo";
 import { MailCheck, Loader2 } from "lucide-react";
-import { auth } from "@/lib/firebase";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { businessCategories } from "@/lib/placeholder-data";
+import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 
 export function SignupForm() {
   const router = useRouter();
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Form state
+  const [fullName, setFullName] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [businessCategory, setBusinessCategory] = useState("");
+  const [rif, setRif] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+
   const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (!businessCategory) {
+        toast({ title: "Error", description: "Por favor, selecciona una categoría de negocio.", variant: "destructive" });
+        return;
+    }
     setIsLoading(true);
 
     try {
         // 1. Create user in Firebase Auth
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // 2. Generate a unique license key (simple version)
+        const licenseKey = `FPV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
         
-        // The rest of the user data will be collected after the first login.
-        // For now, we just create the auth user.
+        const sevenDaysFromNow = new Date();
+        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+        // 3. Save user business data to Firestore
+        await setDoc(doc(db, "users", user.uid), {
+            uid: user.uid,
+            fullName,
+            businessName,
+            businessCategory,
+            rif,
+            email,
+            licenseKey,
+            status: "Trial", // Start as Trial
+            createdAt: new Date().toISOString(),
+            trialEndsAt: sevenDaysFromNow.toISOString(),
+        });
         
         setIsSubmitted(true);
 
@@ -67,7 +105,7 @@ export function SignupForm() {
             </div>
             <CardTitle className="text-2xl">¡Registro Exitoso!</CardTitle>
             <CardDescription className="text-balance">
-              ¡Bienvenido! Tu cuenta ha sido creada. Ahora puedes iniciar sesión.
+              ¡Bienvenido! Tu cuenta ha sido creada y tu período de prueba de 7 días ha comenzado. Ahora puedes iniciar sesión.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -92,6 +130,33 @@ export function SignupForm() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="grid gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2 col-span-2">
+                <Label htmlFor="fullName">Nombre y Apellido</Label>
+                <Input id="fullName" placeholder="Ej: Pedro Pérez" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="businessName">Nombre del Negocio</Label>
+              <Input id="businessName" placeholder="Ej: Bodega La Esquina" required value={businessName} onChange={(e) => setBusinessName(e.target.value)} />
+            </div>
+             <div className="grid gap-2">
+                <Label htmlFor="businessCategory">Categoría del Negocio</Label>
+                 <Select value={businessCategory} onValueChange={setBusinessCategory}>
+                    <SelectTrigger id="businessCategory">
+                        <SelectValue placeholder="Selecciona una categoría..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {businessCategories.map(cat => (
+                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="grid gap-2">
+                <Label htmlFor="rif">RIF del Negocio</Label>
+                <Input id="rif" placeholder="Ej: J-12345678-9" required value={rif} onChange={(e) => setRif(e.target.value)} />
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="email">Correo electrónico</Label>
               <Input id="email" type="email" placeholder="nombre@ejemplo.com" required onChange={(e) => setEmail(e.target.value)} value={email}/>
@@ -102,7 +167,7 @@ export function SignupForm() {
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Crear Cuenta
+              Crear Cuenta e Iniciar Prueba
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">

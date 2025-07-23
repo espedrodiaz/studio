@@ -26,6 +26,7 @@ export function LoginForm() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +47,7 @@ export function LoginForm() {
   };
 
   const handleGoogleLogin = async () => {
-    setIsLoading(true);
+    setIsGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     try {
         const result = await signInWithPopup(auth, provider);
@@ -60,6 +61,7 @@ export function LoginForm() {
             // If user is new, create a document in Firestore
              const sevenDaysFromNow = new Date();
              sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+             const licenseKey = `FPV-G-${Date.now().toString(36).toUpperCase()}`;
 
             await setDoc(userDocRef, {
                 uid: user.uid,
@@ -68,7 +70,7 @@ export function LoginForm() {
                 businessCategory: "Otro",
                 rif: "N/A",
                 email: user.email,
-                licenseKey: "N/A - Google Sign In",
+                licenseKey: licenseKey,
                 status: "Trial",
                 createdAt: new Date().toISOString(),
                 trialEndsAt: sevenDaysFromNow.toISOString(),
@@ -87,7 +89,7 @@ export function LoginForm() {
             variant: "destructive",
         });
     } finally {
-        setIsLoading(false);
+        setIsGoogleLoading(false);
     }
   };
 
@@ -113,6 +115,7 @@ export function LoginForm() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading || isGoogleLoading}
               />
             </div>
             <div className="grid gap-2">
@@ -131,14 +134,15 @@ export function LoginForm() {
                 required 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading || isGoogleLoading}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Iniciar sesión
             </Button>
-            <Button variant="outline" className="w-full" onClick={handleGoogleLogin} type="button" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button variant="outline" className="w-full" onClick={handleGoogleLogin} type="button" disabled={isLoading || isGoogleLoading}>
+              {isGoogleLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Iniciar sesión con Google
             </Button>
           </form>
