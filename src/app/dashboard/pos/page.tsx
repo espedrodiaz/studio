@@ -249,7 +249,7 @@ export default function PosPage() {
 
     const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
     const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-    const [customerForm, setCustomerForm] = useState<Omit<Customer, 'id'>>({ name: '', idNumber: '', email: '', phone: '', vehicles: [] });
+    const [customerForm, setCustomerForm] = useState<Omit<Customer, 'id'>>({ name: '', idNumber: '', address: '', phone: '', secondaryPhone: '', vehicles: [] });
     const [vehicleForm, setVehicleForm] = useState<Vehicle>({ brand: '', model: '', engine: '', year: '' });
 
     const [quantityInputs, setQuantityInputs] = useState<Record<string, string>>({});
@@ -304,7 +304,7 @@ export default function PosPage() {
 
         Object.entries(cashDrawerState).forEach(([pmId, state]) => {
             const method = paymentMethodsList.find(pm => pm.id === pmId);
-            if (!method) return;
+            if (!method || !method.managesOpeningBalance) return;
 
             if (method.currency === '$') {
                 totals.initial.usd += state.initial;
@@ -543,10 +543,10 @@ export default function PosPage() {
     const openCustomerModal = (customer: Customer | null) => {
         if (customer) {
             setEditingCustomer(customer);
-            setCustomerForm({ ...customer });
+            setCustomerForm({ ...customer, secondaryPhone: customer.secondaryPhone || '' });
         } else {
             setEditingCustomer(null);
-            setCustomerForm({ name: '', idNumber: '', email: '', phone: '', vehicles: [] });
+            setCustomerForm({ name: '', idNumber: '', address: '', phone: '', secondaryPhone: '', vehicles: [] });
         }
         setIsCustomerModalOpen(true);
     };
@@ -603,7 +603,7 @@ export default function PosPage() {
             id: 'CUST_OCCASIONAL',
             name: 'Cliente Ocasional',
             idNumber: 'V-00000000',
-            email: '',
+            address: 'N/A',
             phone: '',
             vehicles: []
         });
@@ -1391,12 +1391,16 @@ export default function PosPage() {
                                     <Input id="idNumber" value={customerForm.idNumber} onChange={handleCustomerFormChange} placeholder="V-12345678" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="email">Correo Electrónico</Label>
-                                    <Input id="email" type="email" value={customerForm.email} onChange={handleCustomerFormChange} placeholder="cliente@email.com" />
+                                    <Label htmlFor="address">Dirección</Label>
+                                    <Input id="address" value={customerForm.address} onChange={handleCustomerFormChange} placeholder="Av. Principal, Casa #1" />
                                 </div>
                                  <div className="space-y-2">
                                     <Label htmlFor="phone">Teléfono / WhatsApp</Label>
                                     <Input id="phone" value={customerForm.phone} onChange={handleCustomerFormChange} placeholder="0414-1234567" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="secondaryPhone">Teléfono secundario (Opcional)</Label>
+                                    <Input id="secondaryPhone" value={customerForm.secondaryPhone} onChange={handleCustomerFormChange} placeholder="0212-9876543" />
                                 </div>
                             </div>
                         </TabsContent>
@@ -1556,3 +1560,5 @@ export default function PosPage() {
         </>
     );
 }
+
+    

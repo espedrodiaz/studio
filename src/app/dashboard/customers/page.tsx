@@ -40,7 +40,7 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
-  const [customerForm, setCustomerForm] = useState<Omit<Customer, 'id'>>({ name: '', idNumber: '', email: '', phone: '', vehicles: [] });
+  const [customerForm, setCustomerForm] = useState<Omit<Customer, 'id'>>({ name: '', idNumber: '', address: '', phone: '', secondaryPhone: '', vehicles: [] });
   const [vehicleForm, setVehicleForm] = useState<Vehicle>({ brand: '', model: '', engine: '', year: '' });
   
   const { businessCategory } = useBusinessContext();
@@ -53,7 +53,7 @@ export default function CustomersPage() {
           setCustomerForm({ ...customer });
       } else {
           setEditingCustomer(null);
-          setCustomerForm({ name: '', idNumber: '', email: '', phone: '', vehicles: [] });
+          setCustomerForm({ name: '', idNumber: '', address: '', phone: '', secondaryPhone: '', vehicles: [] });
       }
       setIsCustomerModalOpen(true);
   };
@@ -119,7 +119,7 @@ export default function CustomersPage() {
               <TableRow>
                 <TableHead>Nombre</TableHead>
                 <TableHead>Cédula/RIF</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead>Dirección</TableHead>
                 <TableHead>Teléfono</TableHead>
                 {showVehiclesTab && <TableHead>Vehículos</TableHead>}
                 <TableHead>
@@ -132,7 +132,7 @@ export default function CustomersPage() {
                 <TableRow key={customer.id}>
                   <TableCell className="font-medium">{customer.name}</TableCell>
                   <TableCell>{customer.idNumber}</TableCell>
-                  <TableCell>{customer.email}</TableCell>
+                  <TableCell>{customer.address}</TableCell>
                   <TableCell>{customer.phone}</TableCell>
                   {showVehiclesTab && <TableCell>{customer.vehicles.length}</TableCell>}
                   <TableCell>
@@ -181,12 +181,16 @@ export default function CustomersPage() {
                             <Input id="idNumber" value={customerForm.idNumber} onChange={handleCustomerFormChange} placeholder="V-12345678" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="email">Correo Electrónico</Label>
-                            <Input id="email" type="email" value={customerForm.email} onChange={handleCustomerFormChange} placeholder="cliente@email.com" />
+                            <Label htmlFor="address">Dirección</Label>
+                            <Input id="address" value={customerForm.address} onChange={handleCustomerFormChange} placeholder="Av. Principal, Casa #1" />
                         </div>
                           <div className="space-y-2">
                             <Label htmlFor="phone">Teléfono / WhatsApp</Label>
                             <Input id="phone" value={customerForm.phone} onChange={handleCustomerFormChange} placeholder="0414-1234567" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="secondaryPhone">Teléfono secundario (Opcional)</Label>
+                            <Input id="secondaryPhone" value={customerForm.secondaryPhone} onChange={handleCustomerFormChange} placeholder="0212-9876543" />
                         </div>
                     </div>
                 </TabsContent>
@@ -247,3 +251,5 @@ export default function CustomersPage() {
     </>
   );
 }
+
+    

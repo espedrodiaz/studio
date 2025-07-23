@@ -52,7 +52,7 @@ export const customers: Customer[] = [
     id: 'CUST001', 
     name: 'Ana Pérez', 
     idNumber: 'V-12345678', 
-    email: 'ana.perez@email.com', 
+    address: 'Av. Libertador, Edif. Miranda, Apto. 10A, Caracas', 
     phone: '0414-1234567',
     vehicles: [
         { brand: 'Toyota', model: 'Corolla', engine: '1.8L', year: 2021 }
@@ -62,7 +62,7 @@ export const customers: Customer[] = [
     id: 'CUST002', 
     name: 'Carlos Gómez', 
     idNumber: 'V-87654321', 
-    email: 'carlos.gomez@email.com', 
+    address: 'Calle El Sol, Casa #5, Maracaibo', 
     phone: '0412-8765432',
     vehicles: []
   },
@@ -70,7 +70,7 @@ export const customers: Customer[] = [
     id: 'CUST003', 
     name: 'María Rodríguez', 
     idNumber: 'V-11223344', 
-    email: 'maria.r@email.com', 
+    address: 'Urb. Las Acacias, Qta. "La Nuestra", Valencia', 
     phone: '0424-1122334',
     vehicles: [
         { brand: 'Ford', model: 'Fiesta', engine: '1.6L', year: 2018 },
@@ -81,7 +81,7 @@ export const customers: Customer[] = [
     id: 'CUST004', 
     name: 'Luis Hernández', 
     idNumber: 'E-55667788', 
-    email: 'luis.h@email.com', 
+    address: 'Av. Bolívar Norte, C.C. Global, Local 55, Barquisimeto', 
     phone: '0416-5566778',
     vehicles: []
   },
@@ -230,3 +230,5 @@ export const addCashMovement = (movement: CashMovement) => {
     cashMovements.push(newMovement);
     return newMovement;
 }
+
+    

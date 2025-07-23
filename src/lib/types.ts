@@ -10,7 +10,10 @@ export type Customer = {
     id: string;
     name: string;
     idNumber: string;
-    email: string;
+    address: string;
     phone: string;
+    secondaryPhone?: string;
     vehicles: Vehicle[];
 };
+
+    

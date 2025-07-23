@@ -107,11 +107,11 @@ export function SignupForm() {
                 </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="email">Correo electrónico</Label>
+              <Label htmlFor="address">Dirección</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="nombre@ejemplo.com"
+                id="address"
+                type="text"
+                placeholder="Av. Principal, Local 1, Ciudad"
                 required
               />
             </div>
@@ -134,3 +134,5 @@ export function SignupForm() {
     </div>
   );
 }
+
+    
