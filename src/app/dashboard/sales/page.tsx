@@ -70,7 +70,7 @@ export default function SalesPage() {
 
   const sortedSales = useMemo(() => 
     [...sales].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-  []);
+  [sales]);
 
   const firstSaleDate = useMemo(() => {
     if (sortedSales.length === 0) return new Date();
@@ -82,26 +82,29 @@ export default function SalesPage() {
       return endOfDay(parseISO(sortedSales[sortedSales.length - 1].date));
   }, [sortedSales]);
 
+  // Set initial date to the last sale date if available
+  useState(() => {
+    if (sortedSales.length > 0) {
+      setCurrentDate(lastSaleDate);
+    }
+  });
+
 
   const { interval, dateRangeLabel, isPrevDisabled, isNextDisabled } = useMemo(() => {
-    let start, end, label, prevIntervalEnd, nextIntervalStart;
+    let start, end, label;
 
     if (viewMode === 'week') {
       start = startOfWeek(currentDate, { weekStartsOn: 1 });
       end = endOfWeek(currentDate, { weekStartsOn: 1 });
       label = `${format(start, 'd/L')} - ${format(end, 'd/L/yyyy')}`;
-      prevIntervalEnd = endOfWeek(subDays(currentDate, 7), { weekStartsOn: 1 });
-      nextIntervalStart = startOfWeek(addDays(currentDate, 7), { weekStartsOn: 1 });
     } else { // month
       start = startOfMonth(currentDate);
       end = endOfMonth(currentDate);
       label = format(currentDate, 'MMMM yyyy', { locale: es });
-      prevIntervalEnd = endOfMonth(subMonths(currentDate, 1));
-      nextIntervalStart = startOfMonth(addMonths(currentDate, 1));
     }
     
-    const prevDisabled = prevIntervalEnd < firstSaleDate;
-    const nextDisabled = nextIntervalStart > lastSaleDate;
+    const prevDisabled = start < firstSaleDate;
+    const nextDisabled = end > lastSaleDate;
 
     return { 
       interval: { start, end }, 
@@ -117,6 +120,16 @@ export default function SalesPage() {
      }
      return [];
   }, [interval, viewMode]);
+
+  const handleViewChange = (v: string) => {
+    const newViewMode = v as 'week' | 'month';
+    setViewMode(newViewMode);
+    setSelectedDate(null);
+    // Reset date to last sale when changing view to avoid being stuck in a disabled period
+    if(sortedSales.length > 0) {
+      setCurrentDate(lastSaleDate);
+    }
+  }
 
   const handleDateChange = (direction: 'prev' | 'next') => {
       if (direction === 'prev' && isPrevDisabled) return;
@@ -168,7 +181,9 @@ export default function SalesPage() {
     let totalUsd = 0;
     Object.values(totalsByPaymentMethod).forEach(total => {
         totalUsd += total.usd;
-        totalUsd += total.ves / bcvRate;
+        if (bcvRate > 0) {
+            totalUsd += total.ves / bcvRate;
+        }
     });
     return totalUsd;
   }, [totalsByPaymentMethod, bcvRate]);
@@ -219,7 +234,7 @@ export default function SalesPage() {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                 <Tabs value={viewMode} onValueChange={(v) => { setViewMode(v as 'week' | 'month'); setSelectedDate(null); }}>
+                 <Tabs value={viewMode} onValueChange={handleViewChange}>
                     <TabsList className="grid w-full grid-cols-2 max-w-sm">
                         <TabsTrigger value="week">Por Semanas</TabsTrigger>
                         <TabsTrigger value="month">Por Meses</TabsTrigger>
@@ -235,7 +250,7 @@ export default function SalesPage() {
                 </Button>
                 <div className="text-center">
                     <p className="font-semibold">{viewMode === 'week' ? 'Semana' : 'Mes'}</p>
-                    <p className="text-sm text-muted-foreground">{dateRangeLabel}</p>
+                    <p className="text-sm text-muted-foreground capitalize">{dateRangeLabel}</p>
                 </div>
                 <Button variant="outline" size="icon" onClick={() => handleDateChange('next')} disabled={isNextDisabled}>
                     <ChevronRight className="h-4 w-4" />
@@ -249,6 +264,7 @@ export default function SalesPage() {
                             variant={isSameDay(day, selectedDate || new Date(0)) ? 'default' : 'outline'}
                             className="flex-1 flex-col h-14"
                             onClick={() => setSelectedDate(isSameDay(day, selectedDate || new Date(0)) ? null : day)}
+                            disabled={day < firstSaleDate || day > lastSaleDate}
                         >
                             <span>{format(day, 'd')}</span>
                             <span className="text-xs capitalize">{format(day, 'eee', { locale: es })}</span>
@@ -261,7 +277,7 @@ export default function SalesPage() {
         <Card>
              <CardHeader>
                 <CardTitle className="text-base">Resumen del Período</CardTitle>
-                <CardDescription className="text-xs">
+                <CardDescription className="text-xs capitalize">
                     {selectedDate ? `Mostrando totales para el ${format(selectedDate, 'PPP', {locale: es})}` : `Mostrando totales para ${dateRangeLabel}`}
                 </CardDescription>
             </CardHeader>
@@ -298,7 +314,7 @@ export default function SalesPage() {
                 const dayDate = parseISO(day);
                 const dayTotal = sales.reduce((sum, s) => sum + s.total, 0);
                 return (
-                    <Collapsible key={day} defaultOpen={selectedDate ? isSameDay(dayDate, selectedDate) : false} open={selectedDate ? isSameDay(dayDate, startOfDay(selectedDate)) : undefined}>
+                    <Collapsible key={day} defaultOpen={selectedDate ? isSameDay(dayDate, selectedDate) : true}>
                         <Card>
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50">
