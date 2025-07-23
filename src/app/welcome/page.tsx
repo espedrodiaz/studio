@@ -47,8 +47,8 @@ export default function WelcomePage() {
                     Desde el control de tu inventario hasta la facturación y reportes. FacilitoPOS es la herramienta todo en uno que necesitas para crecer.
                 </p>
                 <Button asChild size="lg">
-                    <Link href="/signup">
-                        Comienza tu Prueba de 7 Días <ArrowRight className="ml-2 h-5 w-5" />
+                    <Link href="/login">
+                        Acceder a la App <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                 </Button>
             </div>

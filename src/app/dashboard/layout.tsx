@@ -131,13 +131,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   if (isLoading) {
-      return <div className="flex items-center justify-center h-screen"><Loading /></div>;
+      return <div className="fixed inset-0 flex items-center justify-center bg-background z-50"><Loading /></div>;
   }
   
   if (!user) {
       // This is a fallback, the auth listener in the provider should handle this.
       router.replace('/login');
-      return <div className="flex items-center justify-center h-screen"><Loading /></div>;
+      return <div className="fixed inset-0 flex items-center justify-center bg-background z-50"><Loading /></div>;
   }
 
   return (
