@@ -18,9 +18,9 @@ export default function WelcomePage() {
   const router = useRouter();
 
   useEffect(() => {
-    // Navigate to login after 10 seconds
+    // Navigate to signup after 10 seconds
     const navigationTimer = setTimeout(() => {
-      router.push('/login');
+      router.push('/signup');
     }, 10000);
 
     // Change phrase every 2 seconds
