@@ -105,17 +105,18 @@ export default function SalesPage() {
       end = endOfMonth(currentDate);
       label = format(currentDate, 'MMMM yyyy', { locale: es });
     }
-    
-    const prevIntervalEnd = subDays(start, 1);
-    const hasSalesInPrevPeriod = sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: firstSaleDate, end: prevIntervalEnd }));
-    
-    const nextIntervalStart = addDays(end, 1);
 
+    const prevIntervalStart = startOfDay(subDays(start, 1));
+    const isPrevDisabled = !sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: firstSaleDate, end: prevIntervalStart }));
+
+    const nextIntervalEnd = endOfDay(addDays(end, 1));
+    const isNextDisabled = isAfter(nextIntervalEnd, lastSaleDate);
+    
     return { 
       interval: { start, end }, 
       dateRangeLabel: label, 
-      isPrevDisabled: !isAfter(start, firstSaleDate),
-      isNextDisabled: isAfter(nextIntervalStart, lastSaleDate)
+      isPrevDisabled,
+      isNextDisabled
     };
   }, [currentDate, viewMode, sortedSales, firstSaleDate, lastSaleDate]);
 
@@ -129,6 +130,9 @@ export default function SalesPage() {
   const handleViewChange = (v: string) => {
     const newViewMode = v as 'week' | 'month';
     setViewMode(newViewMode);
+    if(sortedSales.length > 0) {
+        setCurrentDate(lastSaleDate);
+    }
   }
 
   const handleDateChange = (direction: 'prev' | 'next') => {
@@ -209,18 +213,18 @@ export default function SalesPage() {
   const getPaymentMethodIcon = (methodName: string) => {
     const lowerCaseName = methodName.toLowerCase();
     if (lowerCaseName.includes('zelle')) {
-      return <DollarSign className="w-5 h-5 text-green-600" />;
+      return <DollarSign className="w-4 h-4 text-green-600" />;
     }
      if (lowerCaseName.includes('efectivo')) {
-      return <CreditCard className="w-5 h-5 text-blue-600" />;
+      return <CreditCard className="w-4 h-4 text-blue-600" />;
     }
     if (lowerCaseName.includes('tarjeta') || lowerCaseName.includes('punto')) {
-      return <CreditCard className="w-5 h-5 text-gray-600" />;
+      return <CreditCard className="w-4 h-4 text-gray-600" />;
     }
     if (lowerCaseName.includes('pago móvil')) {
-      return <Smartphone className="w-5 h-5 text-purple-600" />;
+      return <Smartphone className="w-4 h-4 text-purple-600" />;
     }
-    return <DollarSign className="w-5 h-5 text-muted-foreground" />;
+    return <DollarSign className="w-4 h-4 text-muted-foreground" />;
   };
 
   return (
@@ -259,7 +263,7 @@ export default function SalesPage() {
                 </Button>
             </CardHeader>
             {viewMode === 'week' && (
-                <CardContent className="flex justify-center flex-wrap gap-0.5 md:gap-2">
+                <CardContent className="flex justify-center flex-wrap gap-0.5">
                     {daysInInterval.map(day => (
                         <Button 
                             key={day.toString()} 
@@ -283,21 +287,19 @@ export default function SalesPage() {
                     {selectedDate ? `Mostrando totales para el ${format(selectedDate, 'PPP', {locale: es})}` : `Mostrando totales para ${dateRangeLabel}`}
                 </CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <CardContent className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2">
                {paymentMethods.map(pm => {
                  const totals = totalsByPaymentMethod[pm.id] || { usd: 0, ves: 0 };
                  const totalAmount = pm.currency === '$' ? totals.usd : totals.ves;
-                 
-                 if (totalAmount === 0) return null;
 
                  return (
                     <Card key={pm.id}>
-                        <CardContent className="p-4 flex flex-col gap-1">
-                            <div className="flex items-center justify-between">
-                                <span className="text-xs font-semibold">{pm.name}</span>
+                        <CardContent className="p-2 flex flex-col gap-1">
+                            <div className="flex items-center justify-between text-xs">
+                                <span className="font-semibold truncate">{pm.name}</span>
                                 {getPaymentMethodIcon(pm.name)}
                             </div>
-                            <p className="text-xl font-bold">
+                            <p className="text-base font-bold">
                                 {pm.currency === '$' ? `$${formatUsd(totalAmount)}` : `Bs ${formatBs(totalAmount)}`}
                             </p>
                         </CardContent>
@@ -318,7 +320,7 @@ export default function SalesPage() {
                 const dayDate = parseISO(day);
                 const dayTotal = sales.reduce((sum, s) => sum + s.total, 0);
                 return (
-                    <Collapsible key={day} defaultOpen={selectedDate !== null} className="space-y-2">
+                    <Collapsible key={day} defaultOpen={selectedDate !== null || groupedSalesByDay.length === 1} className="space-y-2">
                         <Card>
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 group">
