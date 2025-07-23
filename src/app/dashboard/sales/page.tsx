@@ -325,7 +325,7 @@ export default function SalesPage() {
                                     {sales.map((sale) => (
                                         <Collapsible key={sale.id} className="border-b last:border-b-0">
                                             <CollapsibleTrigger asChild>
-                                                <div className="flex items-center p-4 cursor-pointer hover:bg-muted/10">
+                                                <div className="flex items-center p-4 cursor-pointer hover:bg-muted/10 group">
                                                     <div className="flex-1 font-medium">{sale.customer}</div>
                                                     <div className="flex-1 text-right font-semibold">
                                                         Bs {formatBs(sale.total * bcvRate)}
