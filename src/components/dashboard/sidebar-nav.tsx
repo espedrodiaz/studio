@@ -25,6 +25,11 @@ import {
   Wallet,
   Building,
   ShieldCheck,
+  Tags,
+  Copyright,
+  ScanLine,
+  FileCog,
+  FileDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PosLogo } from "../ui/pos-logo";
@@ -53,6 +58,12 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
   const pathname = usePathname();
   const { isActivated, businessName, businessCategory, setBusinessCategory } = useBusinessContext();
   const isAccountsActive = pathname.startsWith('/dashboard/accounts');
+  const isProductsActive = pathname.startsWith('/dashboard/inventory') || 
+                           pathname.startsWith('/dashboard/categories') ||
+                           pathname.startsWith('/dashboard/brands') ||
+                           pathname.startsWith('/dashboard/recount') ||
+                           pathname.startsWith('/dashboard/inventory-settings') ||
+                           pathname.startsWith('/dashboard/import-export');
 
   return (
     <div className="flex h-full flex-col">
@@ -78,7 +89,29 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
             <NavLink href="/dashboard" icon={LayoutDashboard} onClick={onLinkClick}>Resumen</NavLink>
             <NavLink href="/dashboard/pos" icon={Store} onClick={onLinkClick}>Punto de Venta</NavLink>
             <NavLink href="/dashboard/sales" icon={LineChart} onClick={onLinkClick}>Ventas</NavLink>
-            <NavLink href="/dashboard/inventory" icon={Package} onClick={onLinkClick}>Inventario</NavLink>
+            
+             <Accordion type="single" collapsible defaultValue={isProductsActive ? "item-1" : ""}>
+                <AccordionItem value="item-1" className="border-b-0">
+                    <AccordionTrigger className={cn(
+                        "w-full justify-start gap-2 rounded-md px-3 py-2 text-sm font-medium hover:bg-muted hover:no-underline",
+                        isProductsActive && "bg-secondary"
+                    )}>
+                    <div className="flex items-center gap-2">
+                        <Package className="h-4 w-4" />
+                        <span>Productos</span>
+                    </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pl-6 pt-1">
+                        <NavLink href="/dashboard/inventory" icon={ShoppingCart} onClick={onLinkClick}>Inventario</NavLink>
+                        <NavLink href="/dashboard/categories" icon={Tags} onClick={onLinkClick}>Categorías</NavLink>
+                        <NavLink href="/dashboard/brands" icon={Copyright} onClick={onLinkClick}>Marcas</NavLink>
+                        <NavLink href="/dashboard/recount" icon={ScanLine} onClick={onLinkClick}>Reconteo Físico</NavLink>
+                        <NavLink href="/dashboard/inventory-settings" icon={FileCog} onClick={onLinkClick}>Ajustes de Inventario</NavLink>
+                        <NavLink href="/dashboard/import-export" icon={FileDown} onClick={onLinkClick}>Importar/Exportar</NavLink>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+
             <NavLink href="/dashboard/customers" icon={Users} onClick={onLinkClick}>Clientes</NavLink>
             <NavLink href="/dashboard/suppliers" icon={Truck} onClick={onLinkClick}>Proveedores</NavLink>
             <NavLink href="/dashboard/exchange-rates" icon={Landmark} onClick={onLinkClick}>Tasas de Cambio</NavLink>
