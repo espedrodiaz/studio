@@ -51,7 +51,8 @@ import {
     subMonths,
     isSameDay,
     parseISO,
-    isBefore,
+    isWithinInterval,
+    startOfDay,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -62,29 +63,30 @@ type Sale = typeof sales[0];
 export default function SalesPage() {
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   
   const bcvRate = getCurrentBcvRate();
 
   const firstSaleDate = useMemo(() => {
     if (sales.length === 0) return new Date();
     const sortedSales = [...sales].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    return parseISO(sortedSales[0].date);
+    return startOfDay(parseISO(sortedSales[0].date));
   }, []);
 
   const { interval, dateRangeLabel, isPrevDisabled } = useMemo(() => {
-    let start, end, label, disabled;
+    let start, end, label, prevIntervalStart;
     if (viewMode === 'week') {
       start = startOfWeek(currentDate, { weekStartsOn: 1 });
       end = endOfWeek(currentDate, { weekStartsOn: 1 });
       label = `${format(start, 'd/L')} - ${format(end, 'd/L/yyyy')}`;
-      disabled = isBefore(start, firstSaleDate) && !isSameDay(start, startOfWeek(firstSaleDate, { weekStartsOn: 1 }));
+      prevIntervalStart = startOfWeek(subDays(currentDate, 7), { weekStartsOn: 1 });
     } else {
       start = startOfMonth(currentDate);
       end = endOfMonth(currentDate);
       label = format(currentDate, 'MMMM yyyy', { locale: es });
-      disabled = isBefore(start, firstSaleDate) && !isSameDay(start, startOfMonth(firstSaleDate));
+      prevIntervalStart = startOfMonth(subMonths(currentDate, 1));
     }
+    const disabled = prevIntervalStart < firstSaleDate;
     return { interval: { start, end }, dateRangeLabel: label, isPrevDisabled: disabled };
   }, [currentDate, viewMode, firstSaleDate]);
 
@@ -107,11 +109,10 @@ export default function SalesPage() {
   }
   
   const salesForPeriod = useMemo(() => {
-    const period = selectedDate ? { start: selectedDate, end: selectedDate } : interval;
+    const period = selectedDate ? { start: startOfDay(selectedDate), end: startOfDay(selectedDate) } : interval;
     return sales.filter(sale => {
-      const saleDate = parseISO(sale.date);
-      const saleDayStart = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate());
-      return saleDayStart >= period.start && saleDayStart <= period.end;
+      const saleDate = startOfDay(parseISO(sale.date));
+      return saleDate >= period.start && saleDate <= period.end;
     });
   }, [sales, interval, selectedDate]);
   
@@ -152,7 +153,7 @@ export default function SalesPage() {
     const grouped: { [key: string]: Sale[] } = {};
     sales.filter(sale => {
         const saleDate = parseISO(sale.date);
-        return saleDate >= interval.start && saleDate <= interval.end;
+        return isWithinInterval(saleDate, interval)
     }).forEach(sale => {
       const dayKey = format(parseISO(sale.date), 'yyyy-MM-dd');
       if (!grouped[dayKey]) {
@@ -275,9 +276,9 @@ export default function SalesPage() {
                 const dayDate = parseISO(day);
                 const dayTotal = sales.reduce((sum, s) => sum + s.total, 0);
                 return (
-                    <Collapsible key={day} defaultOpen={selectedDate ? isSameDay(dayDate, selectedDate) : false} open={selectedDate ? isSameDay(dayDate, selectedDate) : undefined}>
+                    <Collapsible key={day} defaultOpen={selectedDate ? isSameDay(dayDate, selectedDate) : false} open={selectedDate ? isSameDay(dayDate, startOfDay(selectedDate)) : undefined}>
                         <Card>
-                            <CollapsibleTrigger className="w-full">
+                            <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50">
                                     <p className="font-semibold capitalize">{format(dayDate, 'eeee, d \'de\' MMMM \'de\' yyyy', {locale: es})}</p>
                                     <Badge variant="secondary">${formatUsd(dayTotal)}</Badge>
