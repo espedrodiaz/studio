@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useRef } from 'react';
@@ -8,9 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Printer, Download, Send } from "lucide-react";
 import { cn } from '@/lib/utils';
-import { PosLogo } from '@/components/ui/pos-logo';
 import { SaleDataForTicket } from '@/lib/types';
-
+import { Separator } from '../ui/separator';
 
 export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTicket | null, onClose: () => void }) => {
     const ticketRef = useRef<HTMLDivElement>(null);
@@ -18,6 +16,14 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
     
     if (!saleData) return null;
     
+    // Placeholder business data - in a real app, this would come from a context or props
+    const businessData = {
+        name: "FacilitoPOS Demo C.A.",
+        rif: "J-12345678-9",
+        address: "Av. Principal, Local 1, Ciudad, Estado",
+        phone: "0414-1234567",
+    };
+
     const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const formatBsFromVes = (amount: number) => amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const formatBs = (amount: number) => (amount * saleData.bcvRate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -27,20 +33,28 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
         const printWindow = window.open('', '', 'height=800,width=800');
         if (printWindow && ticketRef.current) {
             printWindow.document.write('<html><head><title>Ticket de Venta</title>');
+            // Basic styling for the print window to match the ticket's look
             printWindow.document.write(`
                 <style>
-                    body { font-family: 'Courier New', monospace; margin: 0; padding: 10px; color: #000; background: #fff; }
-                    .ticket { width: 100%; max-width: 302px; margin: 0 auto; }
-                    h1, h2, h3, p { margin: 0; padding: 0; font-family: 'Courier New', monospace; }
+                    body { font-family: 'monospace', sans-serif; margin: 0; padding: 15px; color: #000; background: #fff; font-size: 10px; }
+                    .ticket { width: 100%; max-width: 320px; margin: 0 auto; }
+                    h1, h2, h3, p, div { margin: 0; padding: 0; }
                     .text-center { text-align: center; }
                     .text-right { text-align: right; }
-                    .separator { border-top: 1px dashed #000; margin: 10px 0; }
-                    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-                    th, td { padding: 2px 0; }
-                    .items-table th { text-align: left; border-bottom: 1px solid #000; }
-                    .items-table .total-col { text-align: right; }
-                    .totals-table td { padding: 2px 0; }
                     .font-bold { font-weight: bold; }
+                    .mt-1 { margin-top: 4px; }
+                    .mt-2 { margin-top: 8px; }
+                    .mb-1 { margin-bottom: 4px; }
+                    .mb-2 { margin-bottom: 8px; }
+                    .text-xs { font-size: 9px; }
+                    .separator { border-top: 1px dashed #555; margin: 8px 0; }
+                    table { width: 100%; border-collapse: collapse; font-size: 9px; }
+                    th, td { padding: 2px 0; }
+                    .items-table th { text-align: left; border-bottom: 1px solid #555; }
+                    .items-table .text-right { text-align: right; }
+                    .totals-section { display: flex; justify-content: flex-end; }
+                    .totals-table { width: auto; min-width: 150px; }
+                    .payment-details p { display: flex; justify-content: space-between; }
                 </style>
             `);
             printWindow.document.write('</head><body>');
@@ -72,16 +86,18 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
     
     const handleShareWhatsApp = () => {
         if (ticketRef.current) {
-            let message = `*FacilitoPOS - Recibo de Venta*\n\n`;
-            message += `Ticket: *${saleData.id}*\n`;
-            message += `Fecha: ${new Date(saleData.date).toLocaleString('es-VE')}\n`;
-            message += `Tasa: ${formatBsFromVes(saleData.bcvRate)} Bs/USD\n`;
-            message += `Cliente: ${saleData.customer?.name || 'Cliente Ocasional'}\n\n`;
+            // Simplified text version for WhatsApp
+            let message = `*${businessData.name}*\n`;
+            message += `${businessData.rif}\n\n`;
+            message += `*Ticket:* ${saleData.id}\n`;
+            message += `*Fecha:* ${new Date(saleData.date).toLocaleString('es-VE')}\n`;
+            message += `*Cliente:* ${saleData.customer?.name || 'Cliente Ocasional'}\n\n`;
             message += `*--- Productos ---*\n`;
             saleData.items.forEach(item => {
                 message += `${item.quantity} x ${item.name} - Bs ${formatBs(item.salePrice * item.quantity)}\n`;
             });
-            message += `\n*Subtotal: Bs ${formatBs(saleData.subtotal)}*\n\n`;
+            message += `\n*Subtotal: Bs ${formatBs(saleData.subtotal)}*\n`;
+            message += `*Total: Bs ${formatBs(saleData.subtotal)}*\n\n`;
             message += `*--- Pagos ---*\n`;
             saleData.payments.forEach(p => {
                 if (!p.method) return;
@@ -102,84 +118,113 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
 
     return (
         <Dialog open={!!saleData} onOpenChange={(isOpen) => !isOpen && onClose()}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-sm">
                 <DialogHeader>
-                    <DialogTitle>Venta Completada</DialogTitle>
+                    <DialogTitle>Ticket de Venta</DialogTitle>
                     <DialogDescription>
-                        Ticket de venta generado. Puede imprimirlo, descargarlo o compartirlo.
+                        Recibo generado. Puede imprimirlo, descargarlo o compartirlo.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="bg-white text-black p-4 rounded-lg max-h-[60vh] overflow-y-auto ticket" id="ticket-content" ref={ticketRef}>
-                    <div className="text-center mb-2">
-                        <h2 className="text-lg font-bold">FacilitoPOS</h2>
-                        <p className="text-xs">Fecha: {new Date(saleData.date).toLocaleString('es-VE', { year: '2-digit', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}</p>
-                        <p className="text-xs">Tasa: {formatBsFromVes(saleData.bcvRate)} Bs / USD</p>
-                    </div>
+                <div className="bg-white text-black p-2 rounded-sm max-h-[70vh] overflow-y-auto" id="ticket-content">
+                    <div ref={ticketRef} className="ticket text-[10px] leading-tight font-mono p-1">
+                        {/* Business Info */}
+                        <div className="text-center">
+                            <h2 className="text-sm font-bold">{businessData.name}</h2>
+                            <p>{businessData.rif}</p>
+                            <p>{businessData.address}</p>
+                            <p>Telf: {businessData.phone}</p>
+                        </div>
+                        
+                        <div className="separator"></div>
 
-                    <div className="separator"></div>
+                        {/* Sale & Client Info */}
+                        <div className='flex justify-between text-[9px]'>
+                             <p>Ticket: {saleData.id}</p>
+                             <p>Fecha: {new Date(saleData.date).toLocaleString('es-VE')}</p>
+                        </div>
+                        <div className="mt-1">
+                            <p className='font-bold'>Cliente:</p>
+                            <p>{saleData.customer?.name || 'Cliente Ocasional'}</p>
+                            <p>{saleData.customer?.idNumber || 'V-00000000'}</p>
+                            <p className='truncate'>{saleData.customer?.address || 'N/A'}</p>
+                        </div>
 
-                    <p className="text-xs">Cliente: {saleData.customer?.name || 'Cliente Genérico'}</p>
-                    
-                    <div className="separator"></div>
+                        <div className="separator"></div>
+                        
+                        {/* Items Table */}
+                        <table className="w-full items-table">
+                            <thead>
+                                <tr>
+                                    <th className='w-1/12'>Cant</th>
+                                    <th className='w-5/12'>Producto</th>
+                                    <th className='w-3/12 text-right'>Precio</th>
+                                    <th className='w-3/12 text-right'>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            {saleData.items.map((item, index) => (
+                                <tr key={`${item.id}-${index}`} className="text-[9px]">
+                                    <td className='align-top'>{item.quantity}</td>
+                                    <td>
+                                        <div>{item.name}</div>
+                                        <div className='text-[8px]'>Cod: {item.id}</div>
+                                    </td>
+                                    <td className='align-top text-right'>{formatBs(item.salePrice)}</td>
+                                    <td className='align-top text-right font-bold'>{formatBs(item.salePrice * item.quantity)}</td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
 
-                    <h3 className="text-sm font-bold mb-1">Productos</h3>
-                    <table className="items-table">
-                        <thead><tr><th>Cant.</th><th>Producto</th><th className="total-col">Total</th></tr></thead>
-                        <tbody>
-                        {saleData.items.map((item, index) => (
-                            <tr key={`${item.id}-${index}`}>
-                                <td>{item.quantity}</td>
-                                <td>{item.name}</td>
-                                <td className="total-col">{formatBs(item.salePrice * item.quantity)}</td>
-                            </tr>
-                        ))}
-                        </tbody>
-                    </table>
+                        <div className="separator"></div>
+                        
+                        {/* Totals Section */}
+                        <div className="flex justify-end mt-2">
+                             <div className="w-6/12">
+                                <div className='flex justify-between'>
+                                    <p>Subtotal:</p>
+                                    <p className="font-bold">Bs {formatBs(saleData.subtotal)}</p>
+                                </div>
+                                <div className="separator"></div>
+                                <div className='flex justify-between font-bold text-xs'>
+                                    <p>TOTAL:</p>
+                                    <p>Bs {formatBs(saleData.subtotal)}</p>
+                                </div>
+                             </div>
+                        </div>
 
-                    <div className="separator"></div>
+                         <div className="separator"></div>
 
-                    <h3 className="text-sm font-bold mb-1">Forma de Pago</h3>
-                     <table className="totals-table">
-                         <tbody>
+                        {/* Payment Details */}
+                        <div className="mt-1 payment-details">
+                            <p className='font-bold mb-1'>Detalle de Pago:</p>
                             {saleData.payments.map((p, index) => {
                                 if (!p.method) return null;
                                 const amountInBs = p.method.currency === '$' ? p.amount * saleData.bcvRate : p.amount;
-                                const equivInBs = p.method.currency === '$' ? `(Bs ${formatBsFromVes(amountInBs)})` : '';
                                 return (
-                                    <tr key={index}>
-                                        <td>{p.method?.name}:</td>
-                                        <td className="text-right">{p.method.currency === '$' ? `$${formatUsd(p.amount)}` : `Bs ${formatBsFromVes(p.amount)}`} {equivInBs}</td>
-                                    </tr>
+                                    <p key={index}>
+                                        <span>{p.method.name}:</span>
+                                        <span className='font-bold'>Bs {formatBsFromVes(amountInBs)}</span>
+                                    </p>
                                 )
                             })}
-                        </tbody>
-                    </table>
-                    
-                    <div className="separator"></div>
-
-                    <table className="totals-table">
-                         <tbody>
-                            <tr>
-                                <td>Subtotal:</td>
-                                <td className="text-right">
-                                    <span className="font-bold">{formatBs(saleData.subtotal)} Bs</span>
-                                </td>
-                            </tr>
-                             <tr>
-                                <td>Total Pagado:</td>
-                                <td className="text-right">{formatBs(saleData.totalPaid)} Bs</td>
-                            </tr>
+                             <div className='flex justify-between mt-1'>
+                                <p>Total Pagado:</p>
+                                <p>Bs {formatBs(saleData.totalPaid)}</p>
+                            </div>
                             {saleData.totalChange > 0 && (
-                                <tr>
-                                    <td>Vuelto:</td>
-                                    <td className="text-right">{formatBs(saleData.totalChange)} Bs</td>
-                                </tr>
+                                <div className='flex justify-between font-bold'>
+                                    <p>Vuelto:</p>
+                                    <p>Bs {formatBs(saleData.totalChange)}</p>
+                                </div>
                             )}
-                        </tbody>
-                    </table>
-                    
-                    <div className="separator"></div>
-                    <p className="text-center text-xs">¡Gracias por su compra!</p>
+                        </div>
+
+                        <div className="separator"></div>
+                        <p className="text-center text-xs mt-2">¡Gracias por su compra!</p>
+                        <p className="text-center text-[8px] mt-1">Tasa: {formatBsFromVes(saleData.bcvRate)} Bs/USD</p>
+
+                    </div>
                 </div>
                 <DialogFooter className="sm:justify-start gap-2 pt-4">
                      <Button type="button" variant="secondary" onClick={handleShareWhatsApp}><Send className="mr-2 h-4 w-4"/> WhatsApp</Button>

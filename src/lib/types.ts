@@ -1,5 +1,6 @@
 
 
+
 export type Vehicle = {
     brand: string;
     model: string;
@@ -47,7 +48,7 @@ export type Sale = {
     date: string;
     customer: string;
     total: number;
-    status: 'Pagada' | 'Anulada';
+    status: 'Pagada' | 'Anulada' | 'Crédito';
     items: {
         productId: string;
         name: string;
@@ -67,7 +68,7 @@ export type SaleDataForTicket = {
     customer: Customer | null;
     items: CartItem[];
     subtotal: number;
-    payments: { method?: { name: string; currency: string; }; amount: number }[];
+    payments: { method?: { id: string; name: string; currency: string; }; amount: number }[];
     totalPaid: number;
     changeGiven: { method?: { name: string; currency: string; }; amount: number }[];
     totalChange: number;

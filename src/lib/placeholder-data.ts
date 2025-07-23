@@ -225,6 +225,7 @@ export let paymentMethods = [
     { id: 'pay-03', name: 'Zelle', currency: '$', type: 'Digital', givesChange: false, managesOpeningBalance: false },
     { id: 'pay-04', name: 'Pago Móvil', currency: 'Bs', type: 'Digital', givesChange: false, managesOpeningBalance: false },
     { id: 'pay-05', name: 'Tarjeta', currency: 'Bs', type: 'Digital', givesChange: false, managesOpeningBalance: false },
+    { id: 'pay-06', name: 'Crédito', currency: '$', type: 'Digital', givesChange: false, managesOpeningBalance: false },
 ];
 
 export const getPaymentMethods = () => [...paymentMethods];

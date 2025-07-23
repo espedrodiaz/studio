@@ -497,7 +497,7 @@ export default function SalesPage() {
                                                                     <TableCell>{item.name}</TableCell>
                                                                     <TableCell className="text-right">
                                                                         <div className="font-semibold text-xs">Bs {formatBs(item.price * item.quantity * sale.bcvRate)}</div>
-                                                                        <div className="text-muted-foreground text-xs">(${formatUsd(item.price * item.quantity)})</div>
+                                                                        <div className="text-muted-foreground text-[10px]">(${formatUsd(item.price * item.quantity)})</div>
                                                                     </TableCell>
                                                                 </TableRow>
                                                             ))}
