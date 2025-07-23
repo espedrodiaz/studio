@@ -306,8 +306,7 @@ export default function PosPage() {
             if (!method) return;
 
             const isUsd = method.currency === '$';
-            const rate = bcvRate;
-
+            
             const amounts = {
                 initial: {
                     usd: isUsd ? state.initial : convertToUsd(state.initial),
@@ -338,7 +337,7 @@ export default function PosPage() {
         });
 
         return totals;
-    }, [cashDrawerState, paymentMethodsList, bcvRate]);
+    }, [cashDrawerState, paymentMethodsList, bcvRate, convertToUsd, convertToVes]);
 
 
     useEffect(() => {
@@ -602,7 +601,7 @@ export default function PosPage() {
             }
             return acc + p.amount;
         }, 0);
-    }, [payments, paymentMethodsList, bcvRate]);
+    }, [payments, paymentMethodsList, bcvRate, convertToUsd]);
 
     const balance = useMemo(() => subtotal - totalPaid, [subtotal, totalPaid]);
     const changeToGive = useMemo(() => balance < 0 ? Math.abs(balance) : 0, [balance]);
@@ -656,7 +655,7 @@ export default function PosPage() {
             }
             return acc + p.amount;
         }, 0)
-    }, [changePayments, paymentMethodsList, bcvRate]);
+    }, [changePayments, paymentMethodsList, bcvRate, convertToUsd]);
 
     const remainingChange = useMemo(() => changeToGive - totalChangeGiven, [changeToGive, totalChangeGiven]);
 
@@ -1189,53 +1188,55 @@ export default function PosPage() {
                            Resumen de los movimientos y saldos actuales de la caja.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-                        {/* Left Side: Summary and Actions */}
-                        <div className="space-y-6">
-                             <Card>
-                                <CardHeader><CardTitle>Resumen General</CardTitle></CardHeader>
-                                <CardContent className="space-y-2 text-sm">
-                                    <div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">Bs {formatBs(totalCashDrawer.initial.ves)} (${formatUsd(totalCashDrawer.initial.usd)})</span></div>
-                                    <div className="flex justify-between"><span>Ingresos (Ventas + Entradas):</span> <span className="font-medium text-green-600">+ Bs {formatBs(totalCashDrawer.sales.ves)} (${formatUsd(totalCashDrawer.sales.usd)})</span></div>
-                                    <div className="flex justify-between"><span>Salidas (Vueltos + Salidas):</span> <span className="font-medium text-red-600">- Bs {formatBs(totalCashDrawer.movementsOut.ves)} (${formatUsd(totalCashDrawer.movementsOut.usd)})</span></div>
-                                    <Separator/>
-                                    <div className="flex justify-between font-bold text-base"><span>Saldo Actual en Caja:</span> <span>Bs {formatBs(totalCashDrawer.final.ves)} (${formatUsd(totalCashDrawer.final.usd)})</span></div>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button className="w-full" onClick={() => { setIsCashMovementModalOpen(true); resetMovementForm(); }}>
-                                        <ArrowDownUp className="mr-2 h-4 w-4" />
-                                        Registrar Movimiento
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        </div>
-                        {/* Right Side: Detailed Breakdown */}
-                        <div className="space-y-4">
-                            <Label>Desglose por Forma de Pago</Label>
-                            <div className="max-h-[65vh] overflow-y-auto pr-2 space-y-3">
-                                {paymentMethodsList.map(pm => {
-                                    const state = cashDrawerState[pm.id];
-                                    if (!state) return null;
-                                    const format = pm.currency === '$' ? formatUsd : formatBs;
-                                    return (
-                                        <Card key={pm.id}>
-                                            <CardHeader className="pb-2">
-                                                <CardTitle className="text-base flex justify-between items-center">
-                                                    <span>{pm.name}</span>
-                                                    <Badge variant={pm.type === 'Efectivo' ? 'secondary' : 'outline'}>{pm.type}</Badge>
-                                                </CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="space-y-1 text-xs">
-                                                 <div className="flex justify-between"><span>Inicial:</span> <span>{format(state.initial)}</span></div>
-                                                 <div className="flex justify-between"><span>+ Ventas:</span> <span>{format(state.sales)}</span></div>
-                                                 <div className="flex justify-between"><span>+ Entradas:</span> <span>{format(state.movementsIn)}</span></div>
-                                                 <div className="flex justify-between"><span>- Salidas/Vueltos:</span> <span>{format(state.movementsOut)}</span></div>
-                                                 <Separator className="my-1"/>
-                                                 <div className="flex justify-between font-semibold"><span>Final:</span> <span>{format(state.final)}</span></div>
-                                            </CardContent>
-                                        </Card>
-                                    )
-                                })}
+                    <div className="max-h-[85vh] overflow-y-auto pr-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
+                            {/* Left Side: Summary and Actions */}
+                            <div className="space-y-6">
+                                <Card>
+                                    <CardHeader><CardTitle>Resumen General</CardTitle></CardHeader>
+                                    <CardContent className="space-y-2 text-sm">
+                                        <div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">Bs {formatBs(totalCashDrawer.initial.ves)} (${formatUsd(totalCashDrawer.initial.usd)})</span></div>
+                                        <div className="flex justify-between"><span>Ingresos (Ventas + Entradas):</span> <span className="font-medium text-green-600">+ Bs {formatBs(totalCashDrawer.sales.ves)} (${formatUsd(totalCashDrawer.sales.usd)})</span></div>
+                                        <div className="flex justify-between"><span>Salidas (Vueltos + Salidas):</span> <span className="font-medium text-red-600">- Bs {formatBs(totalCashDrawer.movementsOut.ves)} (${formatUsd(totalCashDrawer.movementsOut.usd)})</span></div>
+                                        <Separator/>
+                                        <div className="flex justify-between font-bold text-base"><span>Saldo Actual en Caja:</span> <span>Bs {formatBs(totalCashDrawer.final.ves)} (${formatUsd(totalCashDrawer.final.usd)})</span></div>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button className="w-full" onClick={() => { setIsCashMovementModalOpen(true); resetMovementForm(); }}>
+                                            <ArrowDownUp className="mr-2 h-4 w-4" />
+                                            Registrar Movimiento
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            </div>
+                            {/* Right Side: Detailed Breakdown */}
+                            <div className="space-y-4">
+                                <Label>Desglose por Forma de Pago</Label>
+                                <div className="space-y-3">
+                                    {paymentMethodsList.map(pm => {
+                                        const state = cashDrawerState[pm.id];
+                                        if (!state) return null;
+                                        const format = pm.currency === '$' ? formatUsd : formatBs;
+                                        return (
+                                            <Card key={pm.id}>
+                                                <CardHeader className="pb-2">
+                                                    <CardTitle className="text-base flex justify-between items-center">
+                                                        <span>{pm.name}</span>
+                                                        <Badge variant={pm.type === 'Efectivo' ? 'secondary' : 'outline'}>{pm.type}</Badge>
+                                                    </CardTitle>
+                                                </CardHeader>
+                                                <CardContent className="space-y-1 text-xs">
+                                                    <div className="flex justify-between"><span>Inicial:</span> <span>{format(state.initial)}</span></div>
+                                                    <div className="flex justify-between"><span>+ Ventas:</span> <span>{format(state.sales)}</span></div>
+                                                    <div className="flex justify-between"><span>+ Entradas:</span> <span>{format(state.movementsIn)}</span></div>
+                                                    <div className="flex justify-between"><span>- Salidas/Vueltos:</span> <span>{format(state.movementsOut)}</span></div>
+                                                    <Separator className="my-1"/>
+                                                    <div className="flex justify-between font-semibold"><span>Final:</span> <span>{format(state.final)}</span></div>
+                                                </CardContent>
+                                            </Card>
+                                        )
+                                    })}
+                                </div>
                             </div>
                         </div>
                     </div>
