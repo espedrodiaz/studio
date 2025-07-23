@@ -121,7 +121,7 @@ export default function CustomersPage() {
                 <TableHead>Cédula/RIF</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Teléfono</TableHead>
-                <TableHead>Vehículos</TableHead>
+                {showVehiclesTab && <TableHead>Vehículos</TableHead>}
                 <TableHead>
                   <span className="sr-only">Acciones</span>
                 </TableHead>
@@ -134,7 +134,7 @@ export default function CustomersPage() {
                   <TableCell>{customer.idNumber}</TableCell>
                   <TableCell>{customer.email}</TableCell>
                   <TableCell>{customer.phone}</TableCell>
-                  <TableCell>{customer.vehicles.length}</TableCell>
+                  {showVehiclesTab && <TableCell>{customer.vehicles.length}</TableCell>}
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
