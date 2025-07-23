@@ -129,7 +129,7 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                 <div className="bg-white text-black p-2 rounded-sm max-h-[70vh] overflow-y-auto" id="ticket-content">
                     <div ref={ticketRef} className="ticket text-[10px] leading-tight font-mono p-1">
                         {/* Business Info */}
-                        <div className="text-center">
+                        <div className="text-center mt-1">
                             <h2 className="text-sm font-bold">{businessData.name}</h2>
                             <p>{businessData.rif}</p>
                             <p>{businessData.address}</p>
@@ -216,13 +216,11 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                              </div>
                             
                             <div className="separator mt-2"></div>
-                            
                             <div className='flex justify-between mt-1'>
                                 <p>Total Pagado:</p>
                                 <p>Bs {formatBs(saleData.totalPaid)}</p>
                             </div>
-                            
-                            {saleData.totalChange > 0 && (
+                             {saleData.totalChange > 0 && (
                                 <div className='flex justify-between font-bold'>
                                     <p>Vuelto:</p>
                                     <p>Bs {formatBs(saleData.totalChange)}</p>
@@ -235,8 +233,14 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                         <p className="text-center text-[8px] mt-1">Tasa: {formatBsFromVes(saleData.bcvRate)} Bs/USD</p>
 
                          <div className="text-center mt-2">
-                             <PosLogo className="text-sm" />
-                            <p className="text-[8px] mt-1">Tecnología Impulsada por DiazSoft</p>
+                             <span className="font-bold text-sm">
+                                Facilito
+                                <span style={{ color: '#FFCD00' }}>P</span>
+                                <span style={{ color: '#0033A0' }}>O</span>
+                                <span style={{ color: '#CE1126' }}>S</span>
+                             </span>
+                             <p className="text-[9px]">Venezuela</p>
+                             <p className="text-[8px] mt-1">Tecnología Impulsada por DiazSoft</p>
                         </div>
                     </div>
                 </div>
@@ -249,3 +253,5 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
         </Dialog>
     );
 };
+
+    
