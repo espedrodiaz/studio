@@ -86,7 +86,7 @@ export default function SalesPage() {
         if (sortedSales.length > 0) {
             setCurrentDate(lastSaleDate);
         }
-    }, [sortedSales.length, lastSaleDate]);
+    }, [sortedSales.length, lastSaleDate, viewMode]);
 
 
   const { interval, dateRangeLabel, isPrevDisabled, isNextDisabled } = useMemo(() => {
@@ -101,18 +101,18 @@ export default function SalesPage() {
       end = endOfMonth(currentDate);
       label = format(currentDate, 'MMMM yyyy', { locale: es });
     }
+
+    const prevIntervalEnd = subDays(start, 1);
+    const nextIntervalStart = addDays(end, 1);
     
     const hasSalesInPrevPeriod = sortedSales.some(s => parseISO(s.date) < start);
     const hasSalesInNextPeriod = sortedSales.some(s => parseISO(s.date) > end);
 
-    const prevDisabled = !hasSalesInPrevPeriod;
-    const nextDisabled = !hasSalesInNextPeriod;
-
     return { 
       interval: { start, end }, 
       dateRangeLabel: label, 
-      isPrevDisabled: prevDisabled,
-      isNextDisabled: nextDisabled
+      isPrevDisabled: !hasSalesInPrevPeriod,
+      isNextDisabled: !hasSalesInNextPeriod
     };
   }, [currentDate, viewMode, sortedSales]);
 
@@ -127,9 +127,6 @@ export default function SalesPage() {
     const newViewMode = v as 'week' | 'month';
     setViewMode(newViewMode);
     setSelectedDate(null);
-    if(sortedSales.length > 0) {
-      setCurrentDate(lastSaleDate);
-    }
   }
 
   const handleDateChange = (direction: 'prev' | 'next') => {
@@ -148,6 +145,8 @@ export default function SalesPage() {
     const period = selectedDate 
       ? { start: startOfDay(selectedDate), end: endOfDay(selectedDate) } 
       : interval;
+      
+    if (!period.start || !period.end) return [];
       
     return sortedSales.filter(sale => {
       const saleDate = parseISO(sale.date);
@@ -263,7 +262,7 @@ export default function SalesPage() {
                         <Button 
                             key={day.toString()} 
                             variant={isSameDay(day, selectedDate || new Date(0)) ? 'default' : 'outline'}
-                            className="flex-1 flex-col h-14"
+                            className="flex-col h-14 w-12 flex-shrink-0"
                             onClick={() => setSelectedDate(isSameDay(day, selectedDate || new Date(0)) ? null : day)}
                             disabled={day < firstSaleDate || day > lastSaleDate}
                         >
@@ -315,7 +314,7 @@ export default function SalesPage() {
                 const dayDate = parseISO(day);
                 const dayTotal = sales.reduce((sum, s) => sum + s.total, 0);
                 return (
-                    <Collapsible key={day} defaultOpen={selectedDate ? isSameDay(dayDate, selectedDate) : false}>
+                    <Collapsible key={day} defaultOpen={false}>
                         <Card>
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 group">
