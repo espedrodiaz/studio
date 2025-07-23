@@ -9,7 +9,6 @@ import { Printer, Download, Send } from "lucide-react";
 import { cn } from '@/lib/utils';
 import { SaleDataForTicket } from '@/lib/types';
 import { Separator } from '../ui/separator';
-import { PosLogo } from '../ui/pos-logo';
 
 export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTicket | null, onClose: () => void }) => {
     const ticketRef = useRef<HTMLDivElement>(null);
@@ -233,7 +232,7 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                         <p className="text-center text-[8px] mt-1">Tasa: {formatBsFromVes(saleData.bcvRate)} Bs/USD</p>
 
                          <div className="text-center mt-2">
-                             <span className="font-bold text-sm">
+                            <span className="font-bold text-sm">
                                 Facilito
                                 <span style={{ color: '#FFCD00' }}>P</span>
                                 <span style={{ color: '#0033A0' }}>O</span>
@@ -244,14 +243,15 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                         </div>
                     </div>
                 </div>
-                <DialogFooter className="sm:justify-start gap-2 pt-4">
-                     <Button type="button" variant="secondary" onClick={handleShareWhatsApp}><Send className="mr-2 h-4 w-4"/> WhatsApp</Button>
-                    <Button type="button" variant="secondary" onClick={handleDownloadImage}><Download className="mr-2 h-4 w-4"/> Descargar</Button>
-                    <Button type="button" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
+                <DialogFooter className="sm:justify-between gap-2 pt-4">
+                    <div className="flex flex-wrap gap-2">
+                        <Button type="button" variant="secondary" onClick={handleShareWhatsApp}><Send className="mr-2 h-4 w-4"/> WhatsApp</Button>
+                        <Button type="button" variant="secondary" onClick={handleDownloadImage}><Download className="mr-2 h-4 w-4"/> Descargar</Button>
+                        <Button type="button" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
+                    </div>
+                    <Button type="button" variant="outline" onClick={onClose}>Cerrar</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 };
-
-    
