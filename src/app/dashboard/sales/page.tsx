@@ -69,42 +69,51 @@ export default function SalesPage() {
   const bcvRate = getCurrentBcvRate();
 
   const sortedSales = useMemo(() => 
-    [...sales].sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime()),
+    [...sales].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
   []);
 
-  const firstSaleDate = useMemo(() => {
-    if (sortedSales.length === 0) return new Date();
-    return startOfDay(parseISO(sortedSales[0].date));
+  const { firstSaleDate, lastSaleDate } = useMemo(() => {
+    if (sortedSales.length === 0) return { firstSaleDate: new Date(), lastSaleDate: new Date() };
+    return {
+        firstSaleDate: startOfDay(parseISO(sortedSales[0].date)),
+        lastSaleDate: endOfDay(parseISO(sortedSales[sortedSales.length - 1].date))
+    };
   }, [sortedSales]);
 
-  const lastSaleDate = useMemo(() => {
-      if (sortedSales.length === 0) return new Date();
-      return endOfDay(parseISO(sortedSales[sortedSales.length - 1].date));
-  }, [sortedSales]);
-
-  // Set initial date to the last sale date if available
     useEffect(() => {
         if (sortedSales.length > 0) {
             setCurrentDate(lastSaleDate);
         }
-    }, [sortedSales, lastSaleDate]);
+    }, [sortedSales.length, lastSaleDate]);
 
 
   const { interval, dateRangeLabel, isPrevDisabled, isNextDisabled } = useMemo(() => {
     let start, end, label;
+    let prevCheckStart, prevCheckEnd, nextCheckStart, nextCheckEnd;
 
     if (viewMode === 'week') {
       start = startOfWeek(currentDate, { weekStartsOn: 1 });
       end = endOfWeek(currentDate, { weekStartsOn: 1 });
       label = `${format(start, 'd/L')} - ${format(end, 'd/L/yyyy')}`;
+      prevCheckStart = startOfWeek(subDays(currentDate, 7), { weekStartsOn: 1 });
+      prevCheckEnd = endOfWeek(subDays(currentDate, 7), { weekStartsOn: 1 });
+      nextCheckStart = startOfWeek(addDays(currentDate, 7), { weekStartsOn: 1 });
+      nextCheckEnd = endOfWeek(addDays(currentDate, 7), { weekStartsOn: 1 });
     } else { // month
       start = startOfMonth(currentDate);
       end = endOfMonth(currentDate);
       label = format(currentDate, 'MMMM yyyy', { locale: es });
+      prevCheckStart = startOfMonth(subMonths(currentDate, 1));
+      prevCheckEnd = endOfMonth(subMonths(currentDate, 1));
+      nextCheckStart = startOfMonth(addMonths(currentDate, 1));
+      nextCheckEnd = endOfMonth(addMonths(currentDate, 1));
     }
     
-    const prevDisabled = start < firstSaleDate;
-    const nextDisabled = end > lastSaleDate;
+    const hasPreviousSales = sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: prevCheckStart, end: prevCheckEnd }));
+    const hasNextSales = sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: nextCheckStart, end: nextCheckEnd }));
+
+    const prevDisabled = start < firstSaleDate && !hasPreviousSales;
+    const nextDisabled = end > lastSaleDate && !hasNextSales;
 
     return { 
       interval: { start, end }, 
@@ -112,7 +121,7 @@ export default function SalesPage() {
       isPrevDisabled: prevDisabled,
       isNextDisabled: nextDisabled
     };
-  }, [currentDate, viewMode, firstSaleDate, lastSaleDate]);
+  }, [currentDate, viewMode, firstSaleDate, lastSaleDate, sortedSales]);
 
   const daysInInterval = useMemo(() => {
      if (viewMode === 'week') {
@@ -134,22 +143,16 @@ export default function SalesPage() {
       if (direction === 'prev' && isPrevDisabled) return;
       if (direction === 'next' && isNextDisabled) return;
 
-      if (viewMode === 'week') {
-          setCurrentDate(d => subDays(d, 7));
-      } else {
-          setCurrentDate(d => subMonths(d, 1));
-      }
+      const changeFn = direction === 'prev' 
+        ? (viewMode === 'week' ? subDays : subMonths)
+        : (viewMode === 'week' ? addDays : addMonths);
+      
+      const amount = viewMode === 'week' ? 7 : 1;
+
+      setCurrentDate(d => changeFn(d, amount));
       setSelectedDate(null);
   }
-   const handleNextDate = () => {
-    if (isNextDisabled) return;
-     if (viewMode === 'week') {
-          setCurrentDate(d => addDays(d, 7));
-      } else {
-          setCurrentDate(d => addMonths(d, 1));
-      }
-      setSelectedDate(null);
-  };
+
   
   const salesForPeriod = useMemo(() => {
     const period = selectedDate 
@@ -210,7 +213,7 @@ export default function SalesPage() {
   }, [salesForPeriod]);
 
   const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const formatBs = (amount: number) => (amount * bcvRate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatBs = (amount: number) => (amount).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   
   const getPaymentMethodIcon = (methodName: string) => {
     const lowerCaseName = methodName.toLowerCase();
@@ -260,7 +263,7 @@ export default function SalesPage() {
                     <p className="font-semibold">{viewMode === 'week' ? 'Semana' : 'Mes'}</p>
                     <p className="text-sm text-muted-foreground capitalize">{dateRangeLabel}</p>
                 </div>
-                <Button variant="outline" size="icon" onClick={handleNextDate} disabled={isNextDisabled}>
+                <Button variant="outline" size="icon" onClick={() => handleDateChange('next')} disabled={isNextDisabled}>
                     <ChevronRight className="h-4 w-4" />
                 </Button>
             </CardHeader>
@@ -304,7 +307,7 @@ export default function SalesPage() {
                                 {getPaymentMethodIcon(pm.name)}
                             </div>
                             <p className="text-xl font-bold">
-                                {pm.currency === '$' ? `$${formatUsd(totalAmount)}` : `Bs ${formatBs(totalAmount / bcvRate)}`}
+                                {pm.currency === '$' ? `$${formatUsd(totalAmount)}` : `Bs ${formatBs(totalAmount)}`}
                             </p>
                         </CardContent>
                     </Card>
@@ -354,7 +357,10 @@ export default function SalesPage() {
                                                     {sale.status}
                                                 </Badge>
                                                 </TableCell>
-                                                <TableCell className="text-right">${formatUsd(sale.total)}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="font-semibold">Bs {formatBs(sale.total * bcvRate)}</div>
+                                                    <div className="text-xs text-muted-foreground">(${formatUsd(sale.total)})</div>
+                                                </TableCell>
                                                 <TableCell>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
@@ -390,4 +396,3 @@ export default function SalesPage() {
     </div>
   );
 }
-
