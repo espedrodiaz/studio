@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -69,8 +69,8 @@ export default function SalesPage() {
   const bcvRate = getCurrentBcvRate();
 
   const sortedSales = useMemo(() => 
-    [...sales].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
-  [sales]);
+    [...sales].sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime()),
+  []);
 
   const firstSaleDate = useMemo(() => {
     if (sortedSales.length === 0) return new Date();
@@ -83,11 +83,11 @@ export default function SalesPage() {
   }, [sortedSales]);
 
   // Set initial date to the last sale date if available
-  useState(() => {
-    if (sortedSales.length > 0) {
-      setCurrentDate(lastSaleDate);
-    }
-  });
+    useEffect(() => {
+        if (sortedSales.length > 0) {
+            setCurrentDate(lastSaleDate);
+        }
+    }, [sortedSales, lastSaleDate]);
 
 
   const { interval, dateRangeLabel, isPrevDisabled, isNextDisabled } = useMemo(() => {
@@ -125,7 +125,6 @@ export default function SalesPage() {
     const newViewMode = v as 'week' | 'month';
     setViewMode(newViewMode);
     setSelectedDate(null);
-    // Reset date to last sale when changing view to avoid being stuck in a disabled period
     if(sortedSales.length > 0) {
       setCurrentDate(lastSaleDate);
     }
@@ -136,12 +135,21 @@ export default function SalesPage() {
       if (direction === 'next' && isNextDisabled) return;
 
       if (viewMode === 'week') {
-          setCurrentDate(direction === 'prev' ? subDays(currentDate, 7) : addDays(currentDate, 7));
+          setCurrentDate(d => subDays(d, 7));
       } else {
-          setCurrentDate(direction === 'prev' ? subMonths(currentDate, 1) : addMonths(currentDate, 1));
+          setCurrentDate(d => subMonths(d, 1));
       }
       setSelectedDate(null);
   }
+   const handleNextDate = () => {
+    if (isNextDisabled) return;
+     if (viewMode === 'week') {
+          setCurrentDate(d => addDays(d, 7));
+      } else {
+          setCurrentDate(d => addMonths(d, 1));
+      }
+      setSelectedDate(null);
+  };
   
   const salesForPeriod = useMemo(() => {
     const period = selectedDate 
@@ -252,7 +260,7 @@ export default function SalesPage() {
                     <p className="font-semibold">{viewMode === 'week' ? 'Semana' : 'Mes'}</p>
                     <p className="text-sm text-muted-foreground capitalize">{dateRangeLabel}</p>
                 </div>
-                <Button variant="outline" size="icon" onClick={() => handleDateChange('next')} disabled={isNextDisabled}>
+                <Button variant="outline" size="icon" onClick={handleNextDate} disabled={isNextDisabled}>
                     <ChevronRight className="h-4 w-4" />
                 </Button>
             </CardHeader>
@@ -290,12 +298,12 @@ export default function SalesPage() {
 
                  return (
                     <Card key={pm.id}>
-                        <CardHeader className="flex-row items-center justify-between pb-2">
-                             <CardTitle className="text-sm font-medium">{pm.name}</CardTitle>
-                             {getPaymentMethodIcon(pm.name)}
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-2xl font-bold">
+                        <CardContent className="p-4 flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-xs font-semibold">{pm.name}</span>
+                                {getPaymentMethodIcon(pm.name)}
+                            </div>
+                            <p className="text-xl font-bold">
                                 {pm.currency === '$' ? `$${formatUsd(totalAmount)}` : `Bs ${formatBs(totalAmount / bcvRate)}`}
                             </p>
                         </CardContent>
@@ -383,4 +391,3 @@ export default function SalesPage() {
   );
 }
 
-    
