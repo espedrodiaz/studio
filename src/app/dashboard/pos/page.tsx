@@ -23,6 +23,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { cn } from '@/lib/utils';
 import { PosLogo } from '@/components/ui/pos-logo';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useBusinessContext } from '@/hooks/use-business-context';
 
 
 type CartItem = typeof products[0] & { quantity: number; salePrice: number };
@@ -212,6 +213,8 @@ export default function PosPage() {
     const [paymentMethodsList, setPaymentMethodsList] = useState(getPaymentMethods());
     const bcvRate = getCurrentBcvRate();
     const [currentDate, setCurrentDate] = useState('');
+    const { businessCategory } = useBusinessContext();
+    const showVehiclesTab = businessCategory === 'Venta de Repuestos';
 
     // Cash Drawer State
     const [isCashDrawerOpen, setIsCashDrawerOpen] = useState(false);
@@ -1376,9 +1379,9 @@ export default function PosPage() {
                          <DialogTitle>{editingCustomer ? 'Editar Cliente' : 'Crear Nuevo Cliente'}</DialogTitle>
                     </DialogHeader>
                     <Tabs defaultValue="personal">
-                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsList className="grid w-full" style={{ gridTemplateColumns: showVehiclesTab ? '1fr 1fr' : '1fr' }}>
                             <TabsTrigger value="personal">Información Personal</TabsTrigger>
-                            <TabsTrigger value="vehicles">Vehículos</TabsTrigger>
+                            {showVehiclesTab && <TabsTrigger value="vehicles">Vehículos</TabsTrigger>}
                         </TabsList>
                         <TabsContent value="personal" className="py-4">
                              <div className="grid grid-cols-2 gap-4">
@@ -1404,48 +1407,50 @@ export default function PosPage() {
                                 </div>
                             </div>
                         </TabsContent>
-                        <TabsContent value="vehicles" className="py-4">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Añadir Vehículo</CardTitle>
-                                </CardHeader>
-                                <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
-                                    <div className="space-y-2 md:col-span-1">
-                                        <Label htmlFor="brand">Marca</Label>
-                                        <Input id="brand" value={vehicleForm.brand} onChange={handleVehicleFormChange} placeholder="Ej: Toyota" />
-                                    </div>
-                                    <div className="space-y-2 md:col-span-1">
-                                        <Label htmlFor="model">Modelo</Label>
-                                        <Input id="model" value={vehicleForm.model} onChange={handleVehicleFormChange} placeholder="Ej: Corolla" />
-                                    </div>
-                                    <div className="space-y-2 md:col-span-1">
-                                        <Label htmlFor="engine">Motor</Label>
-                                        <Input id="engine" value={vehicleForm.engine} onChange={handleVehicleFormChange} placeholder="Ej: 1.8L" />
-                                    </div>
-                                     <div className="space-y-2 md:col-span-1">
-                                        <Label htmlFor="year">Año</Label>
-                                        <Input id="year" type="number" value={vehicleForm.year} onChange={handleVehicleFormChange} placeholder="Ej: 2022" />
-                                    </div>
-                                    <Button onClick={addVehicle} size="icon"><Plus className="h-4 w-4" /></Button>
-                                </CardContent>
-                            </Card>
-                            <div className="mt-6 space-y-4">
-                                {customerForm.vehicles.map((vehicle, index) => (
-                                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                                        <div className="flex items-center gap-4">
-                                            <Car className="h-6 w-6 text-muted-foreground" />
-                                            <div>
-                                                <p className="font-semibold">{vehicle.brand} {vehicle.model} ({vehicle.year})</p>
-                                                <p className="text-sm text-muted-foreground">Motor: {vehicle.engine}</p>
-                                            </div>
-                                        </div>
-                                        <Button variant="ghost" size="icon" onClick={() => removeVehicle(index)}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                    </div>
-                                ))}
-                            </div>
-                        </TabsContent>
+                        {showVehiclesTab &&
+                          <TabsContent value="vehicles" className="py-4">
+                              <Card>
+                                  <CardHeader>
+                                      <CardTitle>Añadir Vehículo</CardTitle>
+                                  </CardHeader>
+                                  <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                                      <div className="space-y-2 md:col-span-1">
+                                          <Label htmlFor="brand">Marca</Label>
+                                          <Input id="brand" value={vehicleForm.brand} onChange={handleVehicleFormChange} placeholder="Ej: Toyota" />
+                                      </div>
+                                      <div className="space-y-2 md:col-span-1">
+                                          <Label htmlFor="model">Modelo</Label>
+                                          <Input id="model" value={vehicleForm.model} onChange={handleVehicleFormChange} placeholder="Ej: Corolla" />
+                                      </div>
+                                      <div className="space-y-2 md:col-span-1">
+                                          <Label htmlFor="engine">Motor</Label>
+                                          <Input id="engine" value={vehicleForm.engine} onChange={handleVehicleFormChange} placeholder="Ej: 1.8L" />
+                                      </div>
+                                       <div className="space-y-2 md:col-span-1">
+                                          <Label htmlFor="year">Año</Label>
+                                          <Input id="year" type="number" value={vehicleForm.year} onChange={handleVehicleFormChange} placeholder="Ej: 2022" />
+                                      </div>
+                                      <Button onClick={addVehicle} size="icon"><Plus className="h-4 w-4" /></Button>
+                                  </CardContent>
+                              </Card>
+                              <div className="mt-6 space-y-4">
+                                  {customerForm.vehicles.map((vehicle, index) => (
+                                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                                          <div className="flex items-center gap-4">
+                                              <Car className="h-6 w-6 text-muted-foreground" />
+                                              <div>
+                                                  <p className="font-semibold">{vehicle.brand} {vehicle.model} ({vehicle.year})</p>
+                                                  <p className="text-sm text-muted-foreground">Motor: {vehicle.engine}</p>
+                                              </div>
+                                          </div>
+                                          <Button variant="ghost" size="icon" onClick={() => removeVehicle(index)}>
+                                              <Trash2 className="h-4 w-4 text-destructive" />
+                                          </Button>
+                                      </div>
+                                  ))}
+                              </div>
+                          </TabsContent>
+                        }
                     </Tabs>
                      <DialogFooter>
                         <Button variant="outline" onClick={() => setIsCustomerModalOpen(false)}>Cancelar</Button>
@@ -1561,4 +1566,3 @@ export default function PosPage() {
     );
 }
 
-    
