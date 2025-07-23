@@ -126,8 +126,8 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                     <table className="items-table">
                         <thead><tr><th>Cant.</th><th>Producto</th><th className="total-col">Total</th></tr></thead>
                         <tbody>
-                        {saleData.items.map(item => (
-                            <tr key={item.id}>
+                        {saleData.items.map((item, index) => (
+                            <tr key={`${item.id}-${index}`}>
                                 <td>{item.quantity}</td>
                                 <td>{item.name}</td>
                                 <td className="total-col">{formatBs(item.salePrice * item.quantity)}</td>
