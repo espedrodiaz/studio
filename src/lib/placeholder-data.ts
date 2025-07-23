@@ -238,14 +238,15 @@ export type RegisteredUser = {
     businessName: string;
     businessCategory: string;
     rif: string;
+    licenseKey: string;
     status: 'Pending Activation' | 'Active' | 'Suspended';
 }
 
 let registeredUsers: RegisteredUser[] = [
-    { id: 'USER001', fullName: 'Pedro Pascal', businessName: 'Bodega La Bendición', businessCategory: 'Abastos y Bodegas', rif: 'J-12345678-9', status: 'Pending Activation' },
-    { id: 'USER002', fullName: 'Isabella Castillo', businessName: 'Restaurante El Rincón del Sabor', businessCategory: 'Restaurantes y Cafés', rif: 'J-98765432-1', status: 'Active' },
-    { id: 'USER003', fullName: 'Ricardo Mendoza', businessName: 'Auto Partes El Piston', businessCategory: 'Venta de Repuestos', rif: 'J-11223344-5', status: 'Suspended' },
-    { id: 'USER004', fullName: 'Carolina Herrera', businessName: 'Boutique CHic', businessCategory: 'Tiendas de Ropa y Accesorios', rif: 'J-55667788-9', status: 'Active' },
+    { id: 'USER001', fullName: 'Pedro Pascal', businessName: 'Bodega La Bendición', businessCategory: 'Abastos y Bodegas', rif: 'J-12345678-9', licenseKey: 'AAAA-BBBB-CCCC-DDDD', status: 'Pending Activation' },
+    { id: 'USER002', fullName: 'Isabella Castillo', businessName: 'Restaurante El Rincón del Sabor', businessCategory: 'Restaurantes y Cafés', rif: 'J-98765432-1', licenseKey: 'EEEE-FFFF-GGGG-HHHH', status: 'Active' },
+    { id: 'USER003', fullName: 'Ricardo Mendoza', businessName: 'Auto Partes El Piston', businessCategory: 'Venta de Repuestos', rif: 'J-11223344-5', licenseKey: 'IIII-JJJJ-KKKK-LLLL', status: 'Suspended' },
+    { id: 'USER004', fullName: 'Carolina Herrera', businessName: 'Boutique CHic', businessCategory: 'Tiendas de Ropa y Accesorios', rif: 'J-55667788-9', licenseKey: 'MMMM-NNNN-OOOO-PPPP', status: 'Active' },
 ];
 
 export const getRegisteredUsers = () => [...registeredUsers];

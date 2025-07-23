@@ -32,29 +32,26 @@ const ActivationBanner = () => {
     const { isActivated, activateLicense } = useBusinessContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [licenseKey, setLicenseKey] = useState('');
-    const [tempBusinessName, setTempBusinessName] = useState('');
-    const [tempBusinessCategory, setTempBusinessCategory] = useState('');
-
 
     if (isActivated) {
         return null;
     }
 
     const handleActivation = () => {
-        if (!licenseKey.trim() || !tempBusinessName.trim() || !tempBusinessCategory.trim()) {
+        const success = activateLicense(licenseKey);
+        if (success) {
             toast({
+                title: "¡Licencia Activada!",
+                description: "Bienvenido. Su cuenta ha sido activada y personalizada.",
+            });
+            setIsModalOpen(false);
+        } else {
+             toast({
                 title: "Error de Activación",
-                description: "Por favor, complete todos los campos para activar su licencia.",
+                description: "La clave de producto no es válida. Por favor, verifique e intente de nuevo.",
                 variant: "destructive",
             });
-            return;
         }
-        activateLicense(tempBusinessName, tempBusinessCategory);
-        toast({
-            title: "¡Licencia Activada!",
-            description: "Bienvenido. Su cuenta ha sido activada y personalizada.",
-        });
-        setIsModalOpen(false);
     }
 
     return (
@@ -76,7 +73,7 @@ const ActivationBanner = () => {
                     <DialogHeader>
                         <DialogTitle>Activar Licencia de Producto</DialogTitle>
                         <DialogDescription>
-                            Introduce la clave de producto, el nombre de tu negocio y selecciona la categoría para personalizar tu experiencia.
+                            Introduce la clave de producto que te fue suministrada para personalizar tu experiencia.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -84,18 +81,10 @@ const ActivationBanner = () => {
                             <Label htmlFor="license-key">Clave de Producto</Label>
                             <Input id="license-key" value={licenseKey} onChange={(e) => setLicenseKey(e.target.value)} placeholder="XXXX-XXXX-XXXX-XXXX" />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="business-name-activation">Nombre de tu Negocio</Label>
-                            <Input id="business-name-activation" value={tempBusinessName} onChange={(e) => setTempBusinessName(e.target.value)} placeholder="Mi Negocio C.A." />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="business-category-activation">Categoría de Negocio</Label>
-                            <Input id="business-category-activation" value={tempBusinessCategory} onChange={(e) => setTempBusinessCategory(e.target.value)} placeholder="Ej: Venta de Repuestos" />
-                        </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>
-                        <Button onClick={handleActivation}>Activar</Button>
+                        <Button onClick={handleActivation} disabled={!licenseKey.trim()}>Activar</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

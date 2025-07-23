@@ -13,7 +13,7 @@ import {
     exchangeRates as demoExchangeRates,
     supplierRates as demoSupplierRates,
     cashMovements as demoCashMovements,
-    businessCategories
+    getRegisteredUsers
 } from '@/lib/placeholder-data';
 import { Customer } from '@/lib/types';
 
@@ -22,7 +22,7 @@ type BusinessContextType = {
   isActivated: boolean;
   businessName: string;
   businessCategory: string;
-  activateLicense: (name: string, category: string) => void;
+  activateLicense: (licenseKey: string) => boolean;
   // This is just for the demo/simulated mode
   setBusinessCategory: (category: string) => void; 
 };
@@ -32,12 +32,19 @@ const BusinessContext = createContext<BusinessContextType | undefined>(undefined
 export const BusinessProvider = ({ children }: { children: ReactNode }) => {
   const [isActivated, setIsActivated] = useState(false);
   const [businessName, setBusinessName] = useState("Negocio de Demostración");
-  const [businessCategory, setBusinessCategory] = useState<string>(businessCategories[0]);
+  const [businessCategory, setBusinessCategory] = useState<string>("Abastos y Bodegas");
 
-  const activateLicense = (name: string, category: string) => {
-    setIsActivated(true);
-    setBusinessName(name);
-    setBusinessCategory(category);
+  const activateLicense = (licenseKey: string): boolean => {
+    const users = getRegisteredUsers();
+    const user = users.find(u => u.licenseKey === licenseKey);
+
+    if (user) {
+        setIsActivated(true);
+        setBusinessName(user.businessName);
+        setBusinessCategory(user.businessCategory);
+        return true;
+    }
+    return false;
   };
   
   // This function is purely for the sidebar simulation before activation
