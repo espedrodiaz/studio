@@ -2,65 +2,98 @@
 "use client";
 
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { 
-    products as demoProducts, 
-    customers as demoCustomers,
-    suppliers as demoSuppliers,
-    sales as demoSales,
-    accountsPayable as demoAccountsPayable,
-    accountsReceivable as demoAccountsReceivable,
-    paymentMethods as demoPaymentMethods,
-    exchangeRates as demoExchangeRates,
-    supplierRates as demoSupplierRates,
-    cashMovements as demoCashMovements,
-    getRegisteredUsers
-} from '@/lib/placeholder-data';
-import { Customer } from '@/lib/types';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+import { useRouter } from 'next/navigation';
 
+type UserData = {
+    businessName: string;
+    businessCategory: string;
+    status: 'Trial' | 'Active' | 'Suspended';
+    trialEndsAt: string;
+    licenseKey: string;
+}
 
 type BusinessContextType = {
-  isActivated: boolean;
-  businessName: string;
-  businessCategory: string;
-  activateLicense: (licenseKey: string) => boolean;
-  // This is just for the demo/simulated mode
-  setBusinessCategory: (category: string) => void; 
+  isLoading: boolean;
+  user: User | null;
+  userData: UserData | null;
+  isTrialExpired: boolean;
+  activateLicense: (licenseKey: string) => boolean; // This is now a placeholder, real logic would be a backend call
 };
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
 
 export const BusinessProvider = ({ children }: { children: ReactNode }) => {
-  const [isActivated, setIsActivated] = useState(false);
-  const [businessName, setBusinessName] = useState("Negocio de Demostración");
-  const [businessCategory, setBusinessCategory] = useState<string>("Abastos y Bodegas");
+  const [user, setUser] = useState<User | null>(null);
+  const [userData, setUserData] = useState<UserData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isTrialExpired, setIsTrialExpired] = useState(false);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setIsLoading(true);
+      if (user) {
+        setUser(user);
+        // Fetch user data from Firestore
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const data = userDoc.data() as UserData;
+          setUserData(data);
+
+          // Check license and trial status
+          if (data.status !== 'Active') {
+            const trialEndDate = new Date(data.trialEndsAt);
+            if (new Date() > trialEndDate) {
+              setIsTrialExpired(true);
+            } else {
+              setIsTrialExpired(false);
+            }
+          } else {
+              setIsTrialExpired(false);
+          }
+        } else {
+            // This case might happen if a user is created in Auth but not in Firestore, e.g. Google Sign-in first time
+            // Or if we need to log them out because their data is missing.
+             setUserData(null);
+             router.push('/login');
+        }
+
+      } else {
+        setUser(null);
+        setUserData(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
 
   const activateLicense = (licenseKey: string): boolean => {
-    const users = getRegisteredUsers();
-    const user = users.find(u => u.licenseKey === licenseKey);
-
-    if (user) {
-        setIsActivated(true);
-        setBusinessName(user.businessName);
-        setBusinessCategory(user.businessCategory);
+    // In a REAL app, this would trigger a backend call (e.g., a Firebase Function)
+    // to validate the key and update the user's status in Firestore.
+    // For now, we simulate this.
+    if (userData && licenseKey === userData.licenseKey) {
+        // This is a simulation. A backend would update the doc and this client would get the update via a listener.
+        const updatedUserData = { ...userData, status: 'Active' as 'Active' };
+        setUserData(updatedUserData); 
+        setIsTrialExpired(false);
         return true;
     }
     return false;
   };
-  
-  // This function is purely for the sidebar simulation before activation
-  const handleSetCategoryForDemo = (category: string) => {
-      if (!isActivated) {
-          setBusinessCategory(category);
-      }
-  }
 
   return (
     <BusinessContext.Provider value={{ 
-        isActivated, 
-        businessName, 
-        businessCategory,
+        isLoading,
+        user,
+        userData,
+        isTrialExpired,
         activateLicense,
-        setBusinessCategory: handleSetCategoryForDemo
     }}>
       {children}
     </BusinessContext.Provider>
@@ -74,57 +107,3 @@ export const useBusinessContext = () => {
   }
   return context;
 };
-
-// This is a simulation. In a real app, this logic would be handled by fetching data from a backend
-// based on the authenticated user's license.
-export const useData = () => {
-    const { isActivated } = useBusinessContext();
-    
-    // In a real app, you would have a loading state here.
-    const [data, setData] = useState({
-        products: demoProducts,
-        customers: demoCustomers,
-        suppliers: demoSuppliers,
-        sales: demoSales,
-        accountsPayable: demoAccountsPayable,
-        accountsReceivable: demoAccountsReceivable,
-        paymentMethods: demoPaymentMethods,
-        exchangeRates: demoExchangeRates,
-        supplierRates: demoSupplierRates,
-        cashMovements: demoCashMovements,
-    });
-
-    useEffect(() => {
-        if (isActivated) {
-            // If the license is activated, we simulate loading a clean slate.
-            setData({
-                products: [],
-                customers: [],
-                suppliers: [],
-                sales: [],
-                accountsPayable: [],
-                accountsReceivable: [],
-                paymentMethods: [],
-                exchangeRates: [],
-                supplierRates: [],
-                cashMovements: [],
-            });
-        } else {
-             // If not activated, use the demo data.
-             setData({
-                products: demoProducts,
-                customers: demoCustomers,
-                suppliers: demoSuppliers,
-                sales: demoSales,
-                accountsPayable: demoAccountsPayable,
-                accountsReceivable: demoAccountsReceivable,
-                paymentMethods: demoPaymentMethods,
-                exchangeRates: demoExchangeRates,
-                supplierRates: demoSupplierRates,
-                cashMovements: demoCashMovements,
-            });
-        }
-    }, [isActivated]);
-
-    return data;
-}

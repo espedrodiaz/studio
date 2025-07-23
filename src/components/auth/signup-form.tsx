@@ -84,6 +84,9 @@ export function SignupForm() {
 
         // 2. Create user document in Firestore
         const licenseKey = generateLicenseKey();
+        const sevenDaysFromNow = new Date();
+        sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
         await setDoc(doc(db, "users", user.uid), {
             uid: user.uid,
             fullName: formData.fullName,
@@ -92,8 +95,9 @@ export function SignupForm() {
             rif: formData.rif,
             email: formData.email,
             licenseKey: licenseKey,
-            status: "Pending Activation",
+            status: "Trial", // Initial status
             createdAt: new Date().toISOString(),
+            trialEndsAt: sevenDaysFromNow.toISOString(),
         });
         
         setIsSubmitted(true);
@@ -125,12 +129,12 @@ export function SignupForm() {
             </div>
             <CardTitle className="text-2xl">¡Registro Exitoso!</CardTitle>
             <CardDescription className="text-balance">
-              Hemos recibido tus datos. En breve, recibirás un correo electrónico con tu clave de producto y los siguientes pasos para activar tu cuenta.
+              ¡Bienvenido! Tu cuenta ha sido creada y tu período de prueba de 7 días ha comenzado. Ya puedes iniciar sesión.
             </CardDescription>
           </CardHeader>
           <CardContent>
              <Button onClick={() => router.push('/login')} className="w-full">
-              Volver a Inicio de Sesión
+              Ir a Inicio de Sesión
             </Button>
           </CardContent>
         </Card>
@@ -146,7 +150,7 @@ export function SignupForm() {
             <PosLogo className="text-3xl" />
           </div>
           <CardTitle>Crea tu Cuenta</CardTitle>
-          <CardDescription>Completa el formulario para registrar tu negocio.</CardDescription>
+          <CardDescription>Completa el formulario para registrar tu negocio e iniciar tu prueba de 7 días.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="grid gap-4">
@@ -189,7 +193,7 @@ export function SignupForm() {
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Registrar mi Negocio
+              Registrar y Empezar Prueba
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
@@ -203,3 +207,4 @@ export function SignupForm() {
     </div>
   );
 }
+

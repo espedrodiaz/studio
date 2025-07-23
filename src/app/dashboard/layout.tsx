@@ -7,6 +7,8 @@ import {
   User,
   LineChart,
   ShieldCheck,
+  LogOut,
+  Loader2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -27,13 +29,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
+import { auth } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
+import Loading from "./loading";
+
 
 const ActivationBanner = () => {
-    const { isActivated, activateLicense } = useBusinessContext();
+    const { userData, activateLicense, isTrialExpired } = useBusinessContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [licenseKey, setLicenseKey] = useState('');
 
-    if (isActivated) {
+    if (!userData || userData.status === 'Active') {
         return null;
     }
 
@@ -42,7 +48,7 @@ const ActivationBanner = () => {
         if (success) {
             toast({
                 title: "¡Licencia Activada!",
-                description: "Bienvenido. Su cuenta ha sido activada y personalizada.",
+                description: "¡Felicidades! Todas las funciones de su cuenta han sido activadas permanentemente.",
             });
             setIsModalOpen(false);
         } else {
@@ -53,11 +59,19 @@ const ActivationBanner = () => {
             });
         }
     }
+    
+    const trialEndDate = userData.trialEndsAt ? new Date(userData.trialEndsAt) : null;
 
     return (
         <>
-            <div className="bg-yellow-400 text-yellow-900 text-center p-2 text-sm font-medium flex items-center justify-center gap-4">
-                <span>Estás en modo de demostración.</span>
+            <div className="bg-yellow-400 text-yellow-900 text-center p-2 text-sm font-medium flex items-center justify-center gap-4 w-full">
+                {isTrialExpired ? (
+                     <span>Tu período de prueba ha expirado. Activa tu licencia para continuar.</span>
+                ) : (
+                    <span>
+                        Estás en modo de prueba. Te quedan {trialEndDate ? Math.max(0, Math.ceil((trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : '0'} días.
+                    </span>
+                )}
                 <Button
                     size="sm"
                     variant="secondary"
@@ -73,7 +87,7 @@ const ActivationBanner = () => {
                     <DialogHeader>
                         <DialogTitle>Activar Licencia de Producto</DialogTitle>
                         <DialogDescription>
-                            Introduce la clave de producto que te fue suministrada para personalizar tu experiencia.
+                            Introduce la clave de producto que te fue suministrada para activar tu cuenta permanentemente.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -96,6 +110,8 @@ const ActivationBanner = () => {
 const DashboardLayoutContent = ({ children }: { children: React.ReactNode }) => {
   const [bcvRate, setBcvRate] = useState(getCurrentBcvRate());
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const { isLoading, user, isTrialExpired, userData } = useBusinessContext();
+  const router = useRouter();
 
   useEffect(() => {
     const subscription = bcvRateSubject.subscribe(rate => {
@@ -104,8 +120,24 @@ const DashboardLayoutContent = ({ children }: { children: React.ReactNode }) => 
     return () => subscription.unsubscribe();
   }, []);
 
+  const handleLogout = async () => {
+    await auth.signOut();
+    toast({title: "Sesión Cerrada", description: "Has cerrado sesión exitosamente."})
+    router.push('/login');
+  }
+
   const closeSheet = () => {
     setIsSheetOpen(false);
+  }
+
+  if (isLoading) {
+      return <Loading />;
+  }
+  
+  if (!user) {
+      // This is a fallback, the auth listener in the provider should handle this.
+      router.replace('/login');
+      return <Loading />;
   }
 
   return (
@@ -149,16 +181,30 @@ const DashboardLayoutContent = ({ children }: { children: React.ReactNode }) => 
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Mi Cuenta</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>Ajustes</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>Ajustes</DropdownMenuItem>
                     <DropdownMenuItem>Soporte</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>Cerrar Sesión</DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Cerrar Sesión
+                    </DropdownMenuItem>
                 </DropdownMenuContent>
                 </DropdownMenu>
             </div>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          {children}
+          {isTrialExpired ? (
+             <Card className="flex flex-col items-center justify-center text-center p-12 gap-4">
+                <ShieldCheck className="h-16 w-16 text-destructive" />
+                <CardTitle>Período de Prueba Expirado</CardTitle>
+                <CardDescription>
+                    Tu acceso a los módulos ha sido restringido. Por favor, activa tu licencia para continuar.
+                </CardDescription>
+                {/* The activation button is in the banner */}
+             </Card>
+          ) : (
+            children
+          )}
         </main>
         <footer className="text-center p-4 text-xs text-muted-foreground">
             Desarrollado por DiazSoft
