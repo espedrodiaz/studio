@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,10 +36,15 @@ import {
 } from "@/lib/placeholder-data";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
+import { useBusinessContext } from "@/hooks/use-business-context";
 
 
 export default function UsersPage() {
     const [users, setUsers] = useState<RegisteredUser[]>(getRegisteredUsers());
+    const { user } = useBusinessContext();
+
+    // THIS IS A TEMPORARY ADMIN CHECK
+    const isAdmin = user && user.email === 'diaznelson.sistemas@gmail.com'; 
 
     const handleUpdateStatus = (userId: string, status: "Active" | "Suspended") => {
         updateUserStatus(userId, status);
@@ -58,6 +63,22 @@ export default function UsersPage() {
             description: "El registro del negocio ha sido eliminado.",
             variant: "destructive"
         });
+    }
+
+    if (!isAdmin) {
+        return (
+             <Card>
+                <CardHeader>
+                    <CardTitle>Acceso Denegado</CardTitle>
+                    <CardDescription>
+                    No tienes permisos para acceder a esta sección.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <p>Esta área es solo para administradores de la plataforma.</p>
+                </CardContent>
+            </Card>
+        )
     }
 
   return (

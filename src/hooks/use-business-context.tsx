@@ -55,8 +55,8 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
             setIsTrialExpired(false);
           }
         } else {
-            // User is authenticated but doesn't have a user document.
-            // This is a new user (likely from Google Sign-In). Create their document.
+            // User is authenticated (likely from Google Sign-In) but doesn't have a user document.
+            // Create their document with placeholder data.
             const licenseKey = `FPV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
             const sevenDaysFromNow = new Date();
             sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
@@ -64,7 +64,7 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
             const newUserDocData: UserData = {
                 uid: user.uid,
                 fullName: user.displayName || "Usuario de Google",
-                businessName: "Mi Negocio", // Placeholder
+                businessName: "Mi Negocio (Google)", // Placeholder
                 businessCategory: "Otro", // Placeholder
                 rif: "J-00000000-0", // Placeholder
                 email: user.email,
@@ -77,8 +77,8 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
             await setDoc(userDocRef, newUserDocData);
             setUserData(newUserDocData);
             setIsTrialExpired(false);
-            // Optional: redirect to a profile completion page
-            // router.push('/dashboard/complete-profile');
+            // In a real app, you might redirect to a profile completion page here.
+            // For now, they can edit it in settings.
         }
 
       } else {
@@ -103,8 +103,8 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
         setUserData(updatedUserData); 
         setIsTrialExpired(false);
         // In a real app, you would also update the document in Firestore.
-        // const userDocRef = doc(db, "users", userData.uid);
-        // setDoc(userDocRef, { status: 'Active' }, { merge: true });
+        const userDocRef = doc(db, "users", userData.uid);
+        setDoc(userDocRef, { status: 'Active' }, { merge: true });
         return true;
     }
     return false;

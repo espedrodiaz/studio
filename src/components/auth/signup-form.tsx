@@ -28,7 +28,6 @@ import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
-import { Separator } from "../ui/separator";
 
 export function SignupForm() {
   const router = useRouter();
@@ -44,13 +43,33 @@ export function SignupForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const createUserDataInFirestore = async (user: User, data: { fullName: string, businessName: string, businessCategory: string, rif: string }) => {
+      const userDocRef = doc(db, "users", user.uid);
+      
+      const licenseKey = `FPV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+      const sevenDaysFromNow = new Date();
+      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
+
+      await setDoc(userDocRef, {
+          uid: user.uid,
+          fullName: data.fullName,
+          businessName: data.businessName,
+          businessCategory: data.businessCategory,
+          rif: data.rif,
+          email: user.email,
+          licenseKey,
+          status: "Trial",
+          createdAt: new Date().toISOString(),
+          trialEndsAt: sevenDaysFromNow.toISOString(),
+      });
+  }
 
   const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
 
-    if (!businessCategory || !fullName || !businessName || !rif) {
-        toast({ title: "Información Faltante", description: "Por favor, completa todos los campos del negocio para continuar.", variant: "destructive" });
+    if (!businessCategory) {
+        toast({ title: "Información Faltante", description: "Por favor, selecciona una categoría para tu negocio.", variant: "destructive" });
         setIsLoading(false);
         return;
     }
@@ -58,23 +77,8 @@ export function SignupForm() {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
-      const licenseKey = `FPV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      const sevenDaysFromNow = new Date();
-      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-
-      await setDoc(doc(db, "users", user.uid), {
-          uid: user.uid,
-          fullName,
-          businessName,
-          businessCategory,
-          rif,
-          email: user.email,
-          licenseKey,
-          status: "Trial",
-          createdAt: new Date().toISOString(),
-          trialEndsAt: sevenDaysFromNow.toISOString(),
-      });
+      
+      await createUserDataInFirestore(user, { fullName, businessName, businessCategory, rif });
         
       setIsSubmitted(true);
 
