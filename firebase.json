@@ -1,0 +1,12 @@
+
+{
+  "hosting": {
+    "redirects": [
+      {
+        "source": "/",
+        "destination": "https://studio--facilitoposvzla.us-central1.hosted.app",
+        "type": 302
+      }
+    ]
+  }
+}
