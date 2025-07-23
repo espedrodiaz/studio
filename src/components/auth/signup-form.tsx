@@ -45,7 +45,7 @@ export function SignupForm() {
   const [password, setPassword] = useState("");
 
   const handleSuccessfulRegistration = async (user: User) => {
-     // Check if user already exists (could happen with Google sign-in)
+    // Check if user already exists (could happen with Google sign-in)
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
 
@@ -56,11 +56,9 @@ export function SignupForm() {
     }
 
     if (!businessCategory || !fullName || !businessName || !rif) {
-        // This is a scenario for Google Sign-up where form fields might not be filled yet.
-        // We can handle this more gracefully later, e.g., by redirecting to a profile completion page.
-        // For now, we will show a toast and let them fill the form.
         toast({ title: "Información Faltante", description: "Por favor, completa todos los campos del negocio para continuar.", variant: "destructive" });
         setIsGoogleLoading(false); // Stop loading indicator
+        setIsLoading(false);
         return;
     }
 
@@ -85,10 +83,8 @@ export function SignupForm() {
         setIsSubmitted(true);
     } catch (error) {
          toast({ title: "Error de Base de Datos", description: "No se pudo guardar la información del negocio. Por favor, revisa tu conexión e intenta de nuevo.", variant: "destructive"});
-         // We might need to delete the created auth user if firestore fails, to allow retry.
-         // For now, we just inform the user.
     }
-  }
+  };
 
 
   const handleSignup = async (event: React.FormEvent) => {
@@ -119,12 +115,8 @@ export function SignupForm() {
       const provider = new GoogleAuthProvider();
       try {
           const result = await signInWithPopup(auth, provider);
-          // Set email and name from Google, then check if we can complete registration
           setEmail(result.user.email || "");
           setFullName(result.user.displayName || "");
-
-          // Since the user used Google, other form fields are likely empty.
-          // We trigger the registration function which will now check for missing business info.
           await handleSuccessfulRegistration(result.user);
       } catch (error: any) {
           toast({
@@ -133,7 +125,7 @@ export function SignupForm() {
               variant: "destructive",
           });
       } finally {
-          // The loading state is managed inside handleSuccessfulRegistration for the google path
+          setIsGoogleLoading(false);
       }
   }
 
