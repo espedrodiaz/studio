@@ -117,142 +117,143 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
 
 
     return (
-        <Dialog open={!!saleData} onOpenChange={(isOpen) => !isOpen && onClose()}>
-            <DialogContent className="sm:max-w-sm">
-                <DialogHeader>
-                    <DialogTitle>Ticket de Venta</DialogTitle>
-                    <DialogDescription>
-                        Recibo generado. Puede imprimirlo, descargarlo o compartirlo.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="bg-white text-black p-2 rounded-sm max-h-[70vh] overflow-y-auto" id="ticket-content">
-                    <div ref={ticketRef} className="ticket text-[10px] leading-tight font-mono p-1">
-                        {/* Business Info */}
-                        <div className="text-center mt-1">
-                            <h2 className="text-sm font-bold">{businessData.name}</h2>
-                            <p>{businessData.rif}</p>
-                            <p>{businessData.address}</p>
-                            <p>Telf: {businessData.phone}</p>
-                        </div>
-                        
-                        <div className="separator mt-2"></div>
-
-                        {/* Sale & Client Info */}
-                        <div className='flex justify-between text-[9px] mt-2'>
-                             <p className='font-bold'>Ticket: {saleData.id}</p>
-                             <p>Fecha: {new Date(saleData.date).toLocaleString('es-VE')}</p>
-                        </div>
-                        <div className="mt-2">
-                            <p className='font-bold'>Cliente:</p>
-                            <p>{saleData.customer?.name || 'Cliente Ocasional'}</p>
-                            <p>{saleData.customer?.idNumber || 'V-00000000'}</p>
-                            <p className='truncate'>{saleData.customer?.address || 'N/A'}</p>
-                        </div>
-
-                        <div className="separator mt-2"></div>
-                        
-                        {/* Items Table */}
-                        <table className="w-full items-table mt-2">
-                            <thead>
-                                <tr>
-                                    <th className='w-1/12'>Cant</th>
-                                    <th className='w-5/12'>Producto</th>
-                                    <th className='w-3/12 text-right'>Precio</th>
-                                    <th className='w-3/12 text-right'>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {saleData.items.map((item, index) => (
-                                <tr key={`${item.id}-${index}`} className="text-[9px]">
-                                    <td className='align-top'>{item.quantity}</td>
-                                    <td>
-                                        <div>{item.name}</div>
-                                        <div className='text-[8px]'>Cod: {item.id}</div>
-                                    </td>
-                                    <td className='align-top text-right'>{formatBs(item.salePrice)}</td>
-                                    <td className='align-top text-right font-bold'>{formatBs(item.salePrice * item.quantity)}</td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-
-                        <div className="separator"></div>
-                        
-                        {/* Totals Section */}
-                        <div className="flex justify-end mt-2">
-                             <div className="w-8/12">
-                                <div className='flex justify-between'>
-                                    <p>Subtotal:</p>
-                                    <p className="font-bold">Bs {formatBs(saleData.subtotal)}</p>
+        <Dialog open={!!saleData} onOpenChange={(isOpen) => { if (!isOpen) onClose(); }}>
+            <DialogContent className="sm:max-w-sm p-0">
+                <div className="max-h-[90vh] overflow-y-auto">
+                    <DialogHeader className="p-6 pb-2">
+                        <DialogTitle>Ticket de Venta</DialogTitle>
+                        <DialogDescription>
+                            Recibo generado. Puede imprimirlo, descargarlo o compartirlo.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="p-6 pt-2 pb-4">
+                        <div className="bg-white text-black p-2 rounded-sm" id="ticket-content">
+                            <div ref={ticketRef} className="ticket text-[10px] leading-tight font-mono p-1">
+                                {/* Business Info */}
+                                <div className="text-center mt-1">
+                                    <h2 className="text-sm font-bold">{businessData.name}</h2>
+                                    <p>{businessData.rif}</p>
+                                    <p>{businessData.address}</p>
+                                    <p>Telf: {businessData.phone}</p>
                                 </div>
+                                
+                                <div className="separator mt-2"></div>
+
+                                {/* Sale & Client Info */}
+                                <div className='flex justify-between text-[9px] mt-2'>
+                                    <p className='font-bold'>Ticket: {saleData.id}</p>
+                                    <p>Fecha: {new Date(saleData.date).toLocaleString('es-VE')}</p>
+                                </div>
+                                <div className="mt-2">
+                                    <p className='font-bold'>Cliente:</p>
+                                    <p>{saleData.customer?.name || 'Cliente Ocasional'}</p>
+                                    <p>{saleData.customer?.idNumber || 'V-00000000'}</p>
+                                    <p className='truncate'>{saleData.customer?.address || 'N/A'}</p>
+                                </div>
+
+                                <div className="separator mt-2"></div>
+                                
+                                {/* Items Table */}
+                                <table className="w-full items-table mt-2">
+                                    <thead>
+                                        <tr>
+                                            <th className='w-1/12'>Cant</th>
+                                            <th className='w-5/12'>Producto</th>
+                                            <th className='w-3/12 text-right'>Precio</th>
+                                            <th className='w-3/12 text-right'>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {saleData.items.map((item, index) => (
+                                        <tr key={`${item.id}-${index}`}>
+                                            <td className='align-top'>{item.quantity}</td>
+                                            <td>
+                                                <div>{item.name}</div>
+                                                <div className='text-[8px]'>Cod: {item.id}</div>
+                                            </td>
+                                            <td className='align-top text-right'>{formatBs(item.salePrice)}</td>
+                                            <td className='align-top text-right font-bold'>{formatBs(item.salePrice * item.quantity)}</td>
+                                        </tr>
+                                    ))}
+                                    </tbody>
+                                </table>
+
                                 <div className="separator"></div>
-                                <div className='flex justify-between font-bold text-xs'>
-                                    <p>TOTAL:</p>
-                                    <div className='text-right'>
-                                      <p>Bs {formatBs(saleData.subtotal)}</p>
-                                      <p className="text-[9px] font-normal text-gray-600">(${formatUsd(saleData.subtotal)})</p>
+                                
+                                {/* Totals Section */}
+                                <div className="flex justify-end mt-2">
+                                    <div className="w-8/12">
+                                        <div className='flex justify-between'>
+                                            <p>Subtotal:</p>
+                                            <p className="font-bold">Bs {formatBs(saleData.subtotal)}</p>
+                                        </div>
+                                        <div className="separator"></div>
+                                        <div className='flex justify-between font-bold text-xs'>
+                                            <p>TOTAL:</p>
+                                            <div className='text-right'>
+                                            <p>Bs {formatBs(saleData.subtotal)}</p>
+                                            <p className="text-[9px] font-normal text-gray-600">(${formatUsd(saleData.subtotal)})</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                             </div>
-                        </div>
 
-                        <div className="separator"></div>
+                                <div className="separator"></div>
 
-                        {/* Payment Details */}
-                        <div className="mt-2 payment-details">
-                            <p className='font-bold mb-1'>Detalle de Pago:</p>
-                             <div className='space-y-1'>
-                                {saleData.payments.map((p, index) => {
-                                    if (!p.method) return null;
-                                    const amountInBs = p.method.currency === '$' ? p.amount * saleData.bcvRate : p.amount;
-                                    return (
-                                        <p key={index}>
-                                            <span>{p.method.name}:</span>
-                                            <span className='font-bold'>Bs {formatBsFromVes(amountInBs)}</span>
-                                        </p>
-                                    )
-                                })}
-                             </div>
-                            
-                            <div className="separator mt-2"></div>
-                             <div className='space-y-1'>
-                                <div className='flex justify-between mt-1'>
-                                    <p>Total Pagado:</p>
-                                    <p>Bs {formatBs(saleData.totalPaid)}</p>
-                                </div>
-                                {saleData.totalChange > 0 && (
-                                    <div className='flex justify-between font-bold'>
-                                        <p>Vuelto:</p>
-                                        <p>Bs {formatBs(saleData.totalChange)}</p>
+                                {/* Payment Details */}
+                                <div className="mt-2 payment-details">
+                                    <p className='font-bold mb-1'>Detalle de Pago:</p>
+                                    <div className='space-y-1'>
+                                        {saleData.payments.map((p, index) => {
+                                            if (!p.method) return null;
+                                            const amountInBs = p.method.currency === '$' ? p.amount * saleData.bcvRate : p.amount;
+                                            return (
+                                                <p key={index}>
+                                                    <span>{p.method.name}:</span>
+                                                    <span className='font-bold'>Bs {formatBsFromVes(amountInBs)}</span>
+                                                </p>
+                                            )
+                                        })}
                                     </div>
-                                )}
-                             </div>
-                        </div>
+                                    
+                                    <div className="separator mt-2"></div>
+                                    <div className='space-y-1'>
+                                        <div className='flex justify-between mt-1'>
+                                            <p>Total Pagado:</p>
+                                            <p>Bs {formatBs(saleData.totalPaid)}</p>
+                                        </div>
+                                        {saleData.totalChange > 0 && (
+                                            <div className='flex justify-between font-bold'>
+                                                <p>Vuelto:</p>
+                                                <p>Bs {formatBs(saleData.totalChange)}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
 
-                        <div className="separator"></div>
-                        <p className="text-center text-xs mt-2">¡Gracias por su compra!</p>
-                        <p className="text-center text-[8px] mt-1">Tasa: {formatBsFromVes(saleData.bcvRate)} Bs/USD</p>
+                                <div className="separator"></div>
+                                <p className="text-center text-xs mt-2">¡Gracias por su compra!</p>
+                                <p className="text-center text-[8px] mt-1">Tasa: {formatBsFromVes(saleData.bcvRate)} Bs/USD</p>
 
-                         <div className="text-center mt-2">
-                           <span className="font-bold text-sm">
-                                Facilito
-                                <span style={{ color: '#FFCD00' }}>P</span>
-                                <span style={{ color: '#0033A0' }}>O</span>
-                                <span style={{ color: '#CE1126' }}>S</span>
-                             </span>
-                             <p className="text-[9px]">Venezuela</p>
-                             <p className="text-[8px] mt-1">Tecnología Impulsada por DiazSoft</p>
+                                <div className="text-center mt-2">
+                                <span className="font-bold text-sm">
+                                        Facilito
+                                        <span style={{ color: '#FFCD00' }}>P</span>
+                                        <span style={{ color: '#0033A0' }}>O</span>
+                                        <span style={{ color: '#CE1126' }}>S</span>
+                                    </span>
+                                    <p className="text-[9px]">Venezuela</p>
+                                    <p className="text-[8px] mt-1">Tecnología Impulsada por DiazSoft</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <DialogFooter className="sm:justify-between gap-2 pt-4">
-                    <div className="flex flex-wrap gap-2">
+                    <DialogFooter className="p-6 pt-4 flex-wrap sm:justify-start gap-2">
                         <Button type="button" variant="secondary" onClick={handleShareWhatsApp}><Send className="mr-2 h-4 w-4"/> WhatsApp</Button>
                         <Button type="button" variant="secondary" onClick={handleDownloadImage}><Download className="mr-2 h-4 w-4"/> Descargar</Button>
                         <Button type="button" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
-                    </div>
-                    <Button type="button" variant="outline" onClick={onClose}>Cerrar</Button>
-                </DialogFooter>
+                    </DialogFooter>
+                </div>
             </DialogContent>
         </Dialog>
     );
