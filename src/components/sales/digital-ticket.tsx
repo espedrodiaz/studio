@@ -233,6 +233,10 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                         <p className="text-center text-xs mt-2">¡Gracias por su compra!</p>
                         <p className="text-center text-[8px] mt-1">Tasa: {formatBsFromVes(saleData.bcvRate)} Bs/USD</p>
 
+                         <div className="text-center mt-2">
+                            <p className="text-[9px] font-bold">FacilitoPOS Venezuela</p>
+                            <p className="text-[8px]">Tecnología Impulsada por DiazSoft</p>
+                        </div>
                     </div>
                 </div>
                 <DialogFooter className="sm:justify-start gap-2 pt-4">
