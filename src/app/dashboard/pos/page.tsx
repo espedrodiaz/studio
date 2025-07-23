@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { products, customers as initialCustomers, getPaymentMethods, getCurrentBcvRate, cashMovements as initialCashMovements, addCashMovement, sales as initialSales, addSale } from "@/lib/placeholder-data";
-import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp, ShoppingCart, Pencil, Car, Trash2, Plus, ChevronDown, ChevronUp, CheckCircle2, Share2, Download, Send, Calculator } from "lucide-react";
+import { X, PlusCircle, MinusCircle, Search, UserPlus, ArrowLeft, ArrowRight, DollarSign, Printer, MoreVertical, CalendarIcon, FileText, ArrowDownUp, ShoppingCart, Pencil, Car, Trash2, Plus, ChevronDown, ChevronUp, CheckCircle2, Share2, Download, Send, Calculator, ArrowUpCircle, ArrowDownCircle, BadgeEuro } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ import { Customer, Vehicle } from "@/lib/types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { PosLogo } from '@/components/ui/pos-logo';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 
 type CartItem = typeof products[0] & { quantity: number; salePrice: number };
@@ -218,6 +219,8 @@ export default function PosPage() {
     const [initialBalances, setInitialBalances] = useState<{[key: string]: number}>({});
     const [sales, setSales] = useState<typeof initialSales>([]);
     const [cashMovements, setCashMovements] = useState<CashMovement[]>(initialCashMovements);
+    const [selectedCashDrawerFilter, setSelectedCashDrawerFilter] = useState<string>('all');
+
 
     const [isCashMovementModalOpen, setIsCashMovementModalOpen] = useState(false);
     const [movementType, setMovementType] = useState<'Entrada' | 'Salida'>('Salida');
@@ -322,23 +325,63 @@ export default function PosPage() {
 
         return {
             initial: {
-                ves: totals.initial.ves + convertToVes(totals.initial.usd),
-                usd: totals.initial.usd + convertToUsd(totals.initial.ves)
+                ves: totals.initial.ves,
+                usd: totals.initial.usd,
             },
             income: {
-                ves: totals.income.ves + convertToVes(totals.income.usd),
-                usd: totals.income.usd + convertToUsd(totals.income.ves)
+                ves: totals.income.ves,
+                usd: totals.income.usd,
             },
             outcome: {
-                 ves: totals.outcome.ves + convertToVes(totals.outcome.usd),
-                usd: totals.outcome.usd + convertToUsd(totals.outcome.ves)
+                 ves: totals.outcome.ves,
+                usd: totals.outcome.usd,
             },
             final: {
-                ves: totals.final.ves + convertToVes(totals.final.usd),
-                usd: totals.final.usd + convertToUsd(totals.final.ves)
+                ves: totals.final.ves,
+                usd: totals.final.usd,
             }
         };
-    }, [cashDrawerState, paymentMethodsList, bcvRate, convertToUsd, convertToVes]);
+    }, [cashDrawerState, paymentMethodsList]);
+
+    const compiledMovements = useMemo(() => {
+        let allMovements: any[] = [];
+        const filterPm = paymentMethodsList.find(pm => pm.id === selectedCashDrawerFilter);
+
+        const processMovements = (pm: PaymentMethod) => {
+            // Initial Balance
+            if (initialBalances[pm.id] && initialBalances[pm.id] > 0) {
+                allMovements.push({
+                    date: new Date(0).toISOString(),
+                    type: 'Apertura',
+                    concept: 'Saldo Inicial',
+                    amount: initialBalances[pm.id],
+                    currency: pm.currency
+                });
+            }
+            // Sales
+            sales.forEach(sale => {
+                sale.payments.filter(p => p.methodId === pm.id).forEach(p => {
+                    allMovements.push({ date: sale.date, type: 'Venta', concept: `Venta #${sale.id}`, amount: p.amount, currency: pm.currency });
+                });
+                sale.changeGiven.filter(c => c.methodId === pm.id).forEach(c => {
+                    allMovements.push({ date: sale.date, type: 'Vuelto', concept: `Vuelto Venta #${sale.id}`, amount: -c.amount, currency: pm.currency });
+                });
+            });
+            // Manual Movements
+            cashMovements.filter(m => m.paymentMethodId === pm.id).forEach(m => {
+                 allMovements.push({ date: m.date, type: m.type, concept: m.concept, amount: m.type === 'Entrada' ? m.amount : -m.amount, currency: pm.currency });
+            });
+        };
+
+        if (selectedCashDrawerFilter === 'all') {
+           return [];
+        } else if (filterPm) {
+            processMovements(filterPm);
+        }
+
+        return allMovements.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    }, [selectedCashDrawerFilter, initialBalances, sales, cashMovements, paymentMethodsList]);
 
 
     useEffect(() => {
@@ -1186,59 +1229,101 @@ export default function PosPage() {
                     <DialogHeader>
                         <DialogTitle>Estado de Caja</DialogTitle>
                          <DialogDescription>
-                           Resumen de los movimientos y saldos actuales de la caja.
+                           Resumen interactivo de los movimientos y saldos de la caja.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="max-h-[85vh] overflow-y-auto pr-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-                            {/* Left Side: Summary and Actions */}
-                            <div className="space-y-6">
-                                <Card>
-                                    <CardHeader><CardTitle>Resumen General</CardTitle></CardHeader>
-                                    <CardContent className="space-y-2 text-sm">
-                                        <div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">Bs {formatBs(totalCashDrawer.initial.ves)} (${formatUsd(totalCashDrawer.initial.usd)})</span></div>
-                                        <div className="flex justify-between"><span>Ingresos (Ventas + Entradas):</span> <span className="font-medium text-green-600">+ Bs {formatBs(totalCashDrawer.income.ves)} (${formatUsd(totalCashDrawer.income.usd)})</span></div>
-                                        <div className="flex justify-between"><span>Salidas (Vueltos + Salidas):</span> <span className="font-medium text-red-600">- Bs {formatBs(totalCashDrawer.outcome.ves)} (${formatUsd(totalCashDrawer.outcome.usd)})</span></div>
-                                        <Separator/>
-                                        <div className="flex justify-between font-bold text-base"><span>Saldo Actual en Caja:</span> <span>Bs {formatBs(totalCashDrawer.final.ves)} (${formatUsd(totalCashDrawer.final.usd)})</span></div>
-                                    </CardContent>
-                                    <CardFooter>
-                                        <Button className="w-full" onClick={() => { setIsCashMovementModalOpen(true); resetMovementForm(); }}>
-                                            <ArrowDownUp className="mr-2 h-4 w-4" />
-                                            Registrar Movimiento
-                                        </Button>
-                                    </CardFooter>
-                                </Card>
-                            </div>
-                            {/* Right Side: Detailed Breakdown */}
+                    <div className="max-h-[85vh] overflow-y-auto pr-4 -mx-4 px-4">
+                        <div className="space-y-6 py-4">
+                            <Card>
+                                <CardHeader><CardTitle>Resumen General</CardTitle></CardHeader>
+                                <CardContent className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span>Saldo Inicial Total:</span>
+                                        <span className="font-medium">
+                                            Bs {formatBs(totalCashDrawer.initial.ves + convertToVes(totalCashDrawer.initial.usd))} 
+                                            (${formatUsd(totalCashDrawer.initial.usd + convertToUsd(totalCashDrawer.initial.ves))})
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span>Saldo Actual Total:</span>
+                                        <span className="font-bold text-lg">
+                                            Bs {formatBs(totalCashDrawer.final.ves + convertToVes(totalCashDrawer.final.usd))} 
+                                            (${formatUsd(totalCashDrawer.final.usd + convertToUsd(totalCashDrawer.final.ves))})
+                                        </span>
+                                    </div>
+                                </CardContent>
+                                <CardFooter>
+                                    <Button className="w-full" onClick={() => { setIsCashMovementModalOpen(true); resetMovementForm(); }}>
+                                        <ArrowDownUp className="mr-2 h-4 w-4" />
+                                        Registrar Movimiento Manual
+                                    </Button>
+                                </CardFooter>
+                            </Card>
+                            
                             <div className="space-y-4">
-                                <Label>Desglose por Forma de Pago</Label>
-                                <div className="space-y-3">
+                                <Label>Saldos Actuales por Método de Pago</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                                     {paymentMethodsList.map(pm => {
                                         const state = cashDrawerState[pm.id];
                                         if (!state) return null;
                                         const format = pm.currency === '$' ? formatUsd : formatBs;
                                         return (
-                                            <Card key={pm.id}>
-                                                <CardHeader className="pb-2">
-                                                    <CardTitle className="text-base flex justify-between items-center">
-                                                        <span>{pm.name}</span>
-                                                        <Badge variant={pm.type === 'Efectivo' ? 'secondary' : 'outline'}>{pm.type}</Badge>
-                                                    </CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="space-y-1 text-xs">
-                                                    <div className="flex justify-between"><span>Inicial:</span> <span>{format(state.initial)}</span></div>
-                                                    <div className="flex justify-between"><span>+ Ventas:</span> <span>{format(state.sales)}</span></div>
-                                                    <div className="flex justify-between"><span>+ Entradas:</span> <span>{format(state.movementsIn)}</span></div>
-                                                    <div className="flex justify-between"><span>- Salidas/Vueltos:</span> <span>{format(state.movementsOut)}</span></div>
-                                                    <Separator className="my-1"/>
-                                                    <div className="flex justify-between font-semibold"><span>Final:</span> <span>{format(state.final)}</span></div>
-                                                </CardContent>
-                                            </Card>
+                                            <Button 
+                                                key={pm.id} 
+                                                variant={selectedCashDrawerFilter === pm.id ? "default" : "outline"} 
+                                                className="h-auto flex-col items-start p-3"
+                                                onClick={() => setSelectedCashDrawerFilter(pm.id)}
+                                            >
+                                                <p className="font-semibold text-xs">{pm.name}</p>
+                                                <p className="text-lg font-bold">{format(state.final)}</p>
+                                            </Button>
                                         )
                                     })}
                                 </div>
                             </div>
+                            
+                            {selectedCashDrawerFilter !== 'all' && (
+                                <div className="space-y-4">
+                                    <Label>Historial de Movimientos: {paymentMethodsList.find(pm => pm.id === selectedCashDrawerFilter)?.name}</Label>
+                                    <Card>
+                                        <CardContent className="p-0">
+                                            <Table>
+                                                <TableHeader>
+                                                    <TableRow>
+                                                        <TableHead>Tipo</TableHead>
+                                                        <TableHead>Concepto</TableHead>
+                                                        <TableHead className="text-right">Monto</TableHead>
+                                                    </TableRow>
+                                                </TableHeader>
+                                                <TableBody>
+                                                    {compiledMovements.length > 0 ? compiledMovements.map((mov, index) => (
+                                                        <TableRow key={index}>
+                                                            <TableCell>
+                                                                <Badge variant={
+                                                                    mov.type === 'Venta' || mov.type === 'Entrada' || mov.type === 'Apertura' ? 'default' : 'destructive'
+                                                                } className={cn({
+                                                                    'bg-green-100 text-green-800': mov.type === 'Venta' || mov.type === 'Entrada' || mov.type === 'Apertura',
+                                                                    'bg-red-100 text-red-800': mov.type === 'Salida' || mov.type === 'Vuelto'
+                                                                })}>
+                                                                    {mov.type}
+                                                                </Badge>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <p className="font-medium truncate">{mov.concept}</p>
+                                                                <p className="text-xs text-muted-foreground">{new Date(mov.date).toLocaleString('es-VE')}</p>
+                                                            </TableCell>
+                                                            <TableCell className="text-right font-mono">{mov.currency === '$' ? formatUsd(mov.amount) : formatBs(mov.amount)}</TableCell>
+                                                        </TableRow>
+                                                    )) : (
+                                                         <TableRow><TableCell colSpan={3} className="text-center h-24">No hay movimientos para mostrar.</TableCell></TableRow>
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            )}
+
                         </div>
                     </div>
                     <DialogFooter>
