@@ -320,13 +320,18 @@ export default function SalesPage() {
                 const dayDate = parseISO(day);
                 const dayTotal = sales.reduce((sum, s) => sum + s.total, 0);
                 return (
-                    <Collapsible key={day} defaultOpen={selectedDate !== null || groupedSalesByDay.length === 1} className="space-y-2">
+                    <Collapsible key={day} defaultOpen={false} className="space-y-2">
                         <Card>
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 group">
                                     <p className="font-semibold capitalize">{format(dayDate, "eeee, d", {locale: es})}</p>
                                     <div className='flex items-center gap-2'>
-                                        <Badge variant="secondary">${formatUsd(dayTotal)}</Badge>
+                                        <Badge variant="secondary" className="h-auto">
+                                          <div className="text-right">
+                                            <div className="font-semibold text-sm">Bs {formatBs(dayTotal * bcvRate)}</div>
+                                            <div className="text-xs text-muted-foreground font-normal">(${formatUsd(dayTotal)})</div>
+                                          </div>
+                                        </Badge>
                                         <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                                     </div>
                                 </div>
