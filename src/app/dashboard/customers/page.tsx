@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,7 +9,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter
 } from "@/components/ui/card";
 import {
   DropdownMenu,
@@ -18,8 +17,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { MoreHorizontal, PlusCircle, UserPlus, Car, Trash2, Plus, Users, MessageSquare, Home, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { MoreHorizontal, PlusCircle, UserPlus, Car, Trash2, Plus, Users, MessageSquare, Home, Eye, Edit, Search, Phone, Mail, MapPin } from "lucide-react";
 import { customers as initialCustomers } from "@/lib/placeholder-data";
 import { Customer, Vehicle } from "@/lib/types";
 import { Input } from "@/components/ui/input";
@@ -29,20 +28,64 @@ import { toast } from "@/hooks/use-toast";
 import { useBusinessContext } from "@/hooks/use-business-context";
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
+// Helper components for the view modal
+const CustomerInfoRow = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value?: string }) => (
+    <div className="flex items-start gap-4">
+        <Icon className="h-5 w-5 text-muted-foreground mt-1" />
+        <div className="flex-1">
+            <p className="text-sm text-muted-foreground">{label}</p>
+            <p className="font-medium">{value || 'No especificado'}</p>
+        </div>
+    </div>
+);
+
+const VehicleInfoCard = ({ vehicle }: { vehicle: Vehicle }) => (
+    <Card className="bg-muted/50">
+        <CardHeader className="flex-row items-center gap-4 pb-2">
+            <Car className="h-6 w-6" />
+            <CardTitle className="text-base">{vehicle.brand} {vehicle.model}</CardTitle>
+            <Badge variant="outline" className="ml-auto">{vehicle.year}</Badge>
+        </CardHeader>
+        <CardContent className="text-sm text-muted-foreground">
+            Motor: {vehicle.engine || 'N/A'}
+        </CardContent>
+    </Card>
+);
 
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
-  const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  
+  // Modals state
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingCustomer, setViewingCustomer] = useState<Customer | null>(null);
+
+  // Forms state
   const [customerForm, setCustomerForm] = useState<Omit<Customer, 'id'>>({ name: '', idNumber: '', address: '', phone: '', secondaryPhone: '', vehicles: [] });
   const [vehicleForm, setVehicleForm] = useState<Vehicle>({ brand: '', model: '', engine: '', year: '' });
   
   const { businessCategory } = useBusinessContext();
   const showVehiclesTab = businessCategory === 'Venta de Repuestos';
 
+  const filteredCustomers = useMemo(() => {
+    if (!searchTerm) {
+        return customers;
+    }
+    const lowercasedTerm = searchTerm.toLowerCase();
+    return customers.filter(customer =>
+        customer.name.toLowerCase().includes(lowercasedTerm) ||
+        customer.idNumber.toLowerCase().includes(lowercasedTerm) ||
+        customer.phone.includes(lowercasedTerm)
+    );
+  }, [customers, searchTerm]);
 
-  const openCustomerModal = (customer: Customer | null) => {
+
+  const openEditModal = (customer: Customer | null) => {
       if (customer) {
           setEditingCustomer(customer);
           setCustomerForm({ ...customer });
@@ -50,8 +93,13 @@ export default function CustomersPage() {
           setEditingCustomer(null);
           setCustomerForm({ name: '', idNumber: '', address: '', phone: '', secondaryPhone: '', vehicles: [] });
       }
-      setIsCustomerModalOpen(true);
+      setIsEditModalOpen(true);
   };
+  
+  const openViewModal = (customer: Customer) => {
+      setViewingCustomer(customer);
+      setIsViewModalOpen(true);
+  }
 
   const handleCustomerFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setCustomerForm({ ...customerForm, [e.target.id]: e.target.value });
@@ -89,7 +137,7 @@ export default function CustomersPage() {
           setCustomers([...customers, newCustomer]);
           toast({ title: "Cliente Creado", description: `Se ha registrado a ${newCustomer.name}.` });
       }
-      setIsCustomerModalOpen(false);
+      setIsEditModalOpen(false);
   };
   
   const handleDeleteCustomer = (customerId: string) => {
@@ -98,38 +146,47 @@ export default function CustomersPage() {
   }
   
   const formatPhoneNumberForWhatsApp = (phone: string) => {
-    // Remove non-digit characters and the leading '0'
     const digitsOnly = phone.replace(/\D/g, '');
     if (digitsOnly.startsWith('0')) {
         return `58${digitsOnly.substring(1)}`;
     }
-    // Assuming it might already be in a format like 4141234567, add country code
     if(digitsOnly.length === 10) {
         return `58${digitsOnly}`;
     }
-    return phone; // Fallback
+    return phone;
   }
 
 
   return (
     <>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
+        <CardHeader className="flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex-1">
             <CardTitle>Clientes</CardTitle>
             <CardDescription>
               Administra la base de datos de tus clientes.
             </CardDescription>
           </div>
-          <Button size="sm" className="gap-1" onClick={() => openCustomerModal(null)}>
-            <PlusCircle className="h-4 w-4" />
-            Añadir Cliente
-          </Button>
+          <div className="flex w-full md:w-auto items-center gap-2">
+            <div className="relative flex-1 md:flex-initial">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar cliente..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <Button size="sm" className="gap-1" onClick={() => openEditModal(null)}>
+              <PlusCircle className="h-4 w-4" />
+              Añadir
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
-            {customers.length > 0 ? (
+            {filteredCustomers.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {customers.map((customer) => (
+                    {filteredCustomers.map((customer) => (
                         <Card key={customer.id} className="flex flex-col">
                             <CardHeader className="flex-row gap-4 items-start pb-4">
                                <div className="flex-1">
@@ -145,10 +202,10 @@ export default function CustomersPage() {
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
                                         <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                        <DropdownMenuItem onClick={() => openCustomerModal(customer)}><Eye className="mr-2 h-4 w-4" />Ver Detalles</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => openCustomerModal(customer)}>Editar</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => openViewModal(customer)}><Eye className="mr-2 h-4 w-4" />Ver Detalles</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => openEditModal(customer)}><Edit className="mr-2 h-4 w-4"/>Editar</DropdownMenuItem>
                                         <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteCustomer(customer.id)}>
-                                            Eliminar
+                                            <Trash2 className="mr-2 h-4 w-4" />Eliminar
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
@@ -187,14 +244,15 @@ export default function CustomersPage() {
             ) : (
                  <div className="flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed rounded-lg p-12">
                     <Users className="h-12 w-12 mb-4" />
-                    <h3 className="text-lg font-semibold">No hay clientes registrados</h3>
-                    <p className="text-sm">Haz clic en "Añadir Cliente" para empezar.</p>
+                    <h3 className="text-lg font-semibold">No se encontraron clientes</h3>
+                    <p className="text-sm">Intenta con otro término de búsqueda o añade un nuevo cliente.</p>
                 </div>
             )}
         </CardContent>
       </Card>
       
-      <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
+      {/* Edit/Create Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
         <DialogContent className="max-w-3xl">
             <DialogHeader>
                   <DialogTitle>{editingCustomer ? 'Editar Cliente' : 'Crear Nuevo Cliente'}</DialogTitle>
@@ -214,7 +272,7 @@ export default function CustomersPage() {
                             <Label htmlFor="idNumber">Cédula / RIF</Label>
                             <Input id="idNumber" value={customerForm.idNumber} onChange={handleCustomerFormChange} placeholder="V-12345678" />
                         </div>
-                        <div className="space-y-2">
+                        <div className="col-span-2 space-y-2">
                             <Label htmlFor="address">Dirección</Label>
                             <Input id="address" value={customerForm.address} onChange={handleCustomerFormChange} placeholder="Av. Principal, Casa #1" />
                         </div>
@@ -277,11 +335,57 @@ export default function CustomersPage() {
                 )}
             </Tabs>
               <DialogFooter className="pt-4">
-                <Button variant="outline" onClick={() => setIsCustomerModalOpen(false)}>Cancelar</Button>
+                <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancelar</Button>
                 <Button onClick={handleSaveCustomer}>Guardar Cliente</Button>
             </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* View Details Modal */}
+      <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
+        <DialogContent className="max-w-2xl">
+            {viewingCustomer && (
+                <>
+                    <DialogHeader>
+                        <DialogTitle>{viewingCustomer.name}</DialogTitle>
+                        <DialogDescription>{viewingCustomer.idNumber}</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-6">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-lg">Información de Contacto</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <CustomerInfoRow icon={Home} label="Dirección" value={viewingCustomer.address} />
+                                <CustomerInfoRow icon={MessageSquare} label="Teléfono / WhatsApp" value={viewingCustomer.phone} />
+                                <CustomerInfoRow icon={Phone} label="Teléfono Secundario" value={viewingCustomer.secondaryPhone} />
+                            </CardContent>
+                        </Card>
+
+                        {showVehiclesTab && (
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-lg">Vehículos Registrados</CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    {viewingCustomer.vehicles.length > 0 ? (
+                                        viewingCustomer.vehicles.map((vehicle, index) => <VehicleInfoCard key={index} vehicle={vehicle} />)
+                                    ) : (
+                                        <p className="text-muted-foreground text-sm">Este cliente no tiene vehículos registrados.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>Cerrar</Button>
+                    </DialogFooter>
+                </>
+            )}
         </DialogContent>
       </Dialog>
     </>
   );
 }
+
+    
