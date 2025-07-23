@@ -76,7 +76,7 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
       <div className="flex-1 space-y-2 p-4 overflow-y-auto">
         <nav className="flex-1 space-y-2">
             <NavLink href="/dashboard" icon={LayoutDashboard} onClick={onLinkClick}>Resumen</NavLink>
-            <NavLink href="/dashboard/pos" icon={Store} onClick={onLinkClick}>TPV</NavLink>
+            <NavLink href="/dashboard/pos" icon={Store} onClick={onLinkClick}>Punto de Venta</NavLink>
             <NavLink href="/dashboard/sales" icon={LineChart} onClick={onLinkClick}>Ventas</NavLink>
             <NavLink href="/dashboard/inventory" icon={Package} onClick={onLinkClick}>Inventario</NavLink>
             <NavLink href="/dashboard/customers" icon={Users} onClick={onLinkClick}>Clientes</NavLink>
