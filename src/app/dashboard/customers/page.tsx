@@ -33,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
+import { useBusinessContext } from "@/hooks/use-business-context";
 
 
 export default function CustomersPage() {
@@ -41,6 +42,10 @@ export default function CustomersPage() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [customerForm, setCustomerForm] = useState<Omit<Customer, 'id'>>({ name: '', idNumber: '', email: '', phone: '', vehicles: [] });
   const [vehicleForm, setVehicleForm] = useState<Vehicle>({ brand: '', model: '', engine: '', year: '' });
+  
+  const { businessCategory } = useBusinessContext();
+  const showVehiclesTab = businessCategory === 'Venta de Repuestos';
+
 
   const openCustomerModal = (customer: Customer | null) => {
       if (customer) {
@@ -161,9 +166,9 @@ export default function CustomersPage() {
                   <DialogTitle>{editingCustomer ? 'Editar Cliente' : 'Crear Nuevo Cliente'}</DialogTitle>
             </DialogHeader>
             <Tabs defaultValue="personal">
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full" style={{ gridTemplateColumns: showVehiclesTab ? '1fr 1fr' : '1fr' }}>
                     <TabsTrigger value="personal">Información Personal</TabsTrigger>
-                    <TabsTrigger value="vehicles">Vehículos</TabsTrigger>
+                    {showVehiclesTab && <TabsTrigger value="vehicles">Vehículos</TabsTrigger>}
                 </TabsList>
                 <TabsContent value="personal" className="py-4">
                       <div className="grid grid-cols-2 gap-4">
@@ -185,51 +190,53 @@ export default function CustomersPage() {
                         </div>
                     </div>
                 </TabsContent>
-                <TabsContent value="vehicles" className="py-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Añadir Vehículo</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
-                            <div className="space-y-2 md:col-span-1">
-                                <Label htmlFor="brand">Marca</Label>
-                                <Input id="brand" value={vehicleForm.brand} onChange={handleVehicleFormChange} placeholder="Ej: Toyota" />
-                            </div>
-                            <div className="space-y-2 md:col-span-1">
-                                <Label htmlFor="model">Modelo</Label>
-                                <Input id="model" value={vehicleForm.model} onChange={handleVehicleFormChange} placeholder="Ej: Corolla" />
-                            </div>
-                            <div className="space-y-2 md:col-span-1">
-                                <Label htmlFor="engine">Motor</Label>
-                                <Input id="engine" value={vehicleForm.engine} onChange={handleVehicleFormChange} placeholder="Ej: 1.8L" />
-                            </div>
-                              <div className="space-y-2 md:col-span-1">
-                                <Label htmlFor="year">Año</Label>
-                                <Input id="year" type="number" value={vehicleForm.year} onChange={handleVehicleFormChange} placeholder="Ej: 2022" />
-                            </div>
-                            <Button onClick={addVehicle} size="icon"><Plus className="h-4 w-4" /></Button>
-                        </CardContent>
-                    </Card>
-                    <div className="mt-6 space-y-4 max-h-60 overflow-y-auto pr-2">
-                        {customerForm.vehicles.map((vehicle, index) => (
-                            <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                                <div className="flex items-center gap-4">
-                                    <Car className="h-6 w-6 text-muted-foreground" />
-                                    <div>
-                                        <p className="font-semibold">{vehicle.brand} {vehicle.model} ({vehicle.year})</p>
-                                        <p className="text-sm text-muted-foreground">Motor: {vehicle.engine}</p>
-                                    </div>
+                {showVehiclesTab && (
+                    <TabsContent value="vehicles" className="py-4">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Añadir Vehículo</CardTitle>
+                            </CardHeader>
+                            <CardContent className="grid grid-cols-2 md:grid-cols-5 gap-4 items-end">
+                                <div className="space-y-2 md:col-span-1">
+                                    <Label htmlFor="brand">Marca</Label>
+                                    <Input id="brand" value={vehicleForm.brand} onChange={handleVehicleFormChange} placeholder="Ej: Toyota" />
                                 </div>
-                                <Button variant="ghost" size="icon" onClick={() => removeVehicle(index)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                </Button>
-                            </div>
-                        ))}
-                         {customerForm.vehicles.length === 0 && (
-                            <p className="text-center text-muted-foreground">Este cliente no tiene vehículos registrados.</p>
-                        )}
-                    </div>
-                </TabsContent>
+                                <div className="space-y-2 md:col-span-1">
+                                    <Label htmlFor="model">Modelo</Label>
+                                    <Input id="model" value={vehicleForm.model} onChange={handleVehicleFormChange} placeholder="Ej: Corolla" />
+                                </div>
+                                <div className="space-y-2 md:col-span-1">
+                                    <Label htmlFor="engine">Motor</Label>
+                                    <Input id="engine" value={vehicleForm.engine} onChange={handleVehicleFormChange} placeholder="Ej: 1.8L" />
+                                </div>
+                                <div className="space-y-2 md:col-span-1">
+                                    <Label htmlFor="year">Año</Label>
+                                    <Input id="year" type="number" value={vehicleForm.year} onChange={handleVehicleFormChange} placeholder="Ej: 2022" />
+                                </div>
+                                <Button onClick={addVehicle} size="icon"><Plus className="h-4 w-4" /></Button>
+                            </CardContent>
+                        </Card>
+                        <div className="mt-6 space-y-4 max-h-60 overflow-y-auto pr-2">
+                            {customerForm.vehicles.map((vehicle, index) => (
+                                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                                    <div className="flex items-center gap-4">
+                                        <Car className="h-6 w-6 text-muted-foreground" />
+                                        <div>
+                                            <p className="font-semibold">{vehicle.brand} {vehicle.model} ({vehicle.year})</p>
+                                            <p className="text-sm text-muted-foreground">Motor: {vehicle.engine}</p>
+                                        </div>
+                                    </div>
+                                    <Button variant="ghost" size="icon" onClick={() => removeVehicle(index)}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                </div>
+                            ))}
+                            {customerForm.vehicles.length === 0 && (
+                                <p className="text-center text-muted-foreground">Este cliente no tiene vehículos registrados.</p>
+                            )}
+                        </div>
+                    </TabsContent>
+                )}
             </Tabs>
               <DialogFooter className="pt-4">
                 <Button variant="outline" onClick={() => setIsCustomerModalOpen(false)}>Cancelar</Button>

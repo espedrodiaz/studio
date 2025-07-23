@@ -24,6 +24,19 @@ const createSubject = () => {
 
 export const bcvRateSubject = createSubject();
 
+export const businessCategories = [
+    "Abastos y Bodegas",
+    "Restaurantes y Cafés",
+    "Farmacias",
+    "Ferreterías",
+    "Tiendas de Ropa y Accesorios",
+    "Servicios Profesionales",
+    "Venta de Repuestos",
+    "Supermercados",
+    "Panaderías y Pastelerías",
+    "Otro",
+];
+
 
 export let products = [
   { id: 'PROD001', name: 'Café Molido 500g', stock: 150, purchasePrice: 4.50, salePrice: 7.00 },
