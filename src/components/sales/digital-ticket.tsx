@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useRef } from 'react';
-// import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Printer, Download, Send } from "lucide-react";
@@ -71,18 +71,18 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
     };
 
     const handleDownloadImage = () => {
-        // if (ticketRef.current) {
-        //     html2canvas(ticketRef.current, {
-        //          useCORS: true,
-        //          backgroundColor: '#ffffff',
-        //          scale: 2,
-        //     }).then(canvas => {
-        //         const link = document.createElement('a');
-        //         link.download = `ticket-${saleData.id}.png`;
-        //         link.href = canvas.toDataURL('image/png');
-        //         link.click();
-        //     });
-        // }
+        if (ticketRef.current) {
+            html2canvas(ticketRef.current, {
+                 useCORS: true,
+                 backgroundColor: '#ffffff',
+                 scale: 2,
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `ticket-${saleData.id}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
     };
     
     const handleShareWhatsApp = () => {
@@ -267,7 +267,7 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                     </div>
                     <DialogFooter className="p-6 pt-4 flex-wrap sm:justify-start gap-2">
                         <Button type="button" variant="secondary" onClick={handleShareWhatsApp}><Send className="mr-2 h-4 w-4"/> WhatsApp</Button>
-                        <Button type="button" variant="secondary" onClick={handleDownloadImage} disabled><Download className="mr-2 h-4 w-4"/> Descargar</Button>
+                        <Button type="button" variant="secondary" onClick={handleDownloadImage}><Download className="mr-2 h-4 w-4"/> Descargar</Button>
                         <Button type="button" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/> Imprimir</Button>
                     </DialogFooter>
                 </div>
