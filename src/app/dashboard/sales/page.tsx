@@ -9,7 +9,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   Table,
@@ -55,6 +54,7 @@ import {
     isWithinInterval,
     startOfDay,
     endOfDay,
+    isAfter,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -86,7 +86,11 @@ export default function SalesPage() {
         if (sortedSales.length > 0) {
             setCurrentDate(lastSaleDate);
         }
-    }, [sortedSales.length, lastSaleDate, viewMode]);
+    }, [sortedSales.length, lastSaleDate]);
+
+    useEffect(() => {
+      setSelectedDate(null);
+    }, [viewMode])
 
 
   const { interval, dateRangeLabel, isPrevDisabled, isNextDisabled } = useMemo(() => {
@@ -101,18 +105,17 @@ export default function SalesPage() {
       end = endOfMonth(currentDate);
       label = format(currentDate, 'MMMM yyyy', { locale: es });
     }
-
+    
     const prevIntervalEnd = subDays(start, 1);
     const hasSalesInPrevPeriod = sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: firstSaleDate, end: prevIntervalEnd }));
     
     const nextIntervalStart = addDays(end, 1);
-    const hasSalesInNextPeriod = sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: nextIntervalStart, end: lastSaleDate }));
 
     return { 
       interval: { start, end }, 
       dateRangeLabel: label, 
-      isPrevDisabled: !hasSalesInPrevPeriod,
-      isNextDisabled: !hasSalesInNextPeriod && end < lastSaleDate
+      isPrevDisabled: !isAfter(start, firstSaleDate),
+      isNextDisabled: isAfter(nextIntervalStart, lastSaleDate)
     };
   }, [currentDate, viewMode, sortedSales, firstSaleDate, lastSaleDate]);
 
@@ -126,7 +129,6 @@ export default function SalesPage() {
   const handleViewChange = (v: string) => {
     const newViewMode = v as 'week' | 'month';
     setViewMode(newViewMode);
-    setSelectedDate(null);
   }
 
   const handleDateChange = (direction: 'prev' | 'next') => {
@@ -257,16 +259,16 @@ export default function SalesPage() {
                 </Button>
             </CardHeader>
             {viewMode === 'week' && (
-                <CardContent className="flex justify-center flex-wrap gap-1 md:gap-2">
+                <CardContent className="flex justify-center flex-wrap gap-0.5 md:gap-2">
                     {daysInInterval.map(day => (
                         <Button 
                             key={day.toString()} 
                             variant={isSameDay(day, selectedDate || new Date(0)) ? 'default' : 'outline'}
-                            className="flex-col h-12 w-10 flex-shrink-0"
+                            className="flex-col h-11 w-9 flex-shrink-0"
                             onClick={() => setSelectedDate(isSameDay(day, selectedDate || new Date(0)) ? null : day)}
                             disabled={!isWithinInterval(day, { start: firstSaleDate, end: lastSaleDate })}
                         >
-                            <span>{format(day, 'd')}</span>
+                            <span className="text-sm">{format(day, 'd')}</span>
                             <span className="text-xs capitalize">{format(day, 'eee', { locale: es })}</span>
                         </Button>
                     ))}
@@ -303,10 +305,12 @@ export default function SalesPage() {
                  )
                })}
             </CardContent>
-             <CardFooter className="flex justify-between items-center p-4 mt-4 bg-muted/50 rounded-b-lg">
-                <span className="font-semibold">Total Vendido (Período)</span>
-                <span className="text-xl font-bold text-primary">${formatUsd(totalSoldInPeriod)}</span>
-            </CardFooter>
+             <CardContent className="p-4 mt-4 bg-muted/50 rounded-lg">
+                <div className="flex justify-between items-center">
+                    <span className="font-semibold">Total Vendido (Período)</span>
+                    <span className="text-xl font-bold text-primary">${formatUsd(totalSoldInPeriod)}</span>
+                </div>
+            </CardContent>
         </Card>
 
         <div className="space-y-4">
@@ -397,5 +401,3 @@ export default function SalesPage() {
     </div>
   );
 }
-
-    
