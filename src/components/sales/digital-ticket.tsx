@@ -19,8 +19,8 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
     if (!saleData) return null;
     
     const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const formatBs = (amount: number) => (amount * saleData.bcvRate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const formatBsFromVes = (amount: number) => amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatBs = (amount: number) => (amount * saleData.bcvRate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 
     const handlePrint = () => {
@@ -29,18 +29,17 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
             printWindow.document.write('<html><head><title>Ticket de Venta</title>');
             printWindow.document.write(`
                 <style>
-                    body { font-family: 'Courier New', monospace; margin: 0; padding: 10px; color: #000; }
-                    .ticket { width: 100%; max-width: 302px; /* 80mm */ }
-                    @media (max-width: 219px) { .ticket { max-width: 219px; /* 58mm */ } }
-                    h1, h2, h3, p { margin: 0; padding: 0; }
+                    body { font-family: 'Courier New', monospace; margin: 0; padding: 10px; color: #000; background: #fff; }
+                    .ticket { width: 100%; max-width: 302px; margin: 0 auto; }
+                    h1, h2, h3, p { margin: 0; padding: 0; font-family: 'Courier New', monospace; }
                     .text-center { text-align: center; }
                     .text-right { text-align: right; }
                     .separator { border-top: 1px dashed #000; margin: 10px 0; }
-                    table { width: 100%; border-collapse: collapse; }
-                    th, td { font-size: 0.8rem; padding: 2px 0; }
+                    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+                    th, td { padding: 2px 0; }
                     .items-table th { text-align: left; border-bottom: 1px solid #000; }
+                    .items-table .total-col { text-align: right; }
                     .totals-table td { padding: 2px 0; }
-                    .qr-code { margin: 10px auto; display: block; }
                     @page { size: auto; margin: 5mm; }
                 </style>
             `);
@@ -76,6 +75,7 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
             let message = `*FacilitoPOS - Recibo de Venta*\n\n`;
             message += `Ticket: *${saleData.id}*\n`;
             message += `Fecha: ${new Date(saleData.date).toLocaleString('es-VE')}\n`;
+            message += `Tasa: ${formatBsFromVes(saleData.bcvRate)} Bs/USD\n`;
             message += `Cliente: ${saleData.customer?.name || 'Cliente Ocasional'}\n\n`;
             message += `*--- Productos ---*\n`;
             saleData.items.forEach(item => {
@@ -109,32 +109,28 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                         Ticket de venta generado. Puede imprimirlo, descargarlo o compartirlo.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="bg-white text-black p-4 rounded-lg max-h-[60vh] overflow-y-auto" id="ticket-content" ref={ticketRef}>
-                    <div className="text-center">
-                        <PosLogo className="text-2xl text-black" />
-                        <p className="text-xs">RIF: J-12345678-9</p>
-                        <p className="text-xs">Av. Principal, Local 1, Ciudad</p>
-                        <p className="text-xs">Tel: 0212-555-5555</p>
+                <div className="bg-white text-black p-4 rounded-lg max-h-[60vh] overflow-y-auto ticket" id="ticket-content" ref={ticketRef}>
+                    <div className="text-center mb-2">
+                        <h2 className="text-lg font-bold">FacilitoPOS</h2>
+                        <p className="text-xs">Fecha: {new Date(saleData.date).toLocaleString('es-VE', { year: '2-digit', month: 'numeric', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true })}</p>
+                        <p className="text-xs">Tasa: {formatBsFromVes(saleData.bcvRate)} Bs / USD</p>
                     </div>
 
                     <div className="separator"></div>
 
-                    <p className="text-xs">Ticket: {saleData.id}</p>
-                    <p className="text-xs">Fecha: {new Date(saleData.date).toLocaleString('es-VE')}</p>
-                    <p className="text-xs">Cliente: {saleData.customer?.name || 'Cliente Ocasional'}</p>
-                    <p className="text-xs">Cédula/RIF: {saleData.customer?.idNumber || 'N/A'}</p>
-
-                    <div className="separator"></div>
+                    <p className="text-xs">Cliente: {saleData.customer?.name || 'Cliente Genérico'}</p>
                     
+                    <div className="separator"></div>
+
+                    <h3 className="text-sm font-bold mb-1">Productos</h3>
                     <table className="items-table">
-                        <thead><tr><th>Desc</th><th>Cant</th><th>Precio</th><th>Total</th></tr></thead>
+                        <thead><tr><th>Cant.</th><th>Producto</th><th className="total-col">Total</th></tr></thead>
                         <tbody>
                         {saleData.items.map(item => (
                             <tr key={item.id}>
+                                <td>{item.quantity}</td>
                                 <td>{item.name}</td>
-                                <td className="text-center">{item.quantity}</td>
-                                <td className="text-right">{formatBs(item.salePrice)}</td>
-                                <td className="text-right">{formatBs(item.salePrice * item.quantity)}</td>
+                                <td className="total-col">{formatBs(item.salePrice * item.quantity)}</td>
                             </tr>
                         ))}
                         </tbody>
@@ -144,34 +140,49 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                     
                     <table className="totals-table">
                         <tbody>
-                            <tr><td>SUBTOTAL:</td><td className="text-right">{formatBs(saleData.subtotal)}</td></tr>
+                            <tr>
+                                <td>Subtotal:</td>
+                                <td className="text-right">
+                                    <span className="font-bold">{formatBs(saleData.subtotal)} Bs</span>
+                                    <br/>
+                                    <span className="text-xs">(${formatUsd(saleData.subtotal)})</span>
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                     
                     <div className="separator"></div>
 
-                    <p className="text-xs font-bold">Forma de Pago:</p>
-                    {saleData.payments.map((p, index) => {
-                         if (!p.method) return null;
-                         const amountInBs = p.method.currency === '$' ? p.amount * saleData.bcvRate : p.amount;
-                         return (
-                            <table key={index} className="totals-table">
-                                <tbody><tr><td>{p.method?.name}</td><td className="text-right">Bs {formatBsFromVes(amountInBs)}</td></tr></tbody>
-                            </table>
-                         )
-                    })}
-                    <table className="totals-table font-bold">
-                        <tbody><tr><td>TOTAL PAGADO:</td><td className="text-right">Bs {formatBs(saleData.totalPaid)}</td></tr></tbody>
+                    <h3 className="text-sm font-bold mb-1">Pagos</h3>
+                    <table className="totals-table">
+                         <tbody>
+                            {saleData.payments.map((p, index) => {
+                                if (!p.method) return null;
+                                const amountInBs = p.method.currency === '$' ? p.amount * saleData.bcvRate : p.amount;
+                                return (
+                                    <tr key={index}>
+                                        <td>{p.method?.name}:</td>
+                                        <td className="text-right">{formatBsFromVes(amountInBs)} Bs</td>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
                     </table>
+                    
+                    <div className="separator"></div>
 
-                    {saleData.totalChange > 0 && (
-                        <>
-                        <div className="separator"></div>
-                        <table className="totals-table font-bold">
-                           <tbody><tr><td>VUELTO:</td><td className="text-right">Bs {formatBs(saleData.totalChange)}</td></tr></tbody>
-                        </table>
-                        </>
-                    )}
+                    <table className="totals-table">
+                         <tbody>
+                             <tr>
+                                <td>Total Pagado:</td>
+                                <td className="text-right">{formatBs(saleData.totalPaid)} Bs</td>
+                            </tr>
+                              <tr>
+                                <td>Vuelto:</td>
+                                <td className="text-right">{formatBs(saleData.totalChange)} Bs</td>
+                            </tr>
+                        </tbody>
+                    </table>
                     
                     <div className="separator"></div>
                     <p className="text-center text-xs">¡Gracias por su compra!</p>

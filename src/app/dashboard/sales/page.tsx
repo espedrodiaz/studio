@@ -419,12 +419,21 @@ export default function SalesPage() {
                                         <Collapsible key={sale.id} className={cn("border-b last:border-b-0", {"bg-red-50/50 text-red-900": sale.status === 'Anulada'})}>
                                             <CollapsibleTrigger asChild>
                                                 <div className="flex items-center p-4 cursor-pointer hover:bg-muted/10 group">
-                                                    <div className="flex-1 font-medium">{sale.customer}</div>
-                                                    <div className={cn("flex-1 text-right", {"line-through text-muted-foreground": sale.status === 'Anulada'})}>
-                                                        <div className="font-semibold text-sm">Bs {formatBs(sale.total * sale.bcvRate)}</div>
-                                                        <div className="text-xs text-muted-foreground font-normal">(${formatUsd(sale.total)})</div>
+                                                    <div className="flex-1">
+                                                        <p className="font-medium">{sale.customer}</p>
+                                                         <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                                            {sale.payments.map((p, i) => {
+                                                                const method = paymentMethods.find(pm => pm.id === p.methodId)
+                                                                if (!method) return null;
+                                                                return <Badge key={i} variant="outline" className="text-xs">{method.name}</Badge>
+                                                            })}
+                                                        </div>
                                                     </div>
-                                                    <div className="flex-1 flex justify-end items-center">
+                                                    <div className={cn("text-right", {"line-through text-muted-foreground": sale.status === 'Anulada'})}>
+                                                        <div className="font-semibold text-sm">Bs {formatBs(sale.total * sale.bcvRate)}</div>
+                                                        <div className="text-xs text-muted-foreground">(${formatUsd(sale.total)})</div>
+                                                    </div>
+                                                    <div className="flex justify-end items-center pl-4">
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
                                                                 <Button aria-haspopup="true" size="icon" variant="ghost">
