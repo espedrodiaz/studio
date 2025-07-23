@@ -259,6 +259,11 @@ export default function PosPage() {
     const [selectedChangeMethod, setSelectedChangeMethod] = useState<PaymentMethod | null>(null);
     const [changeAmount, setChangeAmount] = useState<number | ''>('');
     
+    const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const formatBs = (amount: number) => amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const convertToVes = (amountUsd: number) => amountUsd * bcvRate;
+    const convertToUsd = (amountVes: number) => amountVes / bcvRate;
+
     // Derived Calculations
     const cashDrawerState = useMemo(() => {
         const state: { [key: string]: { initial: number; sales: number; movementsIn: number; movementsOut: number; final: number } } = {};
@@ -289,15 +294,49 @@ export default function PosPage() {
     }, [initialBalances, sales, cashMovements, paymentMethodsList]);
     
     const totalCashDrawer = useMemo(() => {
-        const totals = { initial: 0, sales: 0, movementsOut: 0, final: 0 };
-        Object.values(cashDrawerState).forEach(state => {
-            const method = paymentMethodsList.find(pm => pm.id in cashDrawerState && cashDrawerState[pm.id] === state);
-            const rate = method?.currency === 'Bs' ? 1 / bcvRate : 1;
-            totals.initial += state.initial * rate;
-            totals.sales += (state.sales + state.movementsIn) * rate;
-            totals.movementsOut += state.movementsOut * rate;
-            totals.final += state.final * rate;
+        const totals = { 
+            initial: { usd: 0, ves: 0 }, 
+            sales: { usd: 0, ves: 0 }, 
+            movementsOut: { usd: 0, ves: 0 }, 
+            final: { usd: 0, ves: 0 } 
+        };
+
+        Object.entries(cashDrawerState).forEach(([pmId, state]) => {
+            const method = paymentMethodsList.find(pm => pm.id === pmId);
+            if (!method) return;
+
+            const isUsd = method.currency === '$';
+            const rate = bcvRate;
+
+            const amounts = {
+                initial: {
+                    usd: isUsd ? state.initial : convertToUsd(state.initial),
+                    ves: isUsd ? convertToVes(state.initial) : state.initial
+                },
+                sales: {
+                    usd: isUsd ? (state.sales + state.movementsIn) : convertToUsd(state.sales + state.movementsIn),
+                    ves: isUsd ? convertToVes(state.sales + state.movementsIn) : (state.sales + state.movementsIn)
+                },
+                movementsOut: {
+                    usd: isUsd ? state.movementsOut : convertToUsd(state.movementsOut),
+                    ves: isUsd ? convertToVes(state.movementsOut) : state.movementsOut
+                },
+                 final: {
+                    usd: isUsd ? state.final : convertToUsd(state.final),
+                    ves: isUsd ? convertToVes(state.final) : state.final
+                }
+            };
+
+            totals.initial.usd += amounts.initial.usd;
+            totals.initial.ves += amounts.initial.ves;
+            totals.sales.usd += amounts.sales.usd;
+            totals.sales.ves += amounts.sales.ves;
+            totals.movementsOut.usd += amounts.movementsOut.usd;
+            totals.movementsOut.ves += amounts.movementsOut.ves;
+            totals.final.usd += amounts.final.usd;
+            totals.final.ves += amounts.final.ves;
         });
+
         return totals;
     }, [cashDrawerState, paymentMethodsList, bcvRate]);
 
@@ -417,23 +456,26 @@ export default function PosPage() {
 
     const updateQuantity = (productId: string, newQuantity: number) => {
         if (newQuantity <= 0) {
-            setCart(prevCart => prevCart.filter(item => item.id !== productId));
+             setQuantityInputs(prev => ({ ...prev, [productId]: '1' }));
+             setCart(prevCart => prevCart.map(item => item.id === productId ? { ...item, quantity: 1 } : item));
+             toast({title: "Error de Cantidad", description: "La cantidad no puede ser cero o menor. Para eliminar el producto, use el botón de la papelera.", variant: "destructive"})
         } else {
             setCart(prevCart => prevCart.map(item => item.id === productId ? { ...item, quantity: newQuantity } : item));
         }
     };
     
+    const removeItemFromCart = (productId: string) => {
+        setCart(prevCart => prevCart.filter(item => item.id !== productId));
+    };
+
     const handleQuantityInputChange = (productId: string, value: string) => {
         setQuantityInputs(prev => ({ ...prev, [productId]: value }));
     };
 
     const handleQuantityInputBlur = (productId: string) => {
         const value = quantityInputs[productId];
-        if (value === '') {
-             const currentItem = cart.find(item => item.id === productId);
-             if (currentItem) {
-                 setQuantityInputs(prev => ({ ...prev, [productId]: String(currentItem.quantity) }));
-             }
+        if (value === '' || parseInt(value, 10) <= 0) {
+             updateQuantity(productId, 1);
              return;
         }
         const newQuantity = parseInt(value, 10);
@@ -448,18 +490,7 @@ export default function PosPage() {
             event.currentTarget.blur();
         }
     };
-
-
-    const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const formatBs = (amount: number) => amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
-    const convertToVes = (amountUsd: number) => {
-        return amountUsd * bcvRate;
-    }
-    const convertToUsd = (amountVes: number) => {
-        return amountVes / bcvRate;
-    }
-
     const handlePriceEdit = (item: CartItem) => {
         setIsEditingPrice(item);
         setPriceInUsd(item.salePrice.toFixed(2));
@@ -955,15 +986,26 @@ export default function PosPage() {
                       </div>
                   ) : (
                       <div className="space-y-4">
-                          {selectedCustomer && isCartExpanded && <Badge variant="secondary" className="w-fit mt-1">{selectedCustomer.name}</Badge>}
                            {cart.map(item => (
                             <Card key={item.id} className="p-4">
-                                <div className="flex justify-between items-start">
-                                    <p className="font-semibold leading-tight flex-1 pr-4">{item.name}</p>
-                                    <div className="flex items-center gap-2">
+                                <div className="grid grid-cols-[1fr_auto] gap-x-4">
+                                    <p className="font-semibold leading-tight col-span-2">{item.name}</p>
+
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                                        <Input
+                                            type="number"
+                                            value={quantityInputs[item.id] || ''}
+                                            onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
+                                            onBlur={() => handleQuantityInputBlur(item.id)}
+                                            onKeyDown={(e) => handleQuantityInputKeyDown(e, item.id)}
+                                            className="h-8 w-16 text-center"
+                                        />
+                                        <span>x {formatBs(convertToVes(item.salePrice))} Bs (${formatUsd(item.salePrice)})</span>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-end gap-2 row-start-2">
                                         <div className="text-right">
                                             <p className="font-semibold text-base">{formatBs(convertToVes(item.salePrice * item.quantity))}</p>
-                                            <p className="font-normal text-xs text-muted-foreground">${formatUsd(item.salePrice * item.quantity)}</p>
                                         </div>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -975,23 +1017,12 @@ export default function PosPage() {
                                                 <DropdownMenuItem onClick={() => handlePriceEdit(item)}>
                                                     <Pencil className="mr-2 h-4 w-4"/> Editar Precio
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive" onClick={() => updateQuantity(item.id, 0)}>
+                                                <DropdownMenuItem className="text-destructive" onClick={() => removeItemFromCart(item.id)}>
                                                     <Trash2 className="mr-2 h-4 w-4"/> Eliminar
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </div>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
-                                   <Input
-                                        type="number"
-                                        value={quantityInputs[item.id] || ''}
-                                        onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
-                                        onBlur={() => handleQuantityInputBlur(item.id)}
-                                        onKeyDown={(e) => handleQuantityInputKeyDown(e, item.id)}
-                                        className="h-8 w-16 text-center"
-                                    />
-                                    <span>x {formatBs(convertToVes(item.salePrice))} Bs (${formatUsd(item.salePrice)})</span>
                                 </div>
                             </Card>
                           ))}
@@ -1003,19 +1034,19 @@ export default function PosPage() {
                       <Separator />
                       <div className="flex justify-between font-semibold">
                           <span>Subtotal</span>
-                          <span>
-                              {formatBs(convertToVes(subtotal))} Bs
-                              <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(subtotal)})</span>
-                          </span>
+                          <div className="text-right">
+                            <span className="block">{formatBs(convertToVes(subtotal))} Bs</span>
+                            <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(subtotal)})</span>
+                          </div>
                       </div>
                       {step === 3 && (
                          <>
                           <div className="flex justify-between text-muted-foreground">
                               <span>Pagado</span>
-                               <span>
-                                  {formatBs(convertToVes(totalPaid))} Bs
-                                  <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(totalPaid)})</span>
-                              </span>
+                                <div className="text-right">
+                                    <span className="block">{formatBs(convertToVes(totalPaid))} Bs</span>
+                                    <span className="text-muted-foreground text-xs font-normal ml-1">(${formatUsd(totalPaid)})</span>
+                                </div>
                           </div>
                           <Separator />
                           <div className={`flex justify-between font-bold text-lg ${balance > 0 ? 'text-destructive' : 'text-primary'}`}>
@@ -1026,7 +1057,9 @@ export default function PosPage() {
                                         <span className="block text-sm font-normal text-muted-foreground">(${formatUsd(balance)})</span>
                                     </div>
                                 ) : (
-                                    <span className="block">{formatBs(convertToVes(subtotal))} Bs</span>
+                                    <div className="text-right">
+                                      <span className="block">{formatBs(convertToVes(subtotal))} Bs</span>
+                                    </div>
                                 )}
                           </div>
                           {changeToGive > 0 && (
@@ -1160,13 +1193,13 @@ export default function PosPage() {
                         {/* Left Side: Summary and Actions */}
                         <div className="space-y-6">
                              <Card>
-                                <CardHeader><CardTitle>Resumen General (USD)</CardTitle></CardHeader>
+                                <CardHeader><CardTitle>Resumen General</CardTitle></CardHeader>
                                 <CardContent className="space-y-2 text-sm">
-                                    <div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">${formatUsd(totalCashDrawer.initial)}</span></div>
-                                    <div className="flex justify-between"><span>Ingresos (Ventas + Entradas):</span> <span className="font-medium text-green-600">+ ${formatUsd(totalCashDrawer.sales)}</span></div>
-                                    <div className="flex justify-between"><span>Salidas (Vueltos + Salidas):</span> <span className="font-medium text-red-600">- ${formatUsd(totalCashDrawer.movementsOut)}</span></div>
+                                    <div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">Bs {formatBs(totalCashDrawer.initial.ves)} (${formatUsd(totalCashDrawer.initial.usd)})</span></div>
+                                    <div className="flex justify-between"><span>Ingresos (Ventas + Entradas):</span> <span className="font-medium text-green-600">+ Bs {formatBs(totalCashDrawer.sales.ves)} (${formatUsd(totalCashDrawer.sales.usd)})</span></div>
+                                    <div className="flex justify-between"><span>Salidas (Vueltos + Salidas):</span> <span className="font-medium text-red-600">- Bs {formatBs(totalCashDrawer.movementsOut.ves)} (${formatUsd(totalCashDrawer.movementsOut.usd)})</span></div>
                                     <Separator/>
-                                    <div className="flex justify-between font-bold text-base"><span>Saldo Actual en Caja:</span> <span>${formatUsd(totalCashDrawer.final)}</span></div>
+                                    <div className="flex justify-between font-bold text-base"><span>Saldo Actual en Caja:</span> <span>Bs {formatBs(totalCashDrawer.final.ves)} (${formatUsd(totalCashDrawer.final.usd)})</span></div>
                                 </CardContent>
                                 <CardFooter>
                                     <Button className="w-full" onClick={() => { setIsCashMovementModalOpen(true); resetMovementForm(); }}>
