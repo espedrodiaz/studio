@@ -172,15 +172,21 @@ export let sales: {
     customer: string;
     total: number;
     status: 'Pagada' | 'Pendiente';
+    items: {
+        productId: string;
+        name: string;
+        quantity: number;
+        price: number; // Price per unit at time of sale
+    }[];
     payments: { methodId: string, amount: number }[];
     changeGiven: { methodId: string, amount: number }[];
 }[] = [
-  { id: 'SALE001', date: '2024-07-29T10:00:00Z', customer: 'Ana Pérez', total: 10.00, status: 'Pagada', payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [] },
-  { id: 'SALE002', date: '2024-07-29T14:30:00Z', customer: 'Carlos Gómez', total: 25.50, status: 'Pagada', payments: [{ methodId: 'pay-03', amount: 25.50}], changeGiven: [] },
-  { id: 'SALE003', date: '2024-07-28T11:20:00Z', customer: 'María Rodríguez', total: 5.40, status: 'Pagada', payments: [{ methodId: 'pay-02', amount: 216 }], changeGiven: [] },
-  { id: 'SALE004', date: '2024-07-28T09:05:00Z', customer: 'Cliente Ocasional', total: 12.80, status: 'Pagada', payments: [{ methodId: 'pay-04', amount: 512 }], changeGiven: [] },
-  { id: 'SALE005', date: '2024-07-27T16:45:00Z', customer: 'Ana Pérez', total: 7.00, status: 'Pagada', payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [{ methodId: 'pay-01', amount: 3}] },
-  { id: 'SALE006', date: '2024-06-20T16:45:00Z', customer: 'Luis Hernández', total: 50.00, status: 'Pagada', payments: [{ methodId: 'pay-01', amount: 50}], changeGiven: [] },
+  { id: 'SALE001', date: '2024-07-29T10:00:00Z', customer: 'Ana Pérez', total: 10.00, status: 'Pagada', items: [{ productId: 'PROD001', name: 'Café Molido 500g', quantity: 1, price: 7.00}, { productId: 'PROD002', name: 'Harina de Maíz 1kg', quantity: 2, price: 1.50}], payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [] },
+  { id: 'SALE002', date: '2024-07-29T14:30:00Z', customer: 'Carlos Gómez', total: 25.50, status: 'Pagada', items: [{ productId: 'PROD005', name: 'Aceite de Girasol 1L', quantity: 5, price: 4.00}, {productId: 'PROD006', name: 'Azúcar Refinada 1kg', quantity: 2, price: 2.00}, {productId: 'PROD002', name: 'Harina de Maíz 1kg', quantity: 1, price: 1.50}], payments: [{ methodId: 'pay-03', amount: 25.50}], changeGiven: [] },
+  { id: 'SALE003', date: '2024-07-28T11:20:00Z', customer: 'María Rodríguez', total: 5.40, status: 'Pagada', items: [{productId: 'PROD004', name: 'Pasta Larga 500g', quantity: 3, price: 1.80}], payments: [{ methodId: 'pay-02', amount: 216 }], changeGiven: [] },
+  { id: 'SALE004', date: '2024-07-28T09:05:00Z', customer: 'Cliente Ocasional', total: 12.80, status: 'Pagada', items: [{productId: 'PROD003', name: 'Arroz Blanco 1kg', quantity: 4, price: 1.80}, {productId: 'PROD005', name: 'Aceite de Girasol 1L', quantity: 2, price: 2.80}], payments: [{ methodId: 'pay-04', amount: 512 }], changeGiven: [] },
+  { id: 'SALE005', date: '2024-07-27T16:45:00Z', customer: 'Ana Pérez', total: 7.00, status: 'Pagada', items: [{ productId: 'PROD001', name: 'Café Molido 500g', quantity: 1, price: 7.00}], payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [{ methodId: 'pay-01', amount: 3}] },
+  { id: 'SALE006', date: '2024-06-20T16:45:00Z', customer: 'Luis Hernández', total: 50.00, status: 'Pagada', items: [{ productId: 'PROD006', name: 'Azúcar Refinada 1kg', quantity: 25, price: 2.00}], payments: [{ methodId: 'pay-01', amount: 50}], changeGiven: [] },
 ];
 
 type SaleInput = Omit<typeof sales[0], 'id' | 'date'>;
@@ -237,15 +243,15 @@ export const deletePaymentMethod = (id: string) => {
 
 
 export let exchangeRates = [
-    { id: 'RATE003', date: '2024-07-25T09:00:00.000Z', rate: 100.00 },
-    { id: 'RATE002', date: '2024-07-24T09:05:00.000Z', rate: 98.50 },
-    { id: 'RATE001', date: '2024-07-23T08:55:00.000Z', rate: 99.20 },
+    { id: 'RATE003', date: '2024-07-29T09:00:00.000Z', rate: 40.50 },
+    { id: 'RATE002', date: '2024-07-28T09:05:00.000Z', rate: 40.00 },
+    { id: 'RATE001', date: '2024-07-27T08:55:00.000Z', rate: 39.80 },
 ];
 
 let currentBcvRate = [...exchangeRates].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
 export const getCurrentBcvRate = () => {
-    return currentBcvRate.rate || 0;
+    return currentBcvRate?.rate || 0;
 }
 
 export const updateCurrentBcvRate = (newRate: Partial<typeof exchangeRates[0]>) => {
@@ -260,8 +266,8 @@ export const updateCurrentBcvRate = (newRate: Partial<typeof exchangeRates[0]>) 
 
 // Supplier Rates
 export let supplierRates = [
-    { id: 'SRATE001', name: 'Proveedor A', rate: 101.50, lastUpdated: '2024-07-25T10:00:00.000Z' },
-    { id: 'SRATE002', name: 'Proveedor B (Importación)', rate: 99.80, lastUpdated: '2024-07-24T15:30:00.000Z' },
+    { id: 'SRATE001', name: 'Proveedor A', rate: 41.50, lastUpdated: '2024-07-25T10:00:00.000Z' },
+    { id: 'SRATE002', name: 'Proveedor B (Importación)', rate: 40.80, lastUpdated: '2024-07-24T15:30:00.000Z' },
 ];
 
 export const addSupplierRate = (rate: {name: string, rate: number}) => {

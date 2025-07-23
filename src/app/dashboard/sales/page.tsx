@@ -33,7 +33,8 @@ import {
     History,
     DollarSign,
     CreditCard,
-    Smartphone
+    Smartphone,
+    ChevronDown,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { sales, paymentMethods, getCurrentBcvRate } from "@/lib/placeholder-data";
@@ -69,14 +70,15 @@ export default function SalesPage() {
   const bcvRate = getCurrentBcvRate();
 
   const sortedSales = useMemo(() => 
-    [...sales].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()),
+    [...sales].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()),
   []);
 
   const { firstSaleDate, lastSaleDate } = useMemo(() => {
     if (sortedSales.length === 0) return { firstSaleDate: new Date(), lastSaleDate: new Date() };
+    const dates = sortedSales.map(s => parseISO(s.date));
     return {
-        firstSaleDate: startOfDay(parseISO(sortedSales[0].date)),
-        lastSaleDate: endOfDay(parseISO(sortedSales[sortedSales.length - 1].date))
+        firstSaleDate: startOfDay(dates[dates.length - 1]),
+        lastSaleDate: endOfDay(dates[0])
     };
   }, [sortedSales]);
 
@@ -89,31 +91,19 @@ export default function SalesPage() {
 
   const { interval, dateRangeLabel, isPrevDisabled, isNextDisabled } = useMemo(() => {
     let start, end, label;
-    let prevCheckStart, prevCheckEnd, nextCheckStart, nextCheckEnd;
-
+    
     if (viewMode === 'week') {
       start = startOfWeek(currentDate, { weekStartsOn: 1 });
       end = endOfWeek(currentDate, { weekStartsOn: 1 });
       label = `${format(start, 'd/L')} - ${format(end, 'd/L/yyyy')}`;
-      prevCheckStart = startOfWeek(subDays(currentDate, 7), { weekStartsOn: 1 });
-      prevCheckEnd = endOfWeek(subDays(currentDate, 7), { weekStartsOn: 1 });
-      nextCheckStart = startOfWeek(addDays(currentDate, 7), { weekStartsOn: 1 });
-      nextCheckEnd = endOfWeek(addDays(currentDate, 7), { weekStartsOn: 1 });
     } else { // month
       start = startOfMonth(currentDate);
       end = endOfMonth(currentDate);
       label = format(currentDate, 'MMMM yyyy', { locale: es });
-      prevCheckStart = startOfMonth(subMonths(currentDate, 1));
-      prevCheckEnd = endOfMonth(subMonths(currentDate, 1));
-      nextCheckStart = startOfMonth(addMonths(currentDate, 1));
-      nextCheckEnd = endOfMonth(addMonths(currentDate, 1));
     }
     
-    const hasPreviousSales = sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: prevCheckStart, end: prevCheckEnd }));
-    const hasNextSales = sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: nextCheckStart, end: nextCheckEnd }));
-
-    const prevDisabled = start < firstSaleDate && !hasPreviousSales;
-    const nextDisabled = end > lastSaleDate && !hasNextSales;
+    const prevDisabled = start < firstSaleDate;
+    const nextDisabled = end > lastSaleDate;
 
     return { 
       interval: { start, end }, 
@@ -121,7 +111,7 @@ export default function SalesPage() {
       isPrevDisabled: prevDisabled,
       isNextDisabled: nextDisabled
     };
-  }, [currentDate, viewMode, firstSaleDate, lastSaleDate, sortedSales]);
+  }, [currentDate, viewMode, firstSaleDate, lastSaleDate]);
 
   const daysInInterval = useMemo(() => {
      if (viewMode === 'week') {
@@ -140,9 +130,6 @@ export default function SalesPage() {
   }
 
   const handleDateChange = (direction: 'prev' | 'next') => {
-      if (direction === 'prev' && isPrevDisabled) return;
-      if (direction === 'next' && isNextDisabled) return;
-
       const changeFn = direction === 'prev' 
         ? (viewMode === 'week' ? subDays : subMonths)
         : (viewMode === 'week' ? addDays : addMonths);
@@ -335,51 +322,60 @@ export default function SalesPage() {
                             </CollapsibleTrigger>
                             <CollapsibleContent>
                                 <div className="border-t">
-                                     <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                            <TableHead>Cliente</TableHead>
-                                            <TableHead>Estado</TableHead>
-                                            <TableHead className="text-right">Total</TableHead>
-                                            <TableHead>
-                                                <span className="sr-only">Acciones</span>
-                                            </TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {sales.map((sale) => (
-                                            <TableRow key={sale.id}>
-                                                <TableCell className="font-medium">{sale.customer}</TableCell>
-                                                <TableCell>
-                                                <Badge variant={sale.status === 'Pagada' ? 'default' : 'secondary'} className={cn({
-                                                    'bg-green-100 text-green-800': sale.status === 'Pagada',
-                                                })}>
-                                                    {sale.status}
-                                                </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <div className="font-semibold">Bs {formatBs(sale.total * bcvRate)}</div>
-                                                    <div className="text-xs text-muted-foreground">(${formatUsd(sale.total)})</div>
-                                                </TableCell>
-                                                <TableCell>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                    <Button aria-haspopup="true" size="icon" variant="ghost">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                        <span className="sr-only">Toggle menu</span>
-                                                    </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                                                    <DropdownMenuItem>Ver Detalles</DropdownMenuItem>
-                                                    <DropdownMenuItem>Imprimir Ticket</DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                                </TableCell>
-                                            </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                    {sales.map((sale) => (
+                                        <Collapsible key={sale.id} className="border-b last:border-b-0">
+                                            <CollapsibleTrigger asChild>
+                                                <div className="flex items-center p-4 cursor-pointer hover:bg-muted/10">
+                                                    <div className="flex-1 font-medium">{sale.customer}</div>
+                                                    <div className="flex-1 text-right font-semibold">
+                                                        Bs {formatBs(sale.total * bcvRate)}
+                                                        <div className="text-xs text-muted-foreground font-normal">(${formatUsd(sale.total)})</div>
+                                                    </div>
+                                                    <div className="flex-1 flex justify-end items-center">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button aria-haspopup="true" size="icon" variant="ghost">
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                    <span className="sr-only">Toggle menu</span>
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                                                <DropdownMenuItem>Ver Detalles</DropdownMenuItem>
+                                                                <DropdownMenuItem>Imprimir Ticket</DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                         <ChevronDown className="h-4 w-4 ml-2 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                                                    </div>
+                                                </div>
+                                            </CollapsibleTrigger>
+                                            <CollapsibleContent className="px-4 pb-4 bg-muted/30">
+                                                <div className="border-t pt-2 mt-2">
+                                                     <Table>
+                                                        <TableHeader>
+                                                            <TableRow>
+                                                                <TableHead className="text-xs h-8">Cant.</TableHead>
+                                                                <TableHead className="text-xs h-8">Producto</TableHead>
+                                                                <TableHead className="text-xs h-8 text-right">Monto</TableHead>
+                                                            </TableRow>
+                                                        </TableHeader>
+                                                        <TableBody>
+                                                            {sale.items.map((item, index) => (
+                                                                <TableRow key={index} className="text-xs">
+                                                                    <TableCell>{item.quantity}</TableCell>
+                                                                    <TableCell>{item.name}</TableCell>
+                                                                    <TableCell className="text-right">
+                                                                        <div className="font-semibold">Bs {formatBs(item.price * item.quantity * bcvRate)}</div>
+                                                                        <div className="text-muted-foreground">(${formatUsd(item.price * item.quantity)})</div>
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))}
+                                                        </TableBody>
+                                                     </Table>
+                                                </div>
+                                            </CollapsibleContent>
+                                        </Collapsible>
+                                    ))}
                                 </div>
                             </CollapsibleContent>
                         </Card>
