@@ -1,4 +1,5 @@
 
+
 export type Vehicle = {
     brand: string;
     model: string;
@@ -16,4 +17,17 @@ export type Customer = {
     vehicles: Vehicle[];
 };
 
+export type Product = {
+    id: string;
+    name: string;
+    ref: string;
+    model: string;
+    longDescription: string;
+    stock: number;
+    purchasePrice: number;
+    salePrice: number;
+    categoryId: string;
+    brandId: string;
+    location: string;
+};
     

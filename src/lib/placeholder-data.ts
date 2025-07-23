@@ -1,6 +1,6 @@
 
 
-import { Customer } from "./types";
+import { Customer, Product } from "./types";
 
 // A simple in-memory pub/sub system for real-time rate updates across components.
 // In a real app, this would be replaced by a state management library like Redux or Zustand.
@@ -39,13 +39,85 @@ export const businessCategories = [
 ];
 
 
-export let products = [
-  { id: 'PROD001', name: 'Café Molido 500g', stock: 150, purchasePrice: 4.50, salePrice: 7.00, categoryId: 'cat-01', brandId: 'brand-02' },
-  { id: 'PROD002', name: 'Harina de Maíz 1kg', stock: 200, purchasePrice: 0.80, salePrice: 1.50, categoryId: 'cat-01', brandId: 'brand-01' },
-  { id: 'PROD003', name: 'Arroz Blanco 1kg', stock: 180, purchasePrice: 1.00, salePrice: 1.80, categoryId: 'cat-01', brandId: 'brand-03' },
-  { id: 'PROD004', name: 'Pasta Larga 500g', stock: 120, purchasePrice: 0.90, salePrice: 1.60, categoryId: 'cat-01', brandId: 'brand-03' },
-  { id: 'PROD005', name: 'Aceite de Girasol 1L', stock: 90, purchasePrice: 2.50, salePrice: 4.00, categoryId: 'cat-02', brandId: 'brand-04' },
-  { id: 'PROD006', name: 'Azúcar Refinada 1kg', stock: 250, purchasePrice: 1.10, salePrice: 2.00, categoryId: 'cat-01', brandId: 'brand-05' },
+export let products: Product[] = [
+  { 
+    id: 'PROD001', 
+    name: 'Café Molido 500g', 
+    ref: 'CAFE-G-500',
+    model: 'Gourmet',
+    longDescription: 'Café de variedad arábica, tostado oscuro y molido finamente.',
+    stock: 150, 
+    purchasePrice: 4.50, 
+    salePrice: 7.00, 
+    categoryId: 'cat-03', 
+    brandId: 'brand-02',
+    location: 'Estante A1'
+  },
+  { 
+    id: 'PROD002', 
+    name: 'Harina de Maíz 1kg', 
+    ref: 'HAR-PAN-1KG',
+    model: 'Precocida',
+    longDescription: 'Harina de maíz blanco precocida, ideal para arepas y empanadas.',
+    stock: 200, 
+    purchasePrice: 0.80, 
+    salePrice: 1.50, 
+    categoryId: 'cat-01', 
+    brandId: 'brand-01',
+    location: 'Estante A2'
+  },
+  { 
+    id: 'PROD003', 
+    name: 'Arroz Blanco 1kg', 
+    ref: 'ARR-MARY-1KG',
+    model: 'Tipo I',
+    longDescription: 'Arroz de grano entero tipo I, seleccionado para una cocción perfecta.',
+    stock: 180, 
+    purchasePrice: 1.00, 
+    salePrice: 1.80, 
+    categoryId: 'cat-01', 
+    brandId: 'brand-03',
+    location: 'Estante A2'
+  },
+  { 
+    id: 'PROD004', 
+    name: 'Pasta Larga 500g', 
+    ref: 'PASTA-MARY-500',
+    model: 'Spaghetti',
+    longDescription: 'Pasta de sémola de trigo durum, perfecta para cualquier salsa.',
+    stock: 120, 
+    purchasePrice: 0.90, 
+    salePrice: 1.60, 
+    categoryId: 'cat-01', 
+    brandId: 'brand-03',
+    location: 'Estante B1'
+  },
+  { 
+    id: 'PROD005', 
+    name: 'Aceite de Girasol 1L', 
+    ref: 'ACE-VAT-1L',
+    model: 'Mezcla',
+    longDescription: 'Aceite de girasol y soya, ideal para freir y cocinar.',
+    stock: 90, 
+    purchasePrice: 2.50, 
+    salePrice: 4.00, 
+    categoryId: 'cat-02', 
+    brandId: 'brand-04',
+    location: 'Estante B3'
+  },
+  { 
+    id: 'PROD006', 
+    name: 'Azúcar Refinada 1kg', 
+    ref: 'AZUC-MONT-1KG',
+    model: 'Refinada',
+    longDescription: 'Azúcar de caña blanca refinada de alta pureza.',
+    stock: 250, 
+    purchasePrice: 1.10, 
+    salePrice: 2.00, 
+    categoryId: 'cat-01', 
+    brandId: 'brand-05',
+    location: 'Estante A1'
+  },
 ];
 
 export const customers: Customer[] = [
