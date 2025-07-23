@@ -16,9 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PosLogo } from "../ui/pos-logo";
 import { MailCheck, Loader2 } from "lucide-react";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 
 export function SignupForm() {

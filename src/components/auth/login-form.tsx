@@ -49,7 +49,7 @@ export function LoginForm() {
     setIsLoading(true);
     const provider = new GoogleAuthProvider();
     try {
-        const result = await signInWithPopup(auth, result.user);
+        const result = await signInWithPopup(auth, provider);
         const user = result.user;
 
         // Check if user already exists in Firestore
