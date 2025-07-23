@@ -296,8 +296,8 @@ export default function PosPage() {
     const totalCashDrawer = useMemo(() => {
         const totals = { 
             initial: { usd: 0, ves: 0 }, 
-            sales: { usd: 0, ves: 0 }, 
-            movementsOut: { usd: 0, ves: 0 }, 
+            income: { usd: 0, ves: 0 }, // sales + movementsIn
+            outcome: { usd: 0, ves: 0 }, // movementsOut + changeGiven
             final: { usd: 0, ves: 0 } 
         };
 
@@ -307,36 +307,37 @@ export default function PosPage() {
 
             const isUsd = method.currency === '$';
             
-            const amounts = {
-                initial: {
-                    usd: isUsd ? state.initial : convertToUsd(state.initial),
-                    ves: isUsd ? convertToVes(state.initial) : state.initial
-                },
-                sales: {
-                    usd: isUsd ? (state.sales + state.movementsIn) : convertToUsd(state.sales + state.movementsIn),
-                    ves: isUsd ? convertToVes(state.sales + state.movementsIn) : (state.sales + state.movementsIn)
-                },
-                movementsOut: {
-                    usd: isUsd ? state.movementsOut : convertToUsd(state.movementsOut),
-                    ves: isUsd ? convertToVes(state.movementsOut) : state.movementsOut
-                },
-                 final: {
-                    usd: isUsd ? state.final : convertToUsd(state.final),
-                    ves: isUsd ? convertToVes(state.final) : state.final
-                }
-            };
-
-            totals.initial.usd += amounts.initial.usd;
-            totals.initial.ves += amounts.initial.ves;
-            totals.sales.usd += amounts.sales.usd;
-            totals.sales.ves += amounts.sales.ves;
-            totals.movementsOut.usd += amounts.movementsOut.usd;
-            totals.movementsOut.ves += amounts.movementsOut.ves;
-            totals.final.usd += amounts.final.usd;
-            totals.final.ves += amounts.final.ves;
+            if (isUsd) {
+                totals.initial.usd += state.initial;
+                totals.income.usd += state.sales + state.movementsIn;
+                totals.outcome.usd += state.movementsOut;
+                totals.final.usd += state.final;
+            } else {
+                totals.initial.ves += state.initial;
+                totals.income.ves += state.sales + state.movementsIn;
+                totals.outcome.ves += state.movementsOut;
+                totals.final.ves += state.final;
+            }
         });
 
-        return totals;
+        return {
+            initial: {
+                ves: totals.initial.ves + convertToVes(totals.initial.usd),
+                usd: totals.initial.usd + convertToUsd(totals.initial.ves)
+            },
+            income: {
+                ves: totals.income.ves + convertToVes(totals.income.usd),
+                usd: totals.income.usd + convertToUsd(totals.income.ves)
+            },
+            outcome: {
+                 ves: totals.outcome.ves + convertToVes(totals.outcome.usd),
+                usd: totals.outcome.usd + convertToUsd(totals.outcome.ves)
+            },
+            final: {
+                ves: totals.final.ves + convertToVes(totals.final.usd),
+                usd: totals.final.usd + convertToUsd(totals.final.ves)
+            }
+        };
     }, [cashDrawerState, paymentMethodsList, bcvRate, convertToUsd, convertToVes]);
 
 
@@ -1196,8 +1197,8 @@ export default function PosPage() {
                                     <CardHeader><CardTitle>Resumen General</CardTitle></CardHeader>
                                     <CardContent className="space-y-2 text-sm">
                                         <div className="flex justify-between"><span>Saldo Inicial:</span> <span className="font-medium">Bs {formatBs(totalCashDrawer.initial.ves)} (${formatUsd(totalCashDrawer.initial.usd)})</span></div>
-                                        <div className="flex justify-between"><span>Ingresos (Ventas + Entradas):</span> <span className="font-medium text-green-600">+ Bs {formatBs(totalCashDrawer.sales.ves)} (${formatUsd(totalCashDrawer.sales.usd)})</span></div>
-                                        <div className="flex justify-between"><span>Salidas (Vueltos + Salidas):</span> <span className="font-medium text-red-600">- Bs {formatBs(totalCashDrawer.movementsOut.ves)} (${formatUsd(totalCashDrawer.movementsOut.usd)})</span></div>
+                                        <div className="flex justify-between"><span>Ingresos (Ventas + Entradas):</span> <span className="font-medium text-green-600">+ Bs {formatBs(totalCashDrawer.income.ves)} (${formatUsd(totalCashDrawer.income.usd)})</span></div>
+                                        <div className="flex justify-between"><span>Salidas (Vueltos + Salidas):</span> <span className="font-medium text-red-600">- Bs {formatBs(totalCashDrawer.outcome.ves)} (${formatUsd(totalCashDrawer.outcome.usd)})</span></div>
                                         <Separator/>
                                         <div className="flex justify-between font-bold text-base"><span>Saldo Actual en Caja:</span> <span>Bs {formatBs(totalCashDrawer.final.ves)} (${formatUsd(totalCashDrawer.final.usd)})</span></div>
                                     </CardContent>
