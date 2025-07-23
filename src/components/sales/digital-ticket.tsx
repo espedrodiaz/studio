@@ -40,7 +40,7 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                     .items-table th { text-align: left; border-bottom: 1px solid #000; }
                     .items-table .total-col { text-align: right; }
                     .totals-table td { padding: 2px 0; }
-                    @page { size: auto; margin: 5mm; }
+                    .font-bold { font-weight: bold; }
                 </style>
             `);
             printWindow.document.write('</head><body>');
@@ -137,32 +137,18 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                     </table>
 
                     <div className="separator"></div>
-                    
-                    <table className="totals-table">
-                        <tbody>
-                            <tr>
-                                <td>Subtotal:</td>
-                                <td className="text-right">
-                                    <span className="font-bold">{formatBs(saleData.subtotal)} Bs</span>
-                                    <br/>
-                                    <span className="text-xs">(${formatUsd(saleData.subtotal)})</span>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    
-                    <div className="separator"></div>
 
-                    <h3 className="text-sm font-bold mb-1">Pagos</h3>
-                    <table className="totals-table">
+                    <h3 className="text-sm font-bold mb-1">Forma de Pago</h3>
+                     <table className="totals-table">
                          <tbody>
                             {saleData.payments.map((p, index) => {
                                 if (!p.method) return null;
                                 const amountInBs = p.method.currency === '$' ? p.amount * saleData.bcvRate : p.amount;
+                                const equivInBs = p.method.currency === '$' ? `(Bs ${formatBsFromVes(amountInBs)})` : '';
                                 return (
                                     <tr key={index}>
                                         <td>{p.method?.name}:</td>
-                                        <td className="text-right">{formatBsFromVes(amountInBs)} Bs</td>
+                                        <td className="text-right">{p.method.currency === '$' ? `$${formatUsd(p.amount)}` : `Bs ${formatBsFromVes(p.amount)}`} {equivInBs}</td>
                                     </tr>
                                 )
                             })}
@@ -173,14 +159,22 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
 
                     <table className="totals-table">
                          <tbody>
+                            <tr>
+                                <td>Subtotal:</td>
+                                <td className="text-right">
+                                    <span className="font-bold">{formatBs(saleData.subtotal)} Bs</span>
+                                </td>
+                            </tr>
                              <tr>
                                 <td>Total Pagado:</td>
                                 <td className="text-right">{formatBs(saleData.totalPaid)} Bs</td>
                             </tr>
-                              <tr>
-                                <td>Vuelto:</td>
-                                <td className="text-right">{formatBs(saleData.totalChange)} Bs</td>
-                            </tr>
+                            {saleData.totalChange > 0 && (
+                                <tr>
+                                    <td>Vuelto:</td>
+                                    <td className="text-right">{formatBs(saleData.totalChange)} Bs</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                     
