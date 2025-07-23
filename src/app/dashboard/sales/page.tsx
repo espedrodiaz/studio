@@ -262,9 +262,9 @@ export default function SalesPage() {
                         <Button 
                             key={day.toString()} 
                             variant={isSameDay(day, selectedDate || new Date(0)) ? 'default' : 'outline'}
-                            className="flex-col h-14 w-12 flex-shrink-0"
+                            className="flex-col h-12 w-10 flex-shrink-0"
                             onClick={() => setSelectedDate(isSameDay(day, selectedDate || new Date(0)) ? null : day)}
-                            disabled={day < firstSaleDate || day > lastSaleDate}
+                            disabled={!isWithinInterval(day, { start: firstSaleDate, end: lastSaleDate })}
                         >
                             <span>{format(day, 'd')}</span>
                             <span className="text-xs capitalize">{format(day, 'eee', { locale: es })}</span>
@@ -397,3 +397,5 @@ export default function SalesPage() {
     </div>
   );
 }
+
+    
