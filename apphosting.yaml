@@ -4,12 +4,8 @@
 # Specifies the node.js version to use.
 runtime: nodejs20
 
-# Serve your app's static assets.
-staticAssets:
-  - .next/static
-
 # The command that starts your app.
-entrypoint: npm run start
+entrypoint: node server.js
 
 runConfig:
   # Increase this value if you'd like to automatically spin up
