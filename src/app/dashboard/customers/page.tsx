@@ -350,7 +350,7 @@ export default function CustomersPage() {
                         <DialogTitle>{viewingCustomer.name}</DialogTitle>
                         <DialogDescription>{viewingCustomer.idNumber}</DialogDescription>
                     </DialogHeader>
-                    <div className="py-4 space-y-6">
+                    <div className="py-4 space-y-6 max-h-[80vh] overflow-y-auto pr-6">
                         <Card>
                             <CardHeader>
                                 <CardTitle className="text-lg">Información de Contacto</CardTitle>
@@ -387,5 +387,3 @@ export default function CustomersPage() {
     </>
   );
 }
-
-    
