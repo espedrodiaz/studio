@@ -45,7 +45,7 @@ export default function UsersPage() {
     const { user, isLoading } = useBusinessContext();
 
     // THIS IS A TEMPORARY ADMIN CHECK
-    const isAdmin = user && user.email === 'diaznelson.sistemas@gmail.com'; 
+    const isAdmin = user && user.email === 'espedrodiaz94@gmail.com'; 
 
     const handleUpdateStatus = (userId: string, status: "Active" | "Suspended") => {
         updateUserStatus(userId, status);

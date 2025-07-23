@@ -69,7 +69,7 @@ export function SidebarNav({ onLinkClick }: { onLinkClick?: () => void }) {
 
   const navDisabled = isTrialExpired;
   
-  const isAdmin = user && user.email === 'diaznelson.sistemas@gmail.com';
+  const isAdmin = user && user.email === 'espedrodiaz94@gmail.com';
 
   return (
     <div className="flex h-full flex-col">
