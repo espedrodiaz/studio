@@ -222,10 +222,10 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                                             }
 
                                             return (
-                                                <p key={index} className="flex justify-between items-center">
+                                                <div key={index} className="flex justify-between items-center">
                                                     <span>{p.method.name}:</span>
                                                     {paymentDisplay}
-                                                </p>
+                                                </div>
                                             )
                                         })}
                                     </div>
