@@ -399,7 +399,7 @@ export default function SalesPage() {
                 const dayTotal = sales.filter(s => s.status !== 'Anulada').reduce((sum, s) => sum + s.total, 0);
                 const dayRate = sales[0]?.bcvRate || bcvRate;
                 return (
-                    <Collapsible key={day} defaultOpen={isSameDay(dayDate, selectedDate || new Date(0))} className="space-y-2">
+                    <Collapsible key={day} defaultOpen={false} className="space-y-2">
                         <Card>
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 group">
@@ -425,7 +425,7 @@ export default function SalesPage() {
                                                             {sale.payments.map((p, i) => {
                                                                 const method = paymentMethods.find(pm => pm.id === p.methodId)
                                                                 if (!method) return null;
-                                                                return <Badge key={i} variant="outline" className="text-xs">{method.name}</Badge>
+                                                                return <Badge key={i} variant="outline" className="text-[11px] px-1.5 py-0 font-medium">{method.name}</Badge>
                                                             })}
                                                         </div>
                                                     </div>
