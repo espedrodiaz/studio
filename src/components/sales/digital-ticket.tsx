@@ -180,7 +180,7 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                         
                         {/* Totals Section */}
                         <div className="flex justify-end mt-2">
-                             <div className="w-6/12">
+                             <div className="w-8/12">
                                 <div className='flex justify-between'>
                                     <p>Subtotal:</p>
                                     <p className="font-bold">Bs {formatBs(saleData.subtotal)}</p>
@@ -188,30 +188,39 @@ export const DigitalTicket = ({ saleData, onClose }: { saleData: SaleDataForTick
                                 <div className="separator"></div>
                                 <div className='flex justify-between font-bold text-xs'>
                                     <p>TOTAL:</p>
-                                    <p>Bs {formatBs(saleData.subtotal)}</p>
+                                    <div className='text-right'>
+                                      <p>Bs {formatBs(saleData.subtotal)}</p>
+                                      <p className="text-[9px] font-normal text-gray-600">(${formatUsd(saleData.subtotal)})</p>
+                                    </div>
                                 </div>
                              </div>
                         </div>
 
-                         <div className="separator"></div>
+                        <div className="separator"></div>
 
                         {/* Payment Details */}
                         <div className="mt-1 payment-details">
                             <p className='font-bold mb-1'>Detalle de Pago:</p>
-                            {saleData.payments.map((p, index) => {
-                                if (!p.method) return null;
-                                const amountInBs = p.method.currency === '$' ? p.amount * saleData.bcvRate : p.amount;
-                                return (
-                                    <p key={index}>
-                                        <span>{p.method.name}:</span>
-                                        <span className='font-bold'>Bs {formatBsFromVes(amountInBs)}</span>
-                                    </p>
-                                )
-                            })}
-                             <div className='flex justify-between mt-1'>
+                             <div className='space-y-1'>
+                                {saleData.payments.map((p, index) => {
+                                    if (!p.method) return null;
+                                    const amountInBs = p.method.currency === '$' ? p.amount * saleData.bcvRate : p.amount;
+                                    return (
+                                        <p key={index}>
+                                            <span>{p.method.name}:</span>
+                                            <span className='font-bold'>Bs {formatBsFromVes(amountInBs)}</span>
+                                        </p>
+                                    )
+                                })}
+                             </div>
+                            
+                            <div className="separator mt-2"></div>
+                            
+                            <div className='flex justify-between mt-1'>
                                 <p>Total Pagado:</p>
                                 <p>Bs {formatBs(saleData.totalPaid)}</p>
                             </div>
+                            
                             {saleData.totalChange > 0 && (
                                 <div className='flex justify-between font-bold'>
                                     <p>Vuelto:</p>
