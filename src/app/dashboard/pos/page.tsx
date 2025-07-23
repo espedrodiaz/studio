@@ -297,51 +297,27 @@ export default function PosPage() {
     }, [initialBalances, sales, cashMovements, paymentMethodsList]);
     
     const totalCashDrawer = useMemo(() => {
-        const totals = { 
-            initial: { usd: 0, ves: 0 }, 
-            income: { usd: 0, ves: 0 }, // sales + movementsIn
-            outcome: { usd: 0, ves: 0 }, // movementsOut + changeGiven
-            final: { usd: 0, ves: 0 } 
+        const totals = {
+            initial: { usd: 0, ves: 0 },
+            final: { usd: 0, ves: 0 }
         };
 
         Object.entries(cashDrawerState).forEach(([pmId, state]) => {
             const method = paymentMethodsList.find(pm => pm.id === pmId);
             if (!method) return;
 
-            const isUsd = method.currency === '$';
-            
-            if (isUsd) {
+            if (method.currency === '$') {
                 totals.initial.usd += state.initial;
-                totals.income.usd += state.sales + state.movementsIn;
-                totals.outcome.usd += state.movementsOut;
                 totals.final.usd += state.final;
             } else {
                 totals.initial.ves += state.initial;
-                totals.income.ves += state.sales + state.movementsIn;
-                totals.outcome.ves += state.movementsOut;
                 totals.final.ves += state.final;
             }
         });
 
-        return {
-            initial: {
-                ves: totals.initial.ves,
-                usd: totals.initial.usd,
-            },
-            income: {
-                ves: totals.income.ves,
-                usd: totals.income.usd,
-            },
-            outcome: {
-                 ves: totals.outcome.ves,
-                usd: totals.outcome.usd,
-            },
-            final: {
-                ves: totals.final.ves,
-                usd: totals.final.usd,
-            }
-        };
+        return totals;
     }, [cashDrawerState, paymentMethodsList]);
+
 
     const compiledMovements = useMemo(() => {
         let allMovements: any[] = [];
@@ -645,7 +621,7 @@ export default function PosPage() {
             }
             return acc + p.amount;
         }, 0);
-    }, [payments, paymentMethodsList, bcvRate, convertToUsd]);
+    }, [payments, paymentMethodsList, bcvRate]);
 
     const balance = useMemo(() => subtotal - totalPaid, [subtotal, totalPaid]);
     const changeToGive = useMemo(() => balance < 0 ? Math.abs(balance) : 0, [balance]);
@@ -699,7 +675,7 @@ export default function PosPage() {
             }
             return acc + p.amount;
         }, 0)
-    }, [changePayments, paymentMethodsList, bcvRate, convertToUsd]);
+    }, [changePayments, paymentMethodsList, bcvRate]);
 
     const remainingChange = useMemo(() => changeToGive - totalChangeGiven, [changeToGive, totalChangeGiven]);
 
@@ -1238,18 +1214,21 @@ export default function PosPage() {
                                 <CardHeader><CardTitle>Resumen General</CardTitle></CardHeader>
                                 <CardContent className="space-y-2 text-sm">
                                     <div className="flex justify-between">
-                                        <span>Saldo Inicial Total:</span>
-                                        <span className="font-medium">
-                                            Bs {formatBs(totalCashDrawer.initial.ves + convertToVes(totalCashDrawer.initial.usd))} 
-                                            (${formatUsd(totalCashDrawer.initial.usd + convertToUsd(totalCashDrawer.initial.ves))})
-                                        </span>
+                                        <span>Saldo Inicial (VES):</span>
+                                        <span className="font-medium">Bs {formatBs(totalCashDrawer.initial.ves)}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span>Saldo Actual Total:</span>
-                                        <span className="font-bold text-lg">
-                                            Bs {formatBs(totalCashDrawer.final.ves + convertToVes(totalCashDrawer.final.usd))} 
-                                            (${formatUsd(totalCashDrawer.final.usd + convertToUsd(totalCashDrawer.final.ves))})
-                                        </span>
+                                        <span>Saldo Inicial (USD):</span>
+                                        <span className="font-medium">$ {formatUsd(totalCashDrawer.initial.usd)}</span>
+                                    </div>
+                                    <Separator className="my-2" />
+                                    <div className="flex justify-between font-semibold">
+                                        <span>Saldo Actual (VES):</span>
+                                        <span className="font-bold text-lg">Bs {formatBs(totalCashDrawer.final.ves)}</span>
+                                    </div>
+                                    <div className="flex justify-between font-semibold">
+                                        <span>Saldo Actual (USD):</span>
+                                        <span className="font-bold text-lg">$ {formatUsd(totalCashDrawer.final.usd)}</span>
                                     </div>
                                 </CardContent>
                                 <CardFooter>
