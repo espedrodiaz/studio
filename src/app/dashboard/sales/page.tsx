@@ -103,18 +103,18 @@ export default function SalesPage() {
     }
 
     const prevIntervalEnd = subDays(start, 1);
-    const nextIntervalStart = addDays(end, 1);
+    const hasSalesInPrevPeriod = sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: firstSaleDate, end: prevIntervalEnd }));
     
-    const hasSalesInPrevPeriod = sortedSales.some(s => parseISO(s.date) < start);
-    const hasSalesInNextPeriod = sortedSales.some(s => parseISO(s.date) > end);
+    const nextIntervalStart = addDays(end, 1);
+    const hasSalesInNextPeriod = sortedSales.some(s => isWithinInterval(parseISO(s.date), { start: nextIntervalStart, end: lastSaleDate }));
 
     return { 
       interval: { start, end }, 
       dateRangeLabel: label, 
       isPrevDisabled: !hasSalesInPrevPeriod,
-      isNextDisabled: !hasSalesInNextPeriod
+      isNextDisabled: !hasSalesInNextPeriod && end < lastSaleDate
     };
-  }, [currentDate, viewMode, sortedSales]);
+  }, [currentDate, viewMode, sortedSales, firstSaleDate, lastSaleDate]);
 
   const daysInInterval = useMemo(() => {
      if (viewMode === 'week') {
@@ -257,7 +257,7 @@ export default function SalesPage() {
                 </Button>
             </CardHeader>
             {viewMode === 'week' && (
-                <CardContent className="flex justify-center gap-1 md:gap-2">
+                <CardContent className="flex justify-center flex-wrap gap-1 md:gap-2">
                     {daysInInterval.map(day => (
                         <Button 
                             key={day.toString()} 
@@ -314,11 +314,11 @@ export default function SalesPage() {
                 const dayDate = parseISO(day);
                 const dayTotal = sales.reduce((sum, s) => sum + s.total, 0);
                 return (
-                    <Collapsible key={day} defaultOpen={false}>
+                    <Collapsible key={day} defaultOpen={selectedDate !== null} className="space-y-2">
                         <Card>
                             <CollapsibleTrigger asChild>
                                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50 group">
-                                    <p className="font-semibold capitalize">{format(dayDate, 'eeee, d', {locale: es})}</p>
+                                    <p className="font-semibold capitalize">{format(dayDate, "eeee, d", {locale: es})}</p>
                                     <div className='flex items-center gap-2'>
                                         <Badge variant="secondary">${formatUsd(dayTotal)}</Badge>
                                         <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
@@ -397,4 +397,3 @@ export default function SalesPage() {
     </div>
   );
 }
-
