@@ -9,15 +9,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { MoreHorizontal, PlusCircle, UserPlus, Car, Trash2, Plus } from "lucide-react";
+import { MoreHorizontal, PlusCircle, UserPlus, Car, Trash2, Plus, Users, MessageSquare } from "lucide-react";
 import { customers as initialCustomers } from "@/lib/placeholder-data";
 import { Customer, Vehicle } from "@/lib/types";
 import { Input } from "@/components/ui/input";
@@ -34,6 +27,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { useBusinessContext } from "@/hooks/use-business-context";
+import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
 
 
 export default function CustomersPage() {
@@ -96,6 +91,24 @@ export default function CustomersPage() {
       }
       setIsCustomerModalOpen(false);
   };
+  
+  const handleDeleteCustomer = (customerId: string) => {
+      setCustomers(customers.filter(c => c.id !== customerId));
+      toast({ title: "Cliente Eliminado", description: "El cliente ha sido eliminado de la base de datos.", variant: "destructive" });
+  }
+  
+  const formatPhoneNumberForWhatsApp = (phone: string) => {
+    // Remove non-digit characters and the leading '0'
+    const digitsOnly = phone.replace(/\D/g, '');
+    if (digitsOnly.startsWith('0')) {
+        return `58${digitsOnly.substring(1)}`;
+    }
+    // Assuming it might already be in a format like 4141234567, add country code
+    if(digitsOnly.length === 10) {
+        return `58${digitsOnly}`;
+    }
+    return phone; // Fallback
+  }
 
 
   return (
@@ -114,49 +127,60 @@ export default function CustomersPage() {
           </Button>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombre</TableHead>
-                <TableHead>Cédula/RIF</TableHead>
-                <TableHead>Dirección</TableHead>
-                <TableHead>Teléfono</TableHead>
-                {showVehiclesTab && <TableHead>Vehículos</TableHead>}
-                <TableHead>
-                  <span className="sr-only">Acciones</span>
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {customers.map((customer) => (
-                <TableRow key={customer.id}>
-                  <TableCell className="font-medium">{customer.name}</TableCell>
-                  <TableCell>{customer.idNumber}</TableCell>
-                  <TableCell>{customer.address}</TableCell>
-                  <TableCell>{customer.phone}</TableCell>
-                  {showVehiclesTab && <TableCell>{customer.vehicles.length}</TableCell>}
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => openCustomerModal(customer)}>Editar</DropdownMenuItem>
-                        <DropdownMenuItem>Ver Historial</DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive">
-                          Eliminar
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+            {customers.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {customers.map((customer) => (
+                        <Card key={customer.id} className="flex flex-col">
+                            <CardHeader className="flex-row gap-4 items-center pb-4">
+                               <div className="flex-1">
+                                    <CardTitle className="text-lg">{customer.name}</CardTitle>
+                                    <CardDescription>{customer.idNumber}</CardDescription>
+                               </div>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button aria-haspopup="true" size="icon" variant="ghost">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                            <span className="sr-only">Toggle menu</span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                                        <DropdownMenuItem onClick={() => openCustomerModal(customer)}>Editar</DropdownMenuItem>
+                                        <DropdownMenuItem className="text-destructive" onClick={() => handleDeleteCustomer(customer.id)}>
+                                            Eliminar
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </CardHeader>
+                             <CardContent className="flex-1 space-y-3 text-sm">
+                                <Link
+                                    href={`https://wa.me/${formatPhoneNumberForWhatsApp(customer.phone)}`}
+                                    target="_blank"
+                                    className="flex items-center gap-2 text-green-600 font-semibold hover:underline"
+                                >
+                                    <MessageSquare className="h-4 w-4" />
+                                    <span>{customer.phone}</span>
+                                </Link>
+                                 {showVehiclesTab && (
+                                     <>
+                                        <Separator/>
+                                         <div className="flex items-center gap-2 text-muted-foreground">
+                                             <Car className="h-4 w-4" />
+                                             <span>{customer.vehicles.length} vehículo(s)</span>
+                                         </div>
+                                     </>
+                                 )}
+                             </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            ) : (
+                 <div className="flex flex-col items-center justify-center text-center text-muted-foreground border-2 border-dashed rounded-lg p-12">
+                    <Users className="h-12 w-12 mb-4" />
+                    <h3 className="text-lg font-semibold">No hay clientes registrados</h3>
+                    <p className="text-sm">Haz clic en "Añadir Cliente" para empezar.</p>
+                </div>
+            )}
         </CardContent>
       </Card>
       
