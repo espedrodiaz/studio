@@ -175,11 +175,12 @@ export let sales: {
     payments: { methodId: string, amount: number }[];
     changeGiven: { methodId: string, amount: number }[];
 }[] = [
-  { id: 'SALE001', date: '2024-07-20T10:00:00.000Z', customer: 'Ana Pérez', total: 10.00, status: 'Pagada', payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [] },
-  { id: 'SALE002', date: '2024-07-20T14:30:00.000Z', customer: 'Carlos Gómez', total: 25.50, status: 'Pagada', payments: [{ methodId: 'pay-03', amount: 25.50}], changeGiven: [] },
-  { id: 'SALE003', date: '2024-07-21T11:20:00.000Z', customer: 'María Rodríguez', total: 5.40, status: 'Pendiente', payments: [], changeGiven: [] },
-  { id: 'SALE004', date: '2024-07-22T09:05:00.000Z', customer: 'Cliente Ocasional', total: 12.80, status: 'Pagada', payments: [{ methodId: 'pay-02', amount: 1280}], changeGiven: [] },
-  { id: 'SALE005', date: '2024-07-22T16:45:00.000Z', customer: 'Ana Pérez', total: 7.00, status: 'Pagada', payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [{ methodId: 'pay-01', amount: 3}] },
+  { id: 'SALE001', date: '2024-07-29T10:00:00Z', customer: 'Ana Pérez', total: 10.00, status: 'Pagada', payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [] },
+  { id: 'SALE002', date: '2024-07-29T14:30:00Z', customer: 'Carlos Gómez', total: 25.50, status: 'Pagada', payments: [{ methodId: 'pay-03', amount: 25.50}], changeGiven: [] },
+  { id: 'SALE003', date: '2024-07-28T11:20:00Z', customer: 'María Rodríguez', total: 5.40, status: 'Pagada', payments: [{ methodId: 'pay-02', amount: 216 }], changeGiven: [] },
+  { id: 'SALE004', date: '2024-07-28T09:05:00Z', customer: 'Cliente Ocasional', total: 12.80, status: 'Pagada', payments: [{ methodId: 'pay-04', amount: 512 }], changeGiven: [] },
+  { id: 'SALE005', date: '2024-07-27T16:45:00Z', customer: 'Ana Pérez', total: 7.00, status: 'Pagada', payments: [{ methodId: 'pay-01', amount: 10}], changeGiven: [{ methodId: 'pay-01', amount: 3}] },
+  { id: 'SALE006', date: '2024-06-20T16:45:00Z', customer: 'Luis Hernández', total: 50.00, status: 'Pagada', payments: [{ methodId: 'pay-01', amount: 50}], changeGiven: [] },
 ];
 
 type SaleInput = Omit<typeof sales[0], 'id' | 'date'>;

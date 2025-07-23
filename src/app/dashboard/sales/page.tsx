@@ -51,13 +51,13 @@ import {
     subMonths,
     isSameDay,
     parseISO,
+    isBefore,
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 type Sale = typeof sales[0];
-type PaymentMethod = typeof paymentMethods[0];
 
 export default function SalesPage() {
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
@@ -66,23 +66,27 @@ export default function SalesPage() {
   
   const bcvRate = getCurrentBcvRate();
 
-  const { interval, dateRangeLabel } = useMemo(() => {
+  const firstSaleDate = useMemo(() => {
+    if (sales.length === 0) return new Date();
+    const sortedSales = [...sales].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    return parseISO(sortedSales[0].date);
+  }, []);
+
+  const { interval, dateRangeLabel, isPrevDisabled } = useMemo(() => {
+    let start, end, label, disabled;
     if (viewMode === 'week') {
-      const start = startOfWeek(currentDate, { weekStartsOn: 1 });
-      const end = endOfWeek(currentDate, { weekStartsOn: 1 });
-      return {
-        interval: { start, end },
-        dateRangeLabel: `${format(start, 'd/L')} - ${format(end, 'd/L/yyyy')}`,
-      };
+      start = startOfWeek(currentDate, { weekStartsOn: 1 });
+      end = endOfWeek(currentDate, { weekStartsOn: 1 });
+      label = `${format(start, 'd/L')} - ${format(end, 'd/L/yyyy')}`;
+      disabled = isBefore(start, firstSaleDate) && !isSameDay(start, startOfWeek(firstSaleDate, { weekStartsOn: 1 }));
     } else {
-      const start = startOfMonth(currentDate);
-      const end = endOfMonth(currentDate);
-      return {
-        interval: { start, end },
-        dateRangeLabel: format(currentDate, 'MMMM yyyy', { locale: es }),
-      };
+      start = startOfMonth(currentDate);
+      end = endOfMonth(currentDate);
+      label = format(currentDate, 'MMMM yyyy', { locale: es });
+      disabled = isBefore(start, firstSaleDate) && !isSameDay(start, startOfMonth(firstSaleDate));
     }
-  }, [currentDate, viewMode]);
+    return { interval: { start, end }, dateRangeLabel: label, isPrevDisabled: disabled };
+  }, [currentDate, viewMode, firstSaleDate]);
 
   const daysInInterval = useMemo(() => {
      if (viewMode === 'week') {
@@ -92,6 +96,8 @@ export default function SalesPage() {
   }, [interval, viewMode]);
 
   const handleDateChange = (direction: 'prev' | 'next') => {
+      if (direction === 'prev' && isPrevDisabled) return;
+
       if (viewMode === 'week') {
           setCurrentDate(direction === 'prev' ? subDays(currentDate, 7) : addDays(currentDate, 7));
       } else {
@@ -99,12 +105,13 @@ export default function SalesPage() {
       }
       setSelectedDate(null);
   }
-
-  const salesInPeriod = useMemo(() => {
+  
+  const salesForPeriod = useMemo(() => {
     const period = selectedDate ? { start: selectedDate, end: selectedDate } : interval;
     return sales.filter(sale => {
       const saleDate = parseISO(sale.date);
-      return saleDate >= period.start && saleDate <= period.end;
+      const saleDayStart = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate());
+      return saleDayStart >= period.start && saleDayStart <= period.end;
     });
   }, [sales, interval, selectedDate]);
   
@@ -115,7 +122,7 @@ export default function SalesPage() {
       totals[pm.id] = { usd: 0, ves: 0 };
     });
 
-    salesInPeriod.forEach(sale => {
+    salesForPeriod.forEach(sale => {
       sale.payments.forEach(p => {
         const method = paymentMethods.find(pm => pm.id === p.methodId);
         if (method) {
@@ -129,7 +136,7 @@ export default function SalesPage() {
     });
 
     return totals;
-  }, [salesInPeriod, paymentMethods]);
+  }, [salesForPeriod, paymentMethods]);
 
   const totalSoldInPeriod = useMemo(() => {
     let totalUsd = 0;
@@ -143,7 +150,7 @@ export default function SalesPage() {
 
   const groupedSalesByDay = useMemo(() => {
     const grouped: { [key: string]: Sale[] } = {};
-    sales.filter(sale => { // Filter for the whole week/month, not just selected day
+    sales.filter(sale => {
         const saleDate = parseISO(sale.date);
         return saleDate >= interval.start && saleDate <= interval.end;
     }).forEach(sale => {
@@ -157,14 +164,14 @@ export default function SalesPage() {
   }, [sales, interval]);
 
   const formatUsd = (amount: number) => amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  const formatBs = (amount: number) => amount.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formatBs = (amount: number) => (amount * bcvRate).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   
   const getPaymentMethodIcon = (methodName: string) => {
     const lowerCaseName = methodName.toLowerCase();
-    if (lowerCaseName.includes('usd') || lowerCaseName.includes('dolar') || lowerCaseName.includes('zelle')) {
+    if (lowerCaseName.includes('zelle')) {
       return <DollarSign className="w-5 h-5 text-green-600" />;
     }
-     if (lowerCaseName.includes('efectivo') && lowerCaseName.includes('bs')) {
+     if (lowerCaseName.includes('efectivo')) {
       return <CreditCard className="w-5 h-5 text-blue-600" />;
     }
     if (lowerCaseName.includes('tarjeta') || lowerCaseName.includes('punto')) {
@@ -200,7 +207,7 @@ export default function SalesPage() {
 
         <Card>
             <CardHeader className="flex-row items-center justify-between">
-                <Button variant="outline" size="icon" onClick={() => handleDateChange('prev')}>
+                <Button variant="outline" size="icon" onClick={() => handleDateChange('prev')} disabled={isPrevDisabled}>
                     <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <div className="text-center">
@@ -221,7 +228,7 @@ export default function SalesPage() {
                             onClick={() => setSelectedDate(isSameDay(day, selectedDate || new Date(0)) ? null : day)}
                         >
                             <span>{format(day, 'd')}</span>
-                            <span className="text-xs">{format(day, 'eee', { locale: es })}</span>
+                            <span className="text-xs capitalize">{format(day, 'eee', { locale: es })}</span>
                         </Button>
                     ))}
                 </CardContent>
@@ -240,10 +247,7 @@ export default function SalesPage() {
                  const totals = totalsByPaymentMethod[pm.id] || { usd: 0, ves: 0 };
                  const totalAmount = pm.currency === '$' ? totals.usd : totals.ves;
                  
-                 if (totalAmount === 0 && pm.currency === '$' && totals.ves > 0) return null;
-                 if (totalAmount === 0 && pm.currency === 'Bs' && totals.usd > 0) return null;
-                 if(totalAmount === 0) return null;
-
+                 if (totalAmount === 0) return null;
 
                  return (
                     <Card key={pm.id}>
@@ -253,7 +257,7 @@ export default function SalesPage() {
                         </CardHeader>
                         <CardContent>
                             <p className="text-2xl font-bold">
-                                {pm.currency === '$' ? `$${formatUsd(totalAmount)}` : `Bs ${formatBs(totalAmount)}`}
+                                {pm.currency === '$' ? `$${formatUsd(totalAmount)}` : `Bs ${formatBs(totalAmount / bcvRate)}`}
                             </p>
                         </CardContent>
                     </Card>
@@ -271,7 +275,7 @@ export default function SalesPage() {
                 const dayDate = parseISO(day);
                 const dayTotal = sales.reduce((sum, s) => sum + s.total, 0);
                 return (
-                    <Collapsible key={day}>
+                    <Collapsible key={day} defaultOpen={selectedDate ? isSameDay(dayDate, selectedDate) : false} open={selectedDate ? isSameDay(dayDate, selectedDate) : undefined}>
                         <Card>
                             <CollapsibleTrigger className="w-full">
                                 <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-muted/50">
@@ -329,7 +333,7 @@ export default function SalesPage() {
                     </Collapsible>
                 )
             })}
-             {groupedSalesByDay.length === 0 && (
+             {salesForPeriod.length === 0 && (
                 <div className="text-center p-8 text-muted-foreground border-2 border-dashed rounded-lg">
                     <History className="mx-auto h-12 w-12 mb-4" />
                     <h3 className="text-lg font-semibold">No hay ventas registradas</h3>
@@ -340,4 +344,3 @@ export default function SalesPage() {
     </div>
   );
 }
-
