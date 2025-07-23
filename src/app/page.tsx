@@ -3,24 +3,15 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useBusinessContext } from '@/hooks/use-business-context';
-import Loading from './dashboard/loading';
 
-export default function HomePage() {
-  const { user, isLoading } = useBusinessContext();
+// This component now serves as a simple redirect to the main welcome/landing page.
+export default function RedirectToWelcome() {
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) {
-      return;
-    }
+    router.replace('/welcome');
+  }, [router]);
 
-    if (user) {
-      router.replace('/dashboard');
-    } else {
-      router.replace('/login');
-    }
-  }, [user, isLoading, router]);
-
-  return <Loading />;
+  // Render nothing, or a loading spinner, while redirecting.
+  return null;
 }
