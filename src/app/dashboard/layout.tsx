@@ -24,7 +24,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { getCurrentBcvRate, bcvRateSubject } from "@/lib/placeholder-data";
 import { useState, useEffect } from "react";
-import { BusinessProvider, useBusinessContext } from "@/hooks/use-business-context";
+import { useBusinessContext } from "@/hooks/use-business-context";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -107,7 +107,7 @@ const ActivationBanner = () => {
 };
 
 
-const DashboardLayoutContent = ({ children }: { children: React.ReactNode }) => {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [bcvRate, setBcvRate] = useState(getCurrentBcvRate());
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const { isLoading, user, isTrialExpired, userData } = useBusinessContext();
@@ -212,16 +212,4 @@ const DashboardLayoutContent = ({ children }: { children: React.ReactNode }) => 
       </div>
     </div>
   )
-}
-
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <BusinessProvider>
-      <DashboardLayoutContent>{children}</DashboardLayoutContent>
-    </BusinessProvider>
-  );
 }
