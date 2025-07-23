@@ -134,11 +134,11 @@ export const accountsReceivable = [
 ];
 
 export let paymentMethods = [
-    { id: 'pay-01', name: 'Efectivo USD', currency: '$', type: 'Efectivo', givesChange: true },
-    { id: 'pay-02', name: 'Efectivo VES', currency: 'Bs', type: 'Efectivo', givesChange: true },
-    { id: 'pay-03', name: 'Zelle', currency: '$', type: 'Digital', givesChange: false },
-    { id: 'pay-04', name: 'Pago Móvil', currency: 'Bs', type: 'Digital', givesChange: false },
-    { id: 'pay-05', name: 'Punto de Venta', currency: 'Bs', type: 'Digital', givesChange: false },
+    { id: 'pay-01', name: 'Efectivo USD', currency: '$', type: 'Efectivo', givesChange: true, managesOpeningBalance: true },
+    { id: 'pay-02', name: 'Efectivo VES', currency: 'Bs', type: 'Efectivo', givesChange: true, managesOpeningBalance: true },
+    { id: 'pay-03', name: 'Zelle', currency: '$', type: 'Digital', givesChange: false, managesOpeningBalance: false },
+    { id: 'pay-04', name: 'Pago Móvil', currency: 'Bs', type: 'Digital', givesChange: false, managesOpeningBalance: false },
+    { id: 'pay-05', name: 'Punto de Venta', currency: 'Bs', type: 'Digital', givesChange: false, managesOpeningBalance: false },
 ];
 
 export const getPaymentMethods = () => [...paymentMethods];

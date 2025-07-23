@@ -1171,11 +1171,11 @@ export default function PosPage() {
                     <DialogHeader>
                         <DialogTitle>Apertura de Caja</DialogTitle>
                         <DialogDescription>
-                            Ingrese los saldos iniciales en efectivo para cada forma de pago para comenzar a operar.
+                            Ingrese los saldos iniciales para cada forma de pago para comenzar a operar.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
-                        {paymentMethodsList.filter(pm => pm.type === 'Efectivo').map(pm => (
+                        {paymentMethodsList.filter(pm => pm.managesOpeningBalance).map(pm => (
                             <div key={pm.id} className="grid grid-cols-4 items-center gap-4">
                                 <Label htmlFor={`balance-${pm.id}`} className="text-right">
                                     {pm.name}

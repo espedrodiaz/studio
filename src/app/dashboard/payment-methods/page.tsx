@@ -52,6 +52,7 @@ export default function PaymentMethodsPage() {
   const [currency, setCurrency] = useState<"$" | "Bs">("$");
   const [type, setType] = useState<"Efectivo" | "Digital">("Digital");
   const [givesChange, setGivesChange] = useState(false);
+  const [managesOpeningBalance, setManagesOpeningBalance] = useState(false);
 
   useEffect(() => {
     setMethods(getPaymentMethods());
@@ -62,6 +63,7 @@ export default function PaymentMethodsPage() {
     setCurrency("$");
     setType("Digital");
     setGivesChange(false);
+    setManagesOpeningBalance(false);
     setEditingMethod(null);
   };
 
@@ -72,6 +74,7 @@ export default function PaymentMethodsPage() {
       setCurrency(method.currency as "$" | "Bs");
       setType(method.type as "Efectivo" | "Digital");
       setGivesChange(method.givesChange);
+      setManagesOpeningBalance(method.managesOpeningBalance);
     } else {
       resetForm();
     }
@@ -89,7 +92,7 @@ export default function PaymentMethodsPage() {
       return;
     }
 
-    const methodData = { name, currency, type, givesChange };
+    const methodData = { name, currency, type, givesChange, managesOpeningBalance };
 
     if (editingMethod) {
       updatePaymentMethod(editingMethod.id, methodData);
@@ -130,7 +133,8 @@ export default function PaymentMethodsPage() {
               <TableHead>Nombre</TableHead>
               <TableHead>Moneda</TableHead>
               <TableHead>Tipo</TableHead>
-              <TableHead>Se usa para vuelto</TableHead>
+              <TableHead>Da Vuelto</TableHead>
+              <TableHead>Maneja Saldo Apertura</TableHead>
               <TableHead>
                 <span className="sr-only">Acciones</span>
               </TableHead>
@@ -147,6 +151,7 @@ export default function PaymentMethodsPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>{method.givesChange ? 'Sí' : 'No'}</TableCell>
+                <TableCell>{method.managesOpeningBalance ? 'Sí' : 'No'}</TableCell>
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -211,6 +216,15 @@ export default function PaymentMethodsPage() {
                     className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                    Usar esta forma de pago para dar vuelto
+                </label>
+            </div>
+            <div className="flex items-center space-x-2">
+                <Checkbox id="managesOpeningBalance" checked={managesOpeningBalance} onCheckedChange={(checked) => setManagesOpeningBalance(Boolean(checked))} />
+                <label
+                    htmlFor="managesOpeningBalance"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                   Maneja saldo de Apertura de Caja
                 </label>
             </div>
           </div>
