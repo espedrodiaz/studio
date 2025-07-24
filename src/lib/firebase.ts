@@ -1,3 +1,4 @@
+
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
@@ -5,7 +6,7 @@ import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyB-S11iSgE9Wf5nJxkso326y3pYf2G_BfA",
+  apiKey: "AIzaSyABzDx_931Gah9eN2UvYRECk-w_5z3rT5g",
   authDomain: "facilitoposvzla.firebaseapp.com",
   projectId: "facilitoposvzla",
   storageBucket: "facilitoposvzla.appspot.com",
