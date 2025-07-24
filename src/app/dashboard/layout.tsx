@@ -9,6 +9,8 @@ import {
   ShieldCheck,
   LogOut,
   Loader2,
+  ShieldX,
+  Clock,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -32,10 +34,11 @@ import { toast } from "@/hooks/use-toast";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import Loading from "./loading";
+import { cn } from "@/lib/utils";
 
 
 const ActivationBanner = () => {
-    const { userData, activateLicense, isTrialExpired } = useBusinessContext();
+    const { userData, activateLicense, isLicenseInvalid } = useBusinessContext();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [licenseKey, setLicenseKey] = useState('');
 
@@ -48,7 +51,7 @@ const ActivationBanner = () => {
         if (success) {
             toast({
                 title: "¡Licencia Activada!",
-                description: "¡Felicidades! Todas las funciones de su cuenta han sido activadas permanentemente.",
+                description: "¡Felicidades! Todas las funciones de su cuenta han sido activadas por un año.",
             });
             setIsModalOpen(false);
         } else {
@@ -61,21 +64,29 @@ const ActivationBanner = () => {
     }
     
     const trialEndDate = userData.trialEndsAt ? new Date(userData.trialEndsAt) : null;
+    const daysRemaining = trialEndDate ? Math.max(0, Math.ceil((trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : 0;
+    const isTrial = userData.status === 'Trial';
 
     return (
         <>
-            <div className="bg-yellow-400 text-yellow-900 text-center p-2 text-sm font-medium flex items-center justify-center gap-4 w-full">
-                {isTrialExpired ? (
-                     <span>Tu período de prueba ha expirado. Activa tu licencia para continuar.</span>
+            <div className={cn("text-yellow-900 text-center p-2 text-sm font-medium flex items-center justify-center gap-4 w-full",
+                isLicenseInvalid && isTrial ? "bg-yellow-400" : "bg-red-500 text-white"
+            )}>
+                {isTrial ? (
+                    isLicenseInvalid ? (
+                         <span>Tu período de prueba ha expirado. Activa tu licencia para continuar.</span>
+                    ) : (
+                        <span>
+                            Estás en modo de prueba. Te quedan {daysRemaining} días.
+                        </span>
+                    )
                 ) : (
-                    <span>
-                        Estás en modo de prueba. Te quedan {trialEndDate ? Math.max(0, Math.ceil((trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))) : '0'} días.
-                    </span>
+                    <span>Tu licencia ha expirado o está suspendida. Actívala para continuar.</span>
                 )}
                 <Button
                     size="sm"
                     variant="secondary"
-                    className="gap-2 bg-yellow-50 hover:bg-yellow-100 h-8"
+                    className="gap-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-900 h-8"
                     onClick={() => setIsModalOpen(true)}
                 >
                     <ShieldCheck className="h-4 w-4" />
@@ -87,7 +98,7 @@ const ActivationBanner = () => {
                     <DialogHeader>
                         <DialogTitle>Activar Licencia de Producto</DialogTitle>
                         <DialogDescription>
-                            Introduce la clave de producto que te fue suministrada para activar tu cuenta permanentemente.
+                            Introduce la clave de producto que te fue suministrada para activar tu cuenta.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
@@ -110,7 +121,7 @@ const ActivationBanner = () => {
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [bcvRate, setBcvRate] = useState(getCurrentBcvRate());
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const { isLoading, user, isTrialExpired, userData } = useBusinessContext();
+  const { isLoading, user, isLicenseInvalid, userData } = useBusinessContext();
   const router = useRouter();
 
   useEffect(() => {
@@ -180,6 +191,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>{userData?.businessName || 'Mi Cuenta'}</DropdownMenuLabel>
+                     {userData?.status === 'Active' && userData.licenseExpiresAt && (
+                        <DropdownMenuLabel className="font-normal text-xs text-muted-foreground flex items-center gap-1.5">
+                            <Clock className="h-3 w-3" />
+                            <span>Vence: {new Date(userData.licenseExpiresAt).toLocaleDateString('es-VE')}</span>
+                        </DropdownMenuLabel>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => router.push('/dashboard/settings')}>Ajustes</DropdownMenuItem>
                     <DropdownMenuItem>Soporte</DropdownMenuItem>
@@ -193,14 +210,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </div>
         </header>
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
-          {isTrialExpired ? (
+          {isLicenseInvalid ? (
              <Card className="flex flex-col items-center justify-center text-center p-12 gap-4">
-                <ShieldCheck className="h-16 w-16 text-destructive" />
-                <CardTitle>Período de Prueba Expirado</CardTitle>
+                <ShieldX className="h-16 w-16 text-destructive" />
+                <CardTitle>Acceso Restringido</CardTitle>
                 <CardDescription>
-                    Tu acceso a los módulos ha sido restringido. Por favor, activa tu licencia para continuar.
+                    Tu período de prueba o licencia ha expirado. Por favor, activa una licencia para continuar.
                 </CardDescription>
-                {/* The activation button is in the banner */}
              </Card>
           ) : (
             children

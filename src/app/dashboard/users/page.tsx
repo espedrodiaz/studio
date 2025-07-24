@@ -124,9 +124,10 @@ export default function UsersPage() {
                         user.status === 'Active' ? 'default' : user.status === 'Suspended' ? 'destructive' : 'secondary'
                     } className={cn({
                         'bg-green-100 text-green-800': user.status === 'Active',
-                        'bg-yellow-100 text-yellow-800': user.status === 'Pending Activation' || user.status === 'Trial',
+                        'bg-yellow-100 text-yellow-800': user.status === 'Pending Activation',
+                        'bg-red-100 text-red-800': user.status === 'Suspended',
                     })}>
-                        {user.status === 'Active' ? 'Activa' : user.status === 'Suspended' ? 'Suspendida' : 'Prueba'}
+                        {user.status === 'Active' ? 'Activa' : user.status === 'Suspended' ? 'Suspendida' : 'Pendiente'}
                     </Badge>
                     </TableCell>
                     <TableCell>
@@ -139,7 +140,7 @@ export default function UsersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Acciones de Licencia</DropdownMenuLabel>
-                        {(user.status === 'Pending Activation' || user.status === 'Trial' || user.status === 'Suspended') && (
+                        {(user.status === 'Pending Activation' || user.status === 'Suspended') && (
                             <DropdownMenuItem onClick={() => handleUpdateStatus(user.id, 'Active')}>
                                 <ShieldCheck className="mr-2 h-4 w-4 text-green-600"/>
                                 Activar Licencia

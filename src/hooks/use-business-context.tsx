@@ -15,16 +15,17 @@ type UserData = {
     rif: string;
     email: string | null;
     licenseKey: string;
-    status: 'Trial' | 'Active' | 'Suspended';
+    status: 'Trial' | 'Active' | 'Suspended' | 'Expired';
     createdAt: string;
     trialEndsAt: string;
+    licenseExpiresAt?: string;
 }
 
 type BusinessContextType = {
   isLoading: boolean;
   user: User | null;
   userData: UserData | null;
-  isTrialExpired: boolean;
+  isLicenseInvalid: boolean;
   activateLicense: (licenseKey: string) => boolean; 
 };
 
@@ -34,7 +35,7 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isTrialExpired, setIsTrialExpired] = useState(false);
+  const [isLicenseInvalid, setIsLicenseInvalid] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -48,12 +49,19 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
         if (userDoc.exists()) {
           const data = userDoc.data() as UserData;
           setUserData(data);
-          if (data.status !== 'Active') {
+          
+          let licenseIsInvalid = false;
+          if (data.status === 'Trial') {
             const trialEndDate = new Date(data.trialEndsAt);
-            setIsTrialExpired(new Date() > trialEndDate);
-          } else {
-            setIsTrialExpired(false);
+            licenseIsInvalid = new Date() > trialEndDate;
+          } else if (data.status === 'Active' && data.licenseExpiresAt) {
+            const licenseEndDate = new Date(data.licenseExpiresAt);
+            licenseIsInvalid = new Date() > licenseEndDate;
+          } else if (data.status === 'Suspended' || data.status === 'Expired') {
+             licenseIsInvalid = true;
           }
+          setIsLicenseInvalid(licenseIsInvalid);
+
         } else {
             // User is authenticated (likely from Google Sign-In) but doesn't have a user document.
             // Create their document with placeholder data.
@@ -76,15 +84,13 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
             
             await setDoc(userDocRef, newUserDocData);
             setUserData(newUserDocData);
-            setIsTrialExpired(false);
-            // In a real app, you might redirect to a profile completion page here.
-            // For now, they can edit it in settings.
+            setIsLicenseInvalid(false);
         }
 
       } else {
         setUser(null);
         setUserData(null);
-        setIsTrialExpired(false);
+        setIsLicenseInvalid(false);
         const publicRoutes = ['/login', '/signup', '/'];
         if (!publicRoutes.includes(window.location.pathname)) {
            router.push('/login');
@@ -98,13 +104,23 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
 
   const activateLicense = (licenseKey: string): boolean => {
     if (userData && licenseKey === userData.licenseKey) {
-        // This is a simulation. A backend would update the doc and this client would get the update via a listener.
-        const updatedUserData = { ...userData, status: 'Active' as 'Active' };
+        const oneYearFromNow = new Date();
+        oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+
+        const updatedUserData: UserData = { 
+            ...userData, 
+            status: 'Active',
+            licenseExpiresAt: oneYearFromNow.toISOString()
+        };
         setUserData(updatedUserData); 
-        setIsTrialExpired(false);
-        // In a real app, you would also update the document in Firestore.
+        setIsLicenseInvalid(false);
+        
         const userDocRef = doc(db, "users", userData.uid);
-        setDoc(userDocRef, { status: 'Active' }, { merge: true });
+        setDoc(userDocRef, { 
+            status: 'Active',
+            licenseExpiresAt: oneYearFromNow.toISOString()
+        }, { merge: true });
+
         return true;
     }
     return false;
@@ -115,7 +131,7 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
         isLoading,
         user,
         userData,
-        isTrialExpired,
+        isLicenseInvalid: isLicenseInvalid,
         activateLicense,
     }}>
       {children}
