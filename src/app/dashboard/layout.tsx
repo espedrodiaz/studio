@@ -82,7 +82,7 @@ const ActivationBanner = () => {
                          <span>Tu período de prueba ha expirado. Activa tu licencia para continuar.</span>
                     ) : (
                         <span>
-                            Estás en modo de prueba. Te quedan {daysRemaining} días.
+                            Estás en modo de prueba. Te quedan ${daysRemaining} días.
                         </span>
                     )
                 ) : (
@@ -234,5 +234,3 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   )
 }
-
-    
