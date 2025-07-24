@@ -1,5 +1,4 @@
 
-
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
@@ -15,13 +14,20 @@ const firebaseConfig = {
   appId: "1:980965995563:web:00bbafb002c25a919fe66e"
 };
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Robust Firebase initialization
+let app;
+if (!getApps().length) {
+    app = initializeApp(firebaseConfig);
+} else {
+    app = getApp();
+}
+
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Set persistence to local
-setPersistence(auth, browserLocalPersistence);
-
+// Set persistence only on the client-side
+if (typeof window !== 'undefined') {
+    setPersistence(auth, browserLocalPersistence);
+}
 
 export { app, auth, db };
