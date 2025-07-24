@@ -45,7 +45,6 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
     // Check if user is "espedrodiaz94@gmail.com" to assign specific data
     if (user.email === 'espedrodiaz94@gmail.com') {
       const glendaFamilyData = {
-        id: 'USER005',
         uid: user.uid,
         fullName: 'Pedro Díaz',
         businessName: 'Glenda Family',
@@ -106,12 +105,6 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
 
         } else {
           // This case handles new sign-ups, especially from Google, where user data is not yet in Firestore.
-          // It's a "soft" state; we don't know their business details yet.
-          // The form in signup page will handle creating the full document.
-          // If a Google user lands on dashboard without data, we can prompt them.
-          // For now, we will create a basic document and let them update it in settings.
-           const sevenDaysFromNow = new Date();
-           sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
            await createUserDataInFirestore(user, {
               fullName: user.displayName || "Nuevo Usuario",
               businessName: "Mi Negocio",
