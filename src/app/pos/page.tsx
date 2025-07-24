@@ -4,3 +4,5 @@ import { redirect } from 'next/navigation'
 export default function DeprecatedPosPage() {
   redirect('/dashboard/pos')
 }
+
+    
