@@ -42,9 +42,8 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
   const createUserDataInFirestore = async (user: User, data: { fullName: string, businessName: string, businessCategory: string, rif: string }) => {
     const userDocRef = doc(db, "users", user.uid);
     
-    // Check if user is "espedrodiaz94@gmail.com" to assign specific data
     if (user.email === 'espedrodiaz94@gmail.com') {
-      const glendaFamilyData = {
+      const glendaFamilyData: UserData = {
         uid: user.uid,
         fullName: 'Pedro Díaz',
         businessName: 'Glenda Family',
@@ -54,7 +53,7 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
         status: 'Pending Activation',
         email: user.email,
         createdAt: new Date().toISOString(),
-        trialEndsAt: new Date(0).toISOString(), // No trial
+        trialEndsAt: new Date(0).toISOString(),
       };
       await setDoc(userDocRef, glendaFamilyData);
       return;
@@ -104,19 +103,18 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
           setIsLicenseInvalid(licenseIsInvalid);
 
         } else {
-          // This case handles new sign-ups, especially from Google, where user data is not yet in Firestore.
-           await createUserDataInFirestore(user, {
+           const defaultData = {
               fullName: user.displayName || "Nuevo Usuario",
               businessName: "Mi Negocio",
               businessCategory: "Otro",
               rif: "J-00000000-0"
-           })
-           // Re-fetch the newly created document
+           };
+           await createUserDataInFirestore(user, defaultData);
            const newUserDoc = await getDoc(userDocRef);
            if(newUserDoc.exists()){
              setUserData(newUserDoc.data() as UserData);
            }
-           setIsLicenseInvalid(false); // They are in trial period.
+           setIsLicenseInvalid(false); 
         }
 
       } else {
@@ -124,7 +122,7 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
         setUserData(null);
         setIsLicenseInvalid(false);
         const publicRoutes = ['/login', '/signup', '/'];
-        if (!publicRoutes.includes(window.location.pathname)) {
+        if (typeof window !== 'undefined' && !publicRoutes.includes(window.location.pathname)) {
            router.push('/login');
         }
       }

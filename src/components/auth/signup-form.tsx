@@ -24,9 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { businessCategories } from "@/lib/placeholder-data";
-import { auth, db } from "@/lib/firebase";
-import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
+import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
 import { toast } from "@/hooks/use-toast";
 import { useBusinessContext } from "@/hooks/use-business-context";
 
@@ -84,6 +83,7 @@ export function SignupForm() {
       setIsGoogleLoading(true);
       const provider = new GoogleAuthProvider();
       try {
+          // The onAuthStateChanged listener in use-business-context will handle user creation
           await signInWithPopup(auth, provider);
           router.push('/dashboard');
       } catch (error: any) {

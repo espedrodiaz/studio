@@ -49,9 +49,8 @@ export function LoginForm() {
     setIsGoogleLoading(true);
     const provider = new GoogleAuthProvider();
     try {
+        // The onAuthStateChanged listener in use-business-context will handle user creation logic.
         await signInWithPopup(auth, provider);
-        // The onAuthStateChanged listener in use-business-context will handle the redirect and data creation.
-        // It's a more robust way to handle both login and first-time signup with Google.
         router.push("/dashboard");
     } catch (error: any) {
         console.error("Google Sign-In Error:", error);

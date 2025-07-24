@@ -208,17 +208,6 @@ export const voidSale = (saleId: string) => {
 }
 
 
-export const accountsPayable = [
-    { id: 'AP001', supplier: 'Distribuidora Alimentos Polar', amount: 1500.00, dueDate: '2024-08-15', status: 'Pendiente' },
-    { id: 'AP002', supplier: 'Café Fama de América C.A.', amount: 850.50, dueDate: '2024-08-10', status: 'Pendiente' },
-    { id: 'AP003', supplier: 'Inversiones Primor', amount: 2200.00, dueDate: '2024-07-30', status: 'Pagada' },
-];
-
-export const accountsReceivable = [
-    { id: 'AR001', customer: 'María Rodríguez', amount: 5.40, dueDate: '2024-08-05', status: 'Pendiente' },
-    { id: 'AR002', customer: 'Constructora XYZ', amount: 350.00, dueDate: '2024-08-20', status: 'Pendiente' },
-];
-
 export let paymentMethods = [
     { id: 'pay-01', name: 'Efectivo USD', currency: '$', type: 'Efectivo', givesChange: true, managesOpeningBalance: true },
     { id: 'pay-02', name: 'Efectivo VES', currency: 'Bs', type: 'Efectivo', givesChange: true, managesOpeningBalance: true },
@@ -375,4 +364,17 @@ export const getInventoryMovements = () => [
     { id: 'IM002', date: '2024-07-26T14:30:00Z', product: 'Café Molido 500g', type: 'Salida por Venta', quantityChange: -2, finalStock: 150, user: 'Cajero 1' },
     { id: 'IM003', date: '2024-07-25T09:15:00Z', product: 'Aceite de Girasol 1L', type: 'Ajuste por Reconteo', quantityChange: -1, finalStock: 90, user: 'Admin' },
     { id: 'IM004', date: '2024-07-25T18:00:00Z', product: 'Arroz Blanco 1kg', type: 'Salida por Venta', quantityChange: -5, finalStock: 180, user: 'Cajero 1' },
+];
+
+// Accounts Payable & Receivable
+export const accountsPayable = [
+    { id: 'AP001', supplier: 'Distribuidora Alimentos Polar', dueDate: '2024-08-15', amount: 1500.00, status: 'Pendiente' },
+    { id: 'AP002', supplier: 'Inversiones Primor', dueDate: '2024-08-10', amount: 850.50, status: 'Pendiente' },
+    { id: 'AP003', supplier: 'Café Fama de América C.A.', dueDate: '2024-07-20', amount: 600.00, status: 'Pagada' },
+];
+
+export const accountsReceivable = [
+    { id: 'AR001', customer: 'Restaurante El Gran Sabor', dueDate: '2024-08-05', amount: 350.75, status: 'Pendiente' },
+    { id: 'AR002', customer: 'Panadería La Central', dueDate: '2024-08-12', amount: 500.00, status: 'Pendiente' },
+    { id: 'AR003', customer: 'Abasto La Confianza', dueDate: '2024-07-18', amount: 200.00, status: 'Pagada' },
 ];
