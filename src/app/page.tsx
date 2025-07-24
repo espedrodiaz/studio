@@ -8,6 +8,7 @@ import { CheckCircle, BarChart2, Package, Users, ShoppingCart, DollarSign, Landm
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import Loading from "./dashboard/loading";
+import { useBusinessContext } from "@/hooks/use-business-context";
 
 const Feature = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
     <div className="flex flex-col items-center text-center p-4">
@@ -34,9 +35,9 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 
 export default function WelcomePage() {
+    const { isLoading: isAuthLoading } = useBusinessContext();
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
-    const [path, setPath] = useState('');
     const [dynamicWord, setDynamicWord] = useState('Emprendedores');
 
     useEffect(() => {
@@ -51,14 +52,11 @@ export default function WelcomePage() {
     }, []);
 
     const handleNavigation = (newPath: string) => {
-        setPath(newPath);
         setIsLoading(true);
-        setTimeout(() => {
-            router.push(newPath);
-        }, 6000);
+        router.push(newPath);
     };
 
-    if (isLoading) {
+    if (isAuthLoading || isLoading) {
         return <Loading />;
     }
 

@@ -28,7 +28,7 @@ type BusinessContextType = {
   userData: UserData | null;
   isLicenseInvalid: boolean;
   activateLicense: (licenseKey: string) => boolean;
-  createUserDataInFirestore: (user: User, data: { fullName: string, businessName: string, businessCategory: string, rif: string }) => Promise<void>;
+  createUserDataInFirestore: (user: User, data?: Partial<{ fullName: string, businessName: string, businessCategory: string, rif: string }>) => Promise<void>;
 };
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
@@ -41,72 +41,84 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const createUserDataInFirestore = async (user: User, data: { fullName: string, businessName: string, businessCategory: string, rif: string }) => {
+  const createUserDataInFirestore = async (user: User, data: Partial<{ fullName: string, businessName: string, businessCategory: string, rif: string }> = {}) => {
     const userDocRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(userDocRef);
 
     if (docSnap.exists()) {
-        console.log("User data already exists, merging new info.");
-        await setDoc(userDocRef, {
-            fullName: data.fullName || user.displayName || 'Usuario Existente',
-            businessName: data.businessName || 'Negocio Existente',
-            businessCategory: data.businessCategory || 'Otro',
-            rif: data.rif || 'J-00000000-0',
-            email: user.email,
-        }, { merge: true });
-        return;
+      // If user exists, just update their data if they are admin, otherwise do nothing
+      if (user.email === 'espedrodiaz94@gmail.com') {
+          await setDoc(userDocRef, {
+            licenseKey: 'F4C1-L1T0-P05V-ZL41',
+            businessName: 'Glenda Family',
+            businessCategory: 'Venta de Repuestos',
+            fullName: 'Pedro Díaz',
+            rif: 'V-25695305',
+          }, { merge: true });
+      }
+      return;
     }
 
+    // If user does not exist, create new document
     const licenseKey = `FPV-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
     const sevenDaysFromNow = new Date();
     sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
 
     const newUserDocData: UserData = {
         uid: user.uid,
-        fullName: data.fullName,
-        businessName: data.businessName,
-        businessCategory: data.businessCategory,
-        rif: data.rif,
+        fullName: data.fullName || user.displayName || "Nuevo Usuario",
+        businessName: data.businessName || "Mi Negocio",
+        businessCategory: data.businessCategory || "Otro",
+        rif: data.rif || "J-00000000-0",
         email: user.email,
         licenseKey,
         status: "Trial",
         createdAt: new Date().toISOString(),
         trialEndsAt: sevenDaysFromNow.toISOString(),
     };
+    
+    if (user.email === 'espedrodiaz94@gmail.com') {
+      newUserDocData.licenseKey = 'F4C1-L1T0-P05V-ZL41';
+      newUserDocData.businessName = 'Glenda Family';
+      newUserDocData.businessCategory = 'Venta de Repuestos';
+      newUserDocData.fullName = 'Pedro Díaz';
+      newUserDocData.rif = 'V-25695305';
+    }
+    
     await setDoc(userDocRef, newUserDocData);
   }
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const userDocRef = doc(db, "users", user.uid);
-        let userDoc = await getDoc(userDocRef);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setIsLoading(true);
+      if (currentUser) {
+        await createUserDataInFirestore(currentUser);
+        
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          const data = userDoc.data() as UserData;
+          setUser(currentUser);
+          setUserData(data);
 
-        if (!userDoc.exists()) {
-           await createUserDataInFirestore(user, {
-              fullName: user.displayName || "Nuevo Usuario",
-              businessName: "Mi Negocio",
-              businessCategory: "Otro",
-              rif: "J-00000000-0"
-           });
-           userDoc = await getDoc(userDocRef);
+          let licenseIsInvalid = false;
+          if (data.status === 'Trial') {
+              const trialEndDate = new Date(data.trialEndsAt);
+              licenseIsInvalid = new Date() > trialEndDate;
+          } else if (data.status === 'Active' && data.licenseExpiresAt) {
+              const licenseEndDate = new Date(data.licenseExpiresAt);
+              licenseIsInvalid = new Date() > licenseEndDate;
+          } else if (['Suspended', 'Pending Activation', 'Expired'].includes(data.status)) {
+              licenseIsInvalid = true;
+          }
+          setIsLicenseInvalid(licenseIsInvalid);
+        } else {
+            // This case might happen if firestore document creation failed
+            setUser(null);
+            setUserData(null);
+            setIsLicenseInvalid(false);
         }
-
-        const data = userDoc.data() as UserData;
-        setUser(user);
-        setUserData(data);
-
-        let licenseIsInvalid = false;
-        if (data.status === 'Trial') {
-            const trialEndDate = new Date(data.trialEndsAt);
-            licenseIsInvalid = new Date() > trialEndDate;
-        } else if (data.status === 'Active' && data.licenseExpiresAt) {
-            const licenseEndDate = new Date(data.licenseExpiresAt);
-            licenseIsInvalid = new Date() > licenseEndDate;
-        } else if (['Suspended', 'Pending Activation'].includes(data.status)) {
-            licenseIsInvalid = true;
-        }
-        setIsLicenseInvalid(licenseIsInvalid);
 
       } else {
         setUser(null);
@@ -126,7 +138,9 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
     const isPublicRoute = publicRoutes.includes(pathname);
 
     if (!user && !isPublicRoute) {
-        router.push('/login');
+        router.replace('/login');
+    } else if (user && isPublicRoute) {
+        router.replace('/dashboard');
     }
 
   }, [user, isLoading, pathname, router]);
@@ -142,32 +156,34 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
             status: 'Active',
             licenseExpiresAt: oneYearFromNow.toISOString()
         };
-        setUserData(updatedUserData); 
-        setIsLicenseInvalid(false);
         
         const userDocRef = doc(db, "users", userData.uid);
         setDoc(userDocRef, { 
             status: 'Active',
             licenseExpiresAt: oneYearFromNow.toISOString()
-        }, { merge: true });
-
-        clearDemoData();
-        window.location.reload();
+        }, { merge: true }).then(() => {
+            setUserData(updatedUserData); 
+            setIsLicenseInvalid(false);
+            clearDemoData();
+            window.location.reload();
+        });
 
         return true;
     }
     return false;
   };
 
+  const contextValue = {
+    isLoading,
+    user,
+    userData,
+    isLicenseInvalid,
+    activateLicense,
+    createUserDataInFirestore,
+  };
+
   return (
-    <BusinessContext.Provider value={{ 
-        isLoading,
-        user,
-        userData,
-        isLicenseInvalid,
-        activateLicense,
-        createUserDataInFirestore,
-    }}>
+    <BusinessContext.Provider value={contextValue}>
       {children}
     </BusinessContext.Provider>
   );
@@ -180,5 +196,3 @@ export const useBusinessContext = () => {
   }
   return context;
 };
-
-    
