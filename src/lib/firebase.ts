@@ -1,5 +1,4 @@
 
-
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth, setPersistence, browserLocalPersistence } from "firebase/auth";
@@ -32,4 +31,3 @@ if (typeof window !== 'undefined') {
 }
 
 export { app, auth, db };
-
