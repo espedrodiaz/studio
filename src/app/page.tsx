@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PosLogo } from "@/components/ui/pos-logo";
 import { CheckCircle, BarChart2, Package, Users, ShoppingCart, DollarSign, Landmark } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Loading from "./dashboard/loading";
 
 const Feature = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
@@ -25,13 +25,25 @@ export default function WelcomePage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const [path, setPath] = useState('');
+    const [dynamicWord, setDynamicWord] = useState('Emprendedores');
+
+    useEffect(() => {
+        const words = ['Emprendedores', 'Empresas'];
+        let currentIndex = 0;
+        const interval = setInterval(() => {
+            currentIndex = (currentIndex + 1) % words.length;
+            setDynamicWord(words[currentIndex]);
+        }, 2000); // Cambia cada 2 segundos
+
+        return () => clearInterval(interval);
+    }, []);
 
     const handleNavigation = (newPath: string) => {
         setPath(newPath);
         setIsLoading(true);
         setTimeout(() => {
             router.push(newPath);
-        }, 6000); // 6 segundos
+        }, 6000);
     };
 
     if (isLoading) {
@@ -56,7 +68,10 @@ export default function WelcomePage() {
                         <div className="flex flex-col items-center space-y-6 text-center">
                             <div className="space-y-4">
                                 <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl/none">
-                                    El Punto de Venta Diseñado para Venezuela
+                                    El Punto de Venta Diseñado para 
+                                    <br className="sm:hidden" />
+                                    <span className="text-primary transition-all duration-300 ease-in-out"> {dynamicWord} </span> 
+                                    de Venezuela
                                 </h1>
                                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
                                     FacilitoPOS simplifica tu inventario, ventas y facturación. Menos papeleo, más ganancias.
