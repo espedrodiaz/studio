@@ -63,7 +63,7 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
           setIsLicenseInvalid(licenseIsInvalid);
 
         } else {
-            // User is authenticated (likely from Google Sign-In) but doesn't have a user document.
+            // User is authenticated but doesn't have a user document.
             // Create their document with placeholder data.
             const licenseKey = `FPV-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
             const sevenDaysFromNow = new Date();
