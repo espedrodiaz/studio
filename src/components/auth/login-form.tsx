@@ -14,9 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PosLogo } from "../ui/pos-logo";
-import { auth, db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
@@ -52,8 +51,10 @@ export function LoginForm() {
     try {
         await signInWithPopup(auth, provider);
         // The onAuthStateChanged listener in use-business-context will handle the redirect and data creation.
+        // It's a more robust way to handle both login and first-time signup with Google.
         router.push("/dashboard");
     } catch (error: any) {
+        console.error("Google Sign-In Error:", error);
         toast({
             title: "Error con Google",
             description: "No se pudo iniciar sesión con Google. Por favor, intenta de nuevo.",

@@ -28,6 +28,7 @@ import { auth, db } from "@/lib/firebase";
 import { createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, User } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { toast } from "@/hooks/use-toast";
+import { useBusinessContext } from "@/hooks/use-business-context";
 
 export function SignupForm() {
   const router = useRouter();
@@ -42,27 +43,7 @@ export function SignupForm() {
   const [rif, setRif] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  const createUserDataInFirestore = async (user: User, data: { fullName: string, businessName: string, businessCategory: string, rif: string }) => {
-      const userDocRef = doc(db, "users", user.uid);
-      
-      const licenseKey = `FPV-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-      const sevenDaysFromNow = new Date();
-      sevenDaysFromNow.setDate(sevenDaysFromNow.getDate() + 7);
-
-      await setDoc(userDocRef, {
-          uid: user.uid,
-          fullName: data.fullName,
-          businessName: data.businessName,
-          businessCategory: data.businessCategory,
-          rif: data.rif,
-          email: user.email,
-          licenseKey,
-          status: "Trial",
-          createdAt: new Date().toISOString(),
-          trialEndsAt: sevenDaysFromNow.toISOString(),
-      });
-  }
+  const { createUserDataInFirestore } = useBusinessContext();
 
   const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -103,7 +84,6 @@ export function SignupForm() {
       setIsGoogleLoading(true);
       const provider = new GoogleAuthProvider();
       try {
-          // This will sign the user in and the onAuthStateChanged listener in use-business-context will handle data creation
           await signInWithPopup(auth, provider);
           router.push('/dashboard');
       } catch (error: any) {
