@@ -46,16 +46,6 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
     const docSnap = await getDoc(userDocRef);
 
     if (docSnap.exists()) {
-      // If user exists, just update their data if they are admin, otherwise do nothing
-      if (user.email === 'espedrodiaz94@gmail.com') {
-          await setDoc(userDocRef, {
-            licenseKey: 'F4C1-L1T0-P05V-ZL41',
-            businessName: 'Glenda Family',
-            businessCategory: 'Venta de Repuestos',
-            fullName: 'Pedro Díaz',
-            rif: 'V-25695305',
-          }, { merge: true });
-      }
       return;
     }
 
@@ -77,12 +67,14 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
         trialEndsAt: sevenDaysFromNow.toISOString(),
     };
     
+    // Specific override for admin/demo user
     if (user.email === 'espedrodiaz94@gmail.com') {
       newUserDocData.licenseKey = 'F4C1-L1T0-P05V-ZL41';
       newUserDocData.businessName = 'Glenda Family';
       newUserDocData.businessCategory = 'Venta de Repuestos';
       newUserDocData.fullName = 'Pedro Díaz';
       newUserDocData.rif = 'V-25695305';
+      newUserDocData.status = 'Pending Activation';
     }
     
     await setDoc(userDocRef, newUserDocData);
@@ -196,3 +188,5 @@ export const useBusinessContext = () => {
   }
   return context;
 };
+
+    

@@ -70,6 +70,9 @@ export default function WelcomePage() {
                      <Button variant="ghost" onClick={() => handleNavigation('/login')}>
                         Iniciar Sesión
                     </Button>
+                     <Button onClick={() => handleNavigation('/signup')}>
+                        Regístrate
+                    </Button>
                 </nav>
             </header>
             <main className="flex-1">
@@ -163,3 +166,5 @@ export default function WelcomePage() {
         </div>
     );
 }
+
+    

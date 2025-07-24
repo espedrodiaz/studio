@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { SidebarNav } from "@/components/dashboard/sidebar-nav";
+import { SidebarNav } from "./sidebar-nav";
 import { getCurrentBcvRate, bcvRateSubject } from "@/lib/placeholder-data";
 import { useState, useEffect } from "react";
 import { useBusinessContext } from "@/hooks/use-business-context";
@@ -234,3 +234,5 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     </div>
   )
 }
+
+    
