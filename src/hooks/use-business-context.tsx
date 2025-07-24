@@ -41,9 +41,10 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
 
   const createUserDataInFirestore = async (user: User, data: { fullName: string, businessName: string, businessCategory: string, rif: string }) => {
     const userDocRef = doc(db, "users", user.uid);
-    
+    const docSnap = await getDoc(userDocRef);
+
     if (user.email === 'espedrodiaz94@gmail.com') {
-      const glendaFamilyData: UserData = {
+      const adminData = {
         uid: user.uid,
         fullName: 'Pedro Díaz',
         businessName: 'Glenda Family',
@@ -52,11 +53,16 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
         licenseKey: 'F4C1-L1T0-P05V-ZL41',
         status: 'Pending Activation',
         email: user.email,
-        createdAt: new Date().toISOString(),
-        trialEndsAt: new Date(0).toISOString(),
+        createdAt: docSnap.exists() ? docSnap.data().createdAt : new Date().toISOString(),
+        trialEndsAt: docSnap.exists() ? docSnap.data().trialEndsAt : new Date(0).toISOString(),
       };
-      await setDoc(userDocRef, glendaFamilyData);
+      await setDoc(userDocRef, adminData, { merge: true });
       return;
+    }
+
+    if (docSnap.exists()) {
+        console.log("User data already exists, skipping creation.");
+        return;
     }
 
     const licenseKey = `FPV-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
@@ -84,9 +90,24 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
       if (user) {
         setUser(user);
         const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
+        let userDoc = await getDoc(userDocRef);
 
-        if (userDoc.exists()) {
+        if (!userDoc.exists()) {
+           const defaultData = {
+              fullName: user.displayName || "Nuevo Usuario",
+              businessName: "Mi Negocio",
+              businessCategory: "Otro",
+              rif: "J-00000000-0"
+           };
+           await createUserDataInFirestore(user, defaultData);
+           userDoc = await getDoc(userDocRef); // Re-fetch the document after creation
+        } else if (user.email === 'espedrodiaz94@gmail.com') {
+            // This is the key fix: ensure the admin user data is correct on every login
+            await createUserDataInFirestore(user, {} as any);
+            userDoc = await getDoc(userDocRef); // Re-fetch after ensuring data is correct
+        }
+
+        if(userDoc.exists()) {
           const data = userDoc.data() as UserData;
           setUserData(data);
           
@@ -97,24 +118,10 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
           } else if (data.status === 'Active' && data.licenseExpiresAt) {
             const licenseEndDate = new Date(data.licenseExpiresAt);
             licenseIsInvalid = new Date() > licenseEndDate;
-          } else if (data.status === 'Suspended' || data.status === 'Expired' || data.status === 'Pending Activation') {
+          } else if (['Suspended', 'Expired', 'Pending Activation'].includes(data.status)) {
              licenseIsInvalid = true;
           }
           setIsLicenseInvalid(licenseIsInvalid);
-
-        } else {
-           const defaultData = {
-              fullName: user.displayName || "Nuevo Usuario",
-              businessName: "Mi Negocio",
-              businessCategory: "Otro",
-              rif: "J-00000000-0"
-           };
-           await createUserDataInFirestore(user, defaultData);
-           const newUserDoc = await getDoc(userDocRef);
-           if(newUserDoc.exists()){
-             setUserData(newUserDoc.data() as UserData);
-           }
-           setIsLicenseInvalid(false); 
         }
 
       } else {
