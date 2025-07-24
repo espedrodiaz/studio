@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { PosLogo } from "@/components/ui/pos-logo";
 import { CheckCircle, BarChart2, Package, Users, ShoppingCart, DollarSign, Landmark } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import Loading from "./dashboard/loading";
 
 const Feature = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
     <div className="flex flex-col items-center text-center p-4">
@@ -19,6 +22,22 @@ const Feature = ({ icon: Icon, title, description }: { icon: React.ElementType, 
 );
 
 export default function WelcomePage() {
+    const router = useRouter();
+    const [isLoading, setIsLoading] = useState(false);
+    const [path, setPath] = useState('');
+
+    const handleNavigation = (newPath: string) => {
+        setPath(newPath);
+        setIsLoading(true);
+        setTimeout(() => {
+            router.push(newPath);
+        }, 6000); // 6 segundos
+    };
+
+    if (isLoading) {
+        return <Loading />;
+    }
+
     return (
         <div className="flex flex-col min-h-screen bg-background">
             <header className="px-4 lg:px-6 h-14 flex items-center border-b">
@@ -26,11 +45,8 @@ export default function WelcomePage() {
                     <PosLogo className="text-2xl" />
                 </Link>
                 <nav className="ml-auto flex gap-2 sm:gap-4">
-                     <Button asChild variant="ghost">
-                         <Link href="/login">Iniciar Sesión</Link>
-                    </Button>
-                    <Button asChild>
-                         <Link href="/signup">Registrarse Gratis</Link>
+                     <Button variant="ghost" onClick={() => handleNavigation('/login')}>
+                        Iniciar Sesión
                     </Button>
                 </nav>
             </header>
@@ -47,10 +63,8 @@ export default function WelcomePage() {
                                 </p>
                             </div>
                             <div className="space-x-4">
-                                <Button asChild size="lg">
-                                    <Link href="/signup">
-                                        Empieza tu Prueba de 7 Días
-                                    </Link>
+                                <Button size="lg" onClick={() => handleNavigation('/signup')}>
+                                    Empieza tu Prueba de 7 Días
                                 </Button>
                             </div>
                         </div>
