@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import { Toaster } from "@/components/ui/toaster"
 import { BusinessProvider } from '@/hooks/use-business-context';
@@ -34,4 +35,6 @@ export default function RootLayout({
     </html>
   );
 }
+    
+
     
