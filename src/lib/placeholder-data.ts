@@ -120,7 +120,7 @@ export let products: Product[] = [
   },
 ];
 
-export const customers: Customer[] = [
+export let customers: Customer[] = [
   { 
     id: 'CUST001', 
     name: 'Ana Pérez', 
@@ -160,7 +160,7 @@ export const customers: Customer[] = [
   },
 ];
 
-export const suppliers = [
+export let suppliers = [
   { id: 'SUP001', name: 'Distribuidora Alimentos Polar', contact: 'Juan González', phone: '0212-2027111' },
   { id: 'SUP002', name: 'Café Fama de América C.A.', contact: 'Beatriz Rivas', phone: '0212-9915555' },
   { id: 'SUP003', name: 'Inversiones Primor', contact: 'Ricardo Solis', phone: '0241-8745011' },
@@ -367,14 +367,36 @@ export const getInventoryMovements = () => [
 ];
 
 // Accounts Payable & Receivable
-export const accountsPayable = [
+export let accountsPayable = [
     { id: 'AP001', supplier: 'Distribuidora Alimentos Polar', dueDate: '2024-08-15', amount: 1500.00, status: 'Pendiente' },
     { id: 'AP002', supplier: 'Inversiones Primor', dueDate: '2024-08-10', amount: 850.50, status: 'Pendiente' },
     { id: 'AP003', supplier: 'Café Fama de América C.A.', dueDate: '2024-07-20', amount: 600.00, status: 'Pagada' },
 ];
 
-export const accountsReceivable = [
+export let accountsReceivable = [
     { id: 'AR001', customer: 'Restaurante El Gran Sabor', dueDate: '2024-08-05', amount: 350.75, status: 'Pendiente' },
     { id: 'AR002', customer: 'Panadería La Central', dueDate: '2024-08-12', amount: 500.00, status: 'Pendiente' },
     { id: 'AR003', customer: 'Abasto La Confianza', dueDate: '2024-07-18', amount: 200.00, status: 'Pagada' },
 ];
+
+
+/**
+ * Clears all demo data from the placeholder arrays.
+ * This function should be called when a user activates a license to provide a clean slate.
+ */
+export const clearDemoData = () => {
+    console.log("Clearing all demo data...");
+    products.length = 0;
+    customers.length = 0;
+    suppliers.length = 0;
+    sales.length = 0;
+    paymentMethods.length = 0;
+    exchangeRates.length = 0;
+    supplierRates.length = 0;
+    cashMovements.length = 0;
+    categories.length = 0;
+    brands.length = 0;
+    accountsPayable.length = 0;
+    accountsReceivable.length = 0;
+    console.log("Demo data cleared.");
+};

@@ -6,6 +6,7 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
+import { clearDemoData } from '@/lib/placeholder-data';
 
 type UserData = {
     uid: string;
@@ -43,6 +44,9 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
     const userDocRef = doc(db, "users", user.uid);
     const docSnap = await getDoc(userDocRef);
 
+    const isExistingUser = docSnap.exists();
+    
+    // Special handling for admin user to ensure license is always present
     if (user.email === 'espedrodiaz94@gmail.com') {
       const adminData = {
         uid: user.uid,
@@ -50,17 +54,17 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
         businessName: 'Glenda Family',
         businessCategory: 'Venta de Repuestos',
         rif: 'V-25695305',
-        licenseKey: 'F4C1-L1T0-P05V-ZL41',
-        status: 'Pending Activation',
+        licenseKey: 'F4C1-L1T0-P05V-ZL41', // Ensure license key is set
+        status: isExistingUser ? docSnap.data().status : 'Pending Activation',
         email: user.email,
-        createdAt: docSnap.exists() ? docSnap.data().createdAt : new Date().toISOString(),
-        trialEndsAt: docSnap.exists() ? docSnap.data().trialEndsAt : new Date(0).toISOString(),
+        createdAt: isExistingUser ? docSnap.data().createdAt : new Date().toISOString(),
+        trialEndsAt: isExistingUser ? docSnap.data().trialEndsAt : new Date(0).toISOString(),
       };
       await setDoc(userDocRef, adminData, { merge: true });
       return;
     }
 
-    if (docSnap.exists()) {
+    if (isExistingUser) {
         console.log("User data already exists, skipping creation.");
         return;
     }
@@ -76,7 +80,7 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
         businessCategory: data.businessCategory,
         rif: data.rif,
         email: user.email,
-        licenseKey,
+        licenseKey, // Save the generated license key
         status: "Trial",
         createdAt: new Date().toISOString(),
         trialEndsAt: sevenDaysFromNow.toISOString(),
@@ -92,19 +96,15 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(db, "users", user.uid);
         let userDoc = await getDoc(userDocRef);
 
-        if (!userDoc.exists()) {
-           const defaultData = {
+        if (!userDoc.exists() || user.email === 'espedrodiaz94@gmail.com') {
+           const defaultData = userDoc.exists() ? userDoc.data() : {
               fullName: user.displayName || "Nuevo Usuario",
               businessName: "Mi Negocio",
               businessCategory: "Otro",
               rif: "J-00000000-0"
            };
-           await createUserDataInFirestore(user, defaultData);
-           userDoc = await getDoc(userDocRef); // Re-fetch the document after creation
-        } else if (user.email === 'espedrodiaz94@gmail.com') {
-            // This is the key fix: ensure the admin user data is correct on every login
-            await createUserDataInFirestore(user, {} as any);
-            userDoc = await getDoc(userDocRef); // Re-fetch after ensuring data is correct
+           await createUserDataInFirestore(user, defaultData as any);
+           userDoc = await getDoc(userDocRef);
         }
 
         if(userDoc.exists()) {
@@ -157,6 +157,11 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
             status: 'Active',
             licenseExpiresAt: oneYearFromNow.toISOString()
         }, { merge: true });
+
+        // Clear demo data and refresh the app
+        clearDemoData();
+        window.location.reload();
+
 
         return true;
     }
