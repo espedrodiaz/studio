@@ -10,7 +10,6 @@ const withPWA = require('next-pwa')({
 const nextConfig = {
   /* config options here */
   output: 'standalone',
-  trailingSlash: true,
   typescript: {
     ignoreBuildErrors: true,
   },
